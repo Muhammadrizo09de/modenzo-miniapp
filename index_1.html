@@ -1,0 +1,673 @@
+<!doctype html>
+<html lang="ru">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<title>Modenzo AI</title>
+<script src="https://telegram.org/js/telegram-web-app.js"></script>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&family=Space+Grotesk:wght@500;600;700&family=JetBrains+Mono:wght@400;500&display=swap" rel="stylesheet">
+<style>
+:root{
+  --bg:#0A101C;--side:#0D1424;--card:#121A2B;--raised:#182238;--line:#22304A;--line2:#1E2A42;
+  --text:#EAF0FA;--sub:#C7D2E6;--muted:#93A3BF;--faint:#6F80A0;
+  --mint:#3DDC97;--mint-t:#5BE3A8;--mint-bg:#123528;--mint-bd:#1F5A43;--on-mint:#06241A;
+  --amber:#FFC266;--amber-bg:#3A2A10;--amber-bd:#5C4316;
+  --red:#FF8A8A;--red-bg:#1C1215;--red-bd:#5A2A2E;
+  --blue:#9DB8FF;--blue-bg:#1A2440;--blue-bd:#2C3B66;
+  --violet:#C7B3FF;--violet-bg:#2A2140;--violet-bd:#45366B;
+}
+*{box-sizing:border-box}
+html,body{margin:0;background:var(--bg);color:var(--text);font-family:Inter,system-ui,sans-serif;-webkit-font-smoothing:antialiased}
+a{color:inherit;text-decoration:none}
+button,input{font-family:inherit;color:inherit}
+button{cursor:pointer}
+h1,h2,h3{margin:0;font-family:'Space Grotesk',Inter,sans-serif;letter-spacing:-0.01em}
+.app{min-height:100vh;display:flex}
+.side{display:none}
+.main{flex:1;min-width:0;display:flex;flex-direction:column;min-height:100vh}
+.content{flex:1;padding:18px 20px 96px;display:flex;flex-direction:column;gap:20px;max-width:560px;width:100%;margin:0 auto}
+.tabbar{position:fixed;left:0;right:0;bottom:0;height:calc(72px + env(safe-area-inset-bottom));padding-bottom:env(safe-area-inset-bottom);background:var(--side);border-top:1px solid var(--line2);display:grid;grid-template-columns:repeat(5,minmax(0,1fr));z-index:5}
+.tab{background:none;border:0;display:flex;flex-direction:column;align-items:center;justify-content:center;gap:4px;font-size:11px;font-weight:500;color:var(--muted)}
+.tab.on{color:var(--mint);font-weight:600}
+.tab svg{width:22px;height:22px}
+.card{background:var(--card);border:1px solid var(--line);border-radius:20px}
+.pad{padding:16px}
+.row{display:flex;align-items:center;gap:12px}
+.col{display:flex;flex-direction:column}
+.grid2{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:10px}
+.label{font-size:12px;font-weight:600;color:var(--muted);letter-spacing:.06em;text-transform:uppercase}
+.muted{color:var(--muted)}.sub{color:var(--sub)}
+.small{font-size:13px}.xs{font-size:12px}
+.title{font-size:26px;font-weight:700}
+.btn{height:48px;border-radius:14px;border:1px solid var(--line);background:var(--raised);font-weight:600;font-size:15px;display:inline-flex;align-items:center;justify-content:center;gap:8px;padding:0 16px}
+.btn.primary{background:var(--mint);border-color:var(--mint);color:var(--on-mint);font-weight:700}
+.btn.ghost{background:transparent}
+.btn.danger{background:transparent;border-color:var(--red-bd);color:var(--red)}
+.chip{display:inline-flex;align-items:center;height:24px;padding:0 10px;border-radius:12px;font-size:12px;font-weight:600;white-space:nowrap;border:1px solid}
+.c-done{background:var(--mint-bg);color:var(--mint-t);border-color:var(--mint-bd)}
+.c-dev{background:var(--amber-bg);color:var(--amber);border-color:var(--amber-bd)}
+.c-plan{background:var(--blue-bg);color:var(--blue);border-color:var(--blue-bd)}
+.c-disp{background:var(--violet-bg);color:var(--violet);border-color:var(--violet-bd)}
+.c-gray{background:#1B2230;color:#AEB9CC;border-color:#2E3A50}
+.pill{height:36px;padding:0 14px;border-radius:18px;font-size:13px;font-weight:600;border:1px solid var(--line);background:var(--card);color:var(--sub)}
+.pill.on{border-color:var(--mint);background:var(--mint-bg);color:var(--mint-t)}
+.seg{height:48px;border-radius:14px;font-weight:600;font-size:15px;border:1px solid var(--line);background:var(--card)}
+.seg.on{border-color:var(--mint);background:var(--mint-bg);color:var(--mint-t)}
+.list>*{padding:13px 0;border-bottom:1px solid var(--line2)}
+.list>*:last-child{border-bottom:0}
+.listcard{background:var(--card);border:1px solid var(--line);border-radius:18px;padding:2px 16px}
+.icon{width:44px;height:44px;border-radius:13px;display:flex;align-items:center;justify-content:center;flex:none}
+.dot{width:8px;height:8px;border-radius:50%;display:inline-block;flex:none}
+.toggle{width:52px;height:32px;border-radius:16px;border:0;padding:0 4px;display:flex;align-items:center;flex:none;background:#2B3A57;justify-content:flex-start}
+.toggle span{width:24px;height:24px;border-radius:50%;background:var(--muted)}
+.toggle.on{background:var(--mint);justify-content:flex-end}
+.toggle.on span{background:var(--on-mint)}
+.mono{font-family:'JetBrains Mono',ui-monospace,monospace;font-size:12.5px;line-height:1.7;white-space:pre-line;background:var(--bg);border:1px solid var(--line2);border-radius:14px;padding:14px;color:#D6DFEE}
+.back{width:44px;height:44px;border-radius:14px;background:var(--card);border:1px solid var(--line);display:flex;align-items:center;justify-content:center;flex:none}
+.faq{border-radius:16px;overflow:hidden;border:1px solid var(--line);background:var(--card)}
+.faq.open{border-color:var(--blue-bd);background:#141E33}
+.faq button.q{width:100%;min-height:52px;padding:12px 14px;border:0;background:transparent;display:flex;align-items:center;gap:12px;text-align:left}
+.sign{width:28px;height:28px;border-radius:50%;display:flex;align-items:center;justify-content:center;font-size:18px;font-weight:600;background:var(--raised);flex:none}
+.faq.open .sign{background:var(--mint);color:var(--on-mint)}
+.wrap{display:flex;flex-wrap:wrap;gap:8px}
+.tbl{overflow-x:auto}
+.trow{width:100%;display:grid;grid-template-columns:minmax(150px,1.2fr) 110px 140px minmax(180px,1.5fr) 140px;gap:12px;align-items:center;padding:12px 16px;text-align:left;border:0;border-bottom:1px solid var(--line2);background:transparent}
+.trow.on{background:#172440;box-shadow:inset 0 0 0 1px var(--blue-bd)}
+.thead{font-size:11px;font-weight:600;color:var(--muted);letter-spacing:.06em;text-transform:uppercase}
+.board{display:flex;flex-wrap:wrap;gap:20px;align-items:flex-start}
+.kpis{display:grid;grid-template-columns:repeat(auto-fit,minmax(140px,1fr));gap:12px}
+.desk-only{display:none}
+.app.locked [data-act="launch"],.app.locked [data-act="stop"],.app.locked [data-upd],.app.locked [data-group],.app.locked [data-notif],.app.locked [data-hours],.app.locked [data-interval],.app.locked [data-mode],.app.locked [data-lockgo]{opacity:.45;filter:grayscale(.7)}
+.app.locked [data-act="launch"]::after,.app.locked [data-upd]::after,.app.locked [data-lockgo]::after{content:'';width:14px;height:14px;margin-left:8px;background:currentColor;-webkit-mask:url("data:image/svg+xml;utf8,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 24 24' fill='none' stroke='black' stroke-width='2.4' stroke-linecap='round' stroke-linejoin='round'><rect x='4' y='11' width='16' height='10' rx='2'/><path d='M8 11V7a4 4 0 0 1 8 0v4'/></svg>") center/contain no-repeat;mask:url("data:image/svg+xml;utf8,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 24 24' fill='none' stroke='black' stroke-width='2.4' stroke-linecap='round' stroke-linejoin='round'><rect x='4' y='11' width='16' height='10' rx='2'/><path d='M8 11V7a4 4 0 0 1 8 0v4'/></svg>") center/contain no-repeat;display:inline-block;flex:none}
+.toast{position:fixed;left:50%;bottom:calc(92px + env(safe-area-inset-bottom));transform:translateX(-50%);max-width:min(92vw,420px);background:#1B2740;border:1px solid var(--line);color:var(--text);padding:12px 16px;border-radius:14px;font-size:14px;line-height:1.4;z-index:20;box-shadow:0 8px 24px rgba(0,0,0,.4)}
+@media (min-width: 900px){
+  .app.wide .side{display:flex;flex-direction:column;gap:18px;width:240px;flex:none;background:var(--side);border-right:1px solid var(--line2);padding:20px 14px;position:sticky;top:0;height:100vh;overflow:auto}
+  .app.wide .tabbar{display:none}
+  .app.wide .content{max-width:1320px;padding:24px 28px 40px}
+  .app.wide .desk-only{display:flex}
+  .navbtn{height:42px;padding:0 12px;border-radius:12px;border:0;background:transparent;display:flex;align-items:center;gap:10px;font-size:15px;color:var(--sub);text-align:left;width:100%}
+  .navbtn.on{background:#172440;color:var(--text);font-weight:700}
+  .navbtn svg{width:18px;height:18px;flex:none}
+}
+</style>
+</head>
+<body>
+<div id="app" class="app"></div>
+<script>
+'use strict';
+const tg = window.Telegram && window.Telegram.WebApp ? window.Telegram.WebApp : null;
+if (tg) { try { tg.ready(); tg.expand(); tg.setHeaderColor && tg.setHeaderColor('#0A101C'); tg.setBackgroundColor && tg.setBackgroundColor('#0A101C'); } catch (e) {} }
+
+const I = {
+  home:'<path d="M3 11l9-8 9 8v10a1 1 0 0 1-1 1h-5v-6H9v6H4a1 1 0 0 1-1-1z"/>',
+  send:'<path d="M22 2L11 13M22 2l-7 20-4-9-9-4z"/>',
+  users:'<path d="M17 21v-2a4 4 0 0 0-4-4H7a4 4 0 0 0-4 4v2M10 11a4 4 0 1 0 0-8 4 4 0 0 0 0 8zM23 21v-2a4 4 0 0 0-3-3.87M16 3.13a4 4 0 0 1 0 7.75"/>',
+  grid:'<path d="M4 4h6v6H4zM14 4h6v6h-6zM4 14h6v6H4zM14 14h6v6h-6z"/>',
+  sliders:'<path d="M4 21v-7M4 10V3M12 21v-9M12 8V3M20 21v-5M20 12V3M1 14h6M9 8h6M17 16h6"/>',
+  truck:'<path d="M1 4h14v12H1zM15 9h4l3 3v4h-7z"/><circle cx="5.5" cy="18.5" r="2"/><circle cx="18.5" cy="18.5" r="2"/>',
+  wheel:'<circle cx="12" cy="12" r="9"/><circle cx="12" cy="12" r="3"/>',
+  pin:'<path d="M12 22s7-6.2 7-12a7 7 0 1 0-14 0c0 5.8 7 12 7 12z"/><circle cx="12" cy="10" r="2.5"/>',
+  help:'<circle cx="12" cy="12" r="9"/><path d="M9.5 9.5a2.5 2.5 0 1 1 3.5 2.3c-.6.3-1 .9-1 1.6V14M12 17.5v.5"/>',
+  play:'<path d="M6 4l14 8-14 8z"/>',
+  back:'<path d="M15 6l-6 6 6 6"/>',
+  chev:'<path d="M9 6l6 6-6 6"/>',
+  clock:'<circle cx="12" cy="12" r="9"/><path d="M12 7v5l3 2"/>',
+  warn:'<path d="M12 3l10 18H2z"/><path d="M12 10v4M12 17.5v.5"/>',
+  chat:'<path d="M21 15a2 2 0 0 1-2 2H7l-4 4V5a2 2 0 0 1 2-2h14a2 2 0 0 1 2 2z"/><path d="M8 9h8M8 13h5"/>',
+  doc:'<path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"/><path d="M14 2v6h6M9 13h6M9 17h4"/>',
+  check:'<path d="M5 12.5l4.5 4.5L19 7.5"/>',
+  plus:'<path d="M12 5v14M5 12h14"/>',
+  x:'<path d="M6 6l12 12M18 6L6 18"/>',
+  search:'<circle cx="11" cy="11" r="7"/><path d="M20 20l-3.5-3.5"/>',
+  lock:'<rect x="4" y="11" width="16" height="10" rx="2"/><path d="M8 11V7a4 4 0 0 1 8 0v4"/>'
+};
+function ic(name, size, color, sw) {
+  return '<svg width="' + (size || 22) + '" height="' + (size || 22) + '" viewBox="0 0 24 24" fill="none" stroke="' + (color || 'currentColor') + '" stroke-width="' + (sw || 1.9) + '" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">' + I[name] + '</svg>';
+}
+function esc(s) { return String(s).replace(/[&<>"']/g, (c) => ({ '&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;' }[c])); }
+const LOGO = '<svg width="32" height="32" viewBox="0 0 32 32" aria-hidden="true"><rect width="32" height="32" rx="9" fill="#3DDC97"/><path d="M9 22V11l7 6 7-6v11" fill="none" stroke="#06241A" stroke-width="2.6" stroke-linecap="round" stroke-linejoin="round"/></svg>';
+
+/* ---------- данные (пример) ---------- */
+const LOADS = [
+  { id:'1042', driver:'Amir K.', truckNo:'214', group:'Driver A', st:'transit', truck:'Rolling', truckSub:'62 mph · Barstow, CA', stop:'PDX9 Troutdale, OR · 3 из 4', appt:'Окно 16:20 PST', eta:'17:05 PST', v:'late', verdict:'Опоздает ~45 мин', hos:'3 ч 10 мин', hosPct:28,
+    stops:[['Fontana, CA','пройден','done'],['Sacramento, CA','пройден','done'],['PDX9 Troutdale, OR','17:05','now'],['Portland, OR','19:40','next']],
+    msgs:[['Amir K.','19:12','Пробка перед Redding, еду медленно','Для брокера: Heavy traffic before Redding'],['Бот','19:15','Расчёт обновлён: +25 мин из-за пробки','']] },
+  { id:'1128', driver:'Bekzod T.', truckNo:'187', group:'Driver B', st:'transit', truck:'Rolling', truckSub:'58 mph · Stockton, CA', stop:'SMF3 Sacramento, CA · 2 из 3', appt:'Окно 21:00 PST', eta:'20:45 PST', v:'tight', verdict:'Впритык, запас 15 мин', hos:'6 ч 05 мин', hosPct:55,
+    stops:[['Ontario, CA','пройден','done'],['SMF3 Sacramento, CA','20:45','now'],['Reno, NV','01:30','next']],
+    msgs:[['Bekzod T.','18:50','Yükü aldım, yoldayım','Перевод: забрал груз, в пути']] },
+  { id:'0977', driver:'Ivan P.', truckNo:'305', group:'Driver C', st:'transit', truck:'Stopped', truckSub:'25 мин · Love\'s, Barstow', stop:'LGB8 Rialto, CA · 1 из 2', appt:'Окно 23:30 PST', eta:'21:10 PST', v:'ok', verdict:'Вовремя', hos:'8 ч 40 мин', hosPct:79,
+    stops:[['LGB8 Rialto, CA','21:10','now'],['San Diego, CA','00:50','next']],
+    msgs:[['Ivan P.','19:30','Заправляюсь, через 20 минут выезжаю','']] },
+  { id:'1203', driver:'Sardor M.', truckNo:'122', group:'Driver D', st:'dispatched', truck:'Stopped', truckSub:'У шиппера · 40 мин', stop:'ONT8 Moreno Valley, CA · погрузка', appt:'Окно 18:00 PST', eta:'17:40 PST', v:'tight', verdict:'Впритык, запас 20 мин', hos:'9 ч 30 мин', hosPct:86,
+    stops:[['ONT8 Moreno Valley, CA','погрузка','now'],['Las Vegas, NV','23:10','next'],['St George, UT','02:00','next']],
+    msgs:[['Sardor M.','19:05','Navbatdaman, 3-chi turibman','Перевод: стою в очереди, третий']] },
+  { id:'1210', driver:'Oleg R.', truckNo:'276', group:'Driver E', st:'dispatched', truck:'Off duty', truckSub:'Отдых 10 ч, до 04:00', stop:'PHX7 Phoenix, AZ · погрузка', appt:'Окно 06:00 MST', eta:'05:20 MST', v:'ok', verdict:'Вовремя', hos:'после отдыха 11 ч', hosPct:100,
+    stops:[['PHX7 Phoenix, AZ','05:20','now'],['Albuquerque, NM','12:30','next']],
+    msgs:[['Oleg R.','17:40','Ложусь на отдых, утром на погрузку','']] },
+  { id:'1225', driver:'Водитель не назначен', truckNo:'—', group:'', st:'upcoming', truck:'Нет трака', truckSub:'Ждёт назначения', stop:'DFW6 Dallas, TX · погрузка', appt:'Пт 08:00 CST', eta:'—', v:'none', verdict:'Пока не считается', hos:'—', hosPct:0,
+    stops:[['DFW6 Dallas, TX','Пт 08:00','next'],['Houston, TX','Пт 14:00','next']], msgs:[] },
+  { id:'1231', driver:'Jamshid A.', truckNo:'198', group:'Driver F', st:'upcoming', truck:'Off duty', truckSub:'Выходной', stop:'ATL6 East Point, GA · погрузка', appt:'Сб 05:30 EST', eta:'—', v:'none', verdict:'Новый груз', hos:'—', hosPct:100,
+    stops:[['ATL6 East Point, GA','Сб 05:30','next'],['Charlotte, NC','Сб 11:00','next']], msgs:[] },
+  { id:'1001', driver:'Rustam N.', truckNo:'160', group:'Driver G', st:'delivered', truck:'Stopped', truckSub:'Разгружен', stop:'SAN3 San Diego, CA · доставлен', appt:'Окно 14:30 PST', eta:'14:02 PST', v:'ok', verdict:'Доставлен вовремя', hos:'4 ч 20 мин', hosPct:39,
+    stops:[['Fontana, CA','пройден','done'],['SAN3 San Diego, CA','14:02','done']], msgs:[['Rustam N.','14:10','Разгрузился, POD отправил','']] }
+];
+const ST = { upcoming:['Upcoming','c-plan'], dispatched:['Dispatched','c-disp'], transit:['In transit','c-done'], delivered:['Delivered','c-gray'] };
+const VC = { late:'var(--red)', tight:'var(--amber)', ok:'var(--mint-t)', none:'var(--muted)' };
+const TC = (t) => t === 'Rolling' ? 'var(--mint-t)' : (t === 'Stopped' ? 'var(--amber)' : 'var(--muted)');
+
+const D='done', W='dev', P='plan';
+const FEATURES = [
+  ['Чтение чатов и память', [
+    ['Запись сообщений из групп водителей','Всё, что пишут водители, сохраняется в базе',D],
+    ['Проверка, видит ли бот группу','Если не видит, подскажет, что сделать',D],
+    ['«Как решали раньше»','Подсказки по прошлым ответам сотрудников',W],
+    ['Разбор фото: BOL, пломба, номер трейлера','Фото из чата как данные по грузу',P]]],
+  ['Водитель и груз', [
+    ['GPS из Samsara','Где грузовик сейчас',D],
+    ['Проверка ключа ELD','Samsara, Motive, Geotab',D],
+    ['GPS из Motive и Geotab','Сейчас GPS берётся только из Samsara',P],
+    ['Часы водителя (HOS)','Перерыв 30 мин после 8 ч, отдых 10 ч',W],
+    ['Грузовик: Rolling, Stopped, Off duty','По данным ELD, со скоростью и временем стоянки',P]]],
+  ['Честный ETA', [
+    ['Маршрут с пробками и погода','Mapbox и служба погоды США (NWS)',W],
+    ['Вердикт: вовремя, впритык, опоздает на N мин','Запас 30+ мин, 0–30 мин или опоздание',W],
+    ['Часовой пояс стопа и цепочка стопов','Опоздание на 3-м стопе сразу видно на 4-м',W],
+    ['Точность за последние 30 прогнозов','Сравнение прогноза с реальным прибытием',P],
+    ['Команда /eta за секунду','Расчёт заранее, в фоне',P]]],
+  ['Смена и апдейты', [
+    ['Запуск смены','Длительность, интервал, режим. До запуска бот молчит',P],
+    ['Режим «сначала показать мне»','Отправить, изменить или пропустить',W],
+    ['Автоапдейты 3–6 раз в сутки','Не чаще раза в 4 часа, время выбираете вы',W],
+    ['Остановка смены (/stop)','Бот сразу перестаёт писать в группы',P]]],
+  ['Ответы и языки', [
+    ['Ответы на вопросы по логистике','Amazon Relay, Street и другие',D],
+    ['Только логистика','Другие темы бот вежливо отклоняет',W],
+    ['Русский и английский','Интерфейс и ответы',D],
+    ['Турецкий и узбекский','Интерфейс и ответы',P],
+    ['Перевод для водителя','Вы пишете по-русски, водитель получает по-английски',W]]],
+  ['Предупреждения', [
+    ['Груз опаздывает: раньше, чем позвонит брокер','Какой груз и на сколько',W],
+    ['Тревога «водитель молчит»','Если водитель долго не отвечает',W],
+    ['Проблемы с группой или ключом ELD','Сообщение владельцу',D]]],
+  ['Отчёты и доказательства', [
+    ['Отчёт после смены и передача смены','Кто требует внимания, что не решено',W],
+    ['Утренняя сводка владельцу','Коротко о ночи',P],
+    ['Папка /proof по грузу','GPS, фото, сообщения и письмо брокеру при простое',P]]],
+  ['Приложение и интеграции', [
+    ['Это окно (Mini App)','Сейчас демо с примерными данными',P],
+    ['Расширенный экран','Доска грузов на компьютере, окно растягивается',P],
+    ['Статусы грузов','Upcoming, Dispatched, In transit, Delivered',P],
+    ['Новый груз','Бот замечает новый груз в борде и ставит статус',P],
+    ['Чтение Amazon Relay','Расширение Chrome, только чтение. Прототип 0.1',P]]],
+  ['Сервер и оплата (в самом конце)', [
+    ['Работа 24/7 на сервере','Сейчас бот работает на компьютере владельца',W],
+    ['Данные каждого клиента отдельно','Шифрование ключей ELD',P],
+    ['Тарифы, оферта, пробная неделя','Тарифы отличаются только числом водителей',P],
+    ['Оплата: Click, Payme и другие','Появится после запуска сервера',P]]]
+];
+const SM = { done:['Есть','c-done'], dev:['В разработке','c-dev'], plan:['План','c-plan'] };
+
+const FAQ = [
+  ['start','Что такое Modenzo AI?','Помощник диспетчера в Telegram. Он читает чаты водителей, смотрит GPS и часы работы, считает честный ETA и заранее предупреждает, какой груз опаздывает и на сколько. Апдейты отправляет только с вашего согласия.'],
+  ['start','Как начать работу?','Нажмите /start и ответьте на 4 вопроса: язык, борд, тип грузов, ключ ELD. Потом добавьте бота в группы водителей. В начале смены нажмите «Запустить смену».'],
+  ['start','Как добавить бота в группу водителя?','Откройте группу в Telegram и добавьте бота как участника. Бот сам проверит, видит ли он сообщения. Если нет, подскажет: обычно нужно сделать его администратором или добавить заново.'],
+  ['start','Как подключить ELD?','В /start или в Настройках, раздел «Подключения». Вставьте API-ключ ELD вашей компании, бот проверит его. Проверка ключа работает для Samsara, Motive и Geotab. GPS пока берётся только из Samsara.'],
+  ['start','Нужно ли водителям что-то устанавливать?','Нет. Водители пишут в свои группы как обычно. Бот работает внутри этих групп.'],
+  ['shift','Бот будет сам писать водителям?','Нет. Пока вы не запустили смену, бот только читает и анализирует. В группы он пишет только после запуска смены и только в выбранном вами режиме.'],
+  ['shift','Как запустить смену?','На главной нажмите «Управлять сменой». Выберите длительность (6, 7, 8 или 10 часов), как часто слать апдейты и режим. Потом нажмите «Запустить смену».'],
+  ['shift','Чем «Сначала показать мне» отличается от «Авто»?','В режиме «Сначала показать мне» бот готовит апдейт, а вы нажимаете «Отправить», «Изменить» или «Пропустить». В режиме «Авто» бот отправляет апдейты сам по расписанию.'],
+  ['shift','Как часто приходят автоапдейты?','От 3 до 6 раз в сутки, не чаще одного раза в 4 часа. Время каждого апдейта выбираете вы.'],
+  ['shift','Как остановить бота?','Нажмите «Остановить смену» на экране смены или отправьте команду /stop. Бот сразу перестанет писать в группы.'],
+  ['shift','Работает ли бот вне моей смены?','Да, он читает и анализирует 24/7, но в группы вне смены не пишет. Это подходит для любой смены, не только ночной.'],
+  ['eta','Как бот считает ETA?','Считает код, а не ИИ: где грузовик по GPS, маршрут с пробками, сколько часов осталось у водителя, погода по пути и часовой пояс стопа. ИИ только объясняет результат словами.'],
+  ['eta','Что значат On time, Tight и Probably late?','On time: запас больше 30 минут. Tight: запас от 0 до 30 минут. Probably late: опоздание, бот пишет на сколько минут и почему.'],
+  ['eta','Почему время указано не по-моему?','Срок доставки сравнивается во времени самого стопа, потому что так его видит склад и брокер.'],
+  ['eta','Что если в грузе несколько стопов?','Бот считает до стопа, к которому водитель едет сейчас, и дальше по цепочке. Если опоздание на 3-м стопе, сразу видно, что будет на 4-м.'],
+  ['eta','Насколько точен ETA?','Идеально точного прогноза не бывает: пробки и водители меняются. Бот будет сравнивать прогноз с реальным прибытием и показывать свою точность за последние 30 прогнозов (в плане).'],
+  ['eta','Учитываются ли ограничения для грузовиков?','Пока нет. Сервис маршрутов не знает низких мостов и запретных для грузовиков дорог. Это стоит помнить на сложных маршрутах.'],
+  ['eta','Что если грузовик стоит?','Бот не гадает, сколько он простоит. Он считает, как будто водитель выедет сейчас, и пишет это в пояснении.'],
+  ['lang','Какие языки поддерживаются?','Русский и английский уже работают. Турецкий и узбекский появятся позже.'],
+  ['lang','О чём можно спрашивать бота?','Только о логистике: грузы, стопы, часы водителя, Amazon Relay, Street и похожее. Другие темы бот вежливо отклонит.'],
+  ['lang','Может ли бот переводить для водителя?','Это в разработке: вы пишете на русском, узбекском или турецком, водитель получает текст на английском.'],
+  ['safe','Кто видит мои ключи и данные?','Ключи хранятся только на сервере и нигде не показываются. Раздельное хранение данных каждого клиента и шифрование ключей появятся до того, как бот начнут использовать другие компании.'],
+  ['safe','Может ли кто-то управлять ботом через сообщение в чате?','Нет. Сообщения, фото и текст в них для бота только данные. Команды вроде «забудь правила» или «пришли ключ» он не выполняет.'],
+  ['safe','Бот читает Amazon Relay?','Это последний этап. Чтение будет через расширение Chrome и только на чтение: бот ничего не нажимает и не меняет в Relay.'],
+  ['pay','Сколько стоит?','Тарифы отличаются только числом водителей, все функции есть на любом тарифе. План цен: от $9 в месяц до 10 водителей. Цены окончательно не утверждены.'],
+  ['pay','Есть ли пробный период?','Планируется пробная неделя: если не подойдёт, вернём деньги за вычетом использованных дней. Точная формула будет в оферте.'],
+  ['pay','Как оплатить?','Оплата через Click, Payme и другие способы появится позже, после запуска сервера.']
+];
+const FAQ_CATS = [['all','Все'],['start','Начало'],['shift','Смена'],['eta','ETA'],['lang','Языки'],['safe','Безопасность'],['pay','Тариф и оплата']];
+
+/* ---------- состояние ---------- */
+const S = {
+  view:'home', hours:7, interval:4, mode:'review', launched:false,
+  upd:'pending', groups:{ a:true, b:true, team:true }, feat:'all', cat:'all', open:'q1',
+  lang:'ru', notif:{ late:true, silent:true, group:true },
+  tab:'transit', sel:'1042', q:'', showNew:true, queue:{}, compact:false,
+  access:'active'
+};
+/* язык: ссылка ?lang=, потом сохранённый выбор, потом язык Telegram */
+(function initPrefs() {
+  let lang = null;
+  try { lang = new URLSearchParams(location.search).get('lang'); } catch (e) {}
+  if (!lang) { try { lang = localStorage.getItem('mz_lang'); } catch (e) {} }
+  if (!lang && tg && tg.initDataUnsafe && tg.initDataUnsafe.user) lang = (tg.initDataUnsafe.user.language_code || '').slice(0, 2);
+  if (['ru','en','tr','uz'].indexOf(lang) >= 0) S.lang = lang;
+  try { const a = new URLSearchParams(location.search).get('access'); if (['survey','unpaid','active'].indexOf(a) >= 0) S.access = a; } catch (e) {}
+})();
+function locked() { return S.access !== 'active'; }
+let toastTimer = null;
+function toast(text) {
+  let el = document.getElementById('toast');
+  if (!el) { el = document.createElement('div'); el.id = 'toast'; el.className = 'toast'; el.setAttribute('role', 'status'); document.body.appendChild(el); }
+  el.textContent = text; el.style.display = 'block';
+  if (S.lang === 'en') translateDom(el);
+  clearTimeout(toastTimer); toastTimer = setTimeout(() => { el.style.display = 'none'; }, 3200);
+}
+function lockBanner() {
+  if (!locked()) return '';
+  const survey = S.access === 'survey';
+  return '<div class="card row" style="padding:14px 16px;border-radius:16px;border-color:var(--amber-bd);background:#1E1A10;align-items:flex-start"><span class="icon" style="width:36px;height:36px;border-radius:10px;background:var(--amber-bg);color:var(--amber)">' + ic('lock', 18, 'currentColor', 2.2) + '</span><span class="col" style="flex:1;gap:3px"><b style="font-size:14px">Только просмотр</b><span class="small sub" style="line-height:1.45">' + (survey ? 'Пройдите опрос /start до конца, чтобы включить функции.' : 'Тариф не оплачен. Функции включатся после оплаты.') + '</span></span><button class="btn" style="height:38px;font-size:13px" data-act="unlock">' + (survey ? 'Пройти опрос' : 'Оплата') + '</button></div>';
+}
+function screenWide() { return window.matchMedia('(min-width: 900px)').matches; }
+function isWide() { return screenWide() && !S.compact; }
+function fsSupported() { return !!(tg && tg.requestFullscreen && tg.isVersionAtLeast && tg.isVersionAtLeast('8.0')); }
+function fsOn() { return !!(tg && tg.isFullscreen); }
+function openSeparate() {
+  const url = location.origin + location.pathname + '?view=board';
+  try { if (tg && tg.openLink) { tg.openLink(url); return; } } catch (x) {}
+  window.open(url, '_blank', 'noopener');
+}
+function windowBar() {
+  const b = [];
+  if (tg && tg.platform && tg.platform !== 'unknown') b.push('<button class="btn primary" style="height:40px;font-size:13px" data-act="separate">Открыть отдельным окном</button>');
+  if (fsSupported()) b.push('<button class="btn" style="height:40px;font-size:13px" data-act="fs">' + (fsOn() ? 'Выйти из полного экрана' : 'На весь экран') + '</button>');
+  if (screenWide()) b.push('<button class="btn" style="height:40px;font-size:13px" data-act="compact">' + (S.compact ? 'Расширенный экран' : 'Компактный вид') + '</button>');
+  return b.join('');
+}
+function go(v) { S.view = v; render(); window.scrollTo(0, 0); }
+
+function hh(h) { const v = ((h % 24) + 24) % 24; return (v < 10 ? '0' : '') + v + ':00'; }
+function schedule() {
+  const out = []; let n = 1;
+  for (let t = 16 + S.interval; t < 16 + S.hours; t += S.interval) { out.push(['Апдейт ' + n, hh(t)]); n++; }
+  out.push(['Итоговый апдейт', hh(16 + S.hours)]);
+  return out;
+}
+
+/* ---------- экраны ---------- */
+function head(title, sub, backTo) {
+  return '<div class="row">' + (backTo ? '<button class="back" data-go="' + backTo + '" aria-label="Назад">' + ic('back', 20, '#EAF0FA', 2) + '</button>' : '') +
+    '<div><h1 class="title" style="font-size:' + (backTo ? 24 : 26) + 'px">' + title + '</h1>' + (sub ? '<div class="small muted" style="margin-top:3px">' + sub + '</div>' : '') + '</div></div>';
+}
+
+function vHome() {
+  const sch = schedule();
+  const wb = !isWide() ? windowBar() : '';
+  return (wb ? '<div class="wrap">' + wb + '</div>' : '') + '<div class="row" style="justify-content:space-between">' +
+    '<div class="row" style="gap:10px">' + LOGO + '<div><h2 style="font-size:19px">Modenzo AI</h2><div class="xs muted">Помощник диспетчера 24/7</div></div></div>' +
+    (S.launched ? '<span class="chip c-done" style="height:30px"><span class="dot" style="background:var(--mint);margin-right:6px"></span>Смена идёт</span>' : '<span class="chip c-dev" style="height:30px">Смена не запущена</span>') + '</div>' +
+    '<div class="card" style="padding:20px;display:flex;flex-direction:column;gap:18px">' +
+      '<div class="row" style="gap:18px"><svg width="84" height="84" viewBox="0 0 84 84" role="img" aria-label="Прогресс смены"><circle cx="42" cy="42" r="34" fill="none" stroke="#22304A" stroke-width="8"/><circle cx="42" cy="42" r="34" fill="none" stroke="#3DDC97" stroke-width="8" stroke-linecap="round" stroke-dasharray="' + (S.launched ? '102.5' : '0') + ' 213.6" stroke-opacity="' + (S.launched ? 1 : 0) + '" transform="rotate(-90 42 42)"/><text x="42" y="47" text-anchor="middle" font-family="Space Grotesk, Inter, sans-serif" font-size="18" font-weight="700" fill="#EAF0FA">' + (S.launched ? '48%' : '0%') + '</text></svg>' +
+      '<div class="col" style="gap:4px;flex:1;min-width:0"><div class="small muted">Смена 16:00–' + hh(16 + S.hours) + ' (время США)</div><h2 style="font-size:22px">' + (S.launched ? '3 ч 22 мин из ' + S.hours + ' ч' : 'Бот пока только слушает') + '</h2><div class="small sub">' + (S.launched ? 'Следующий апдейт в ' + sch[0][1] : 'В группы водителей ничего не пишет до запуска') + '</div></div></div>' +
+      '<div class="grid2"><button class="btn primary" data-go="shift">' + (S.launched ? 'Управлять сменой' : 'Запустить смену') + '</button><button class="btn" data-go="updates">Решения · ' + (S.upd === 'pending' ? 1 : 0) + '</button></div></div>' +
+    '<div class="col" style="gap:12px"><div class="row" style="justify-content:space-between"><h3 style="font-size:18px">Требует внимания</h3><span class="xs muted">Пример данных</span></div>' +
+      alertRow('eta', 'clock', 'var(--red-bg)', 'var(--red)', 'Load 1042 · стоп 3 из 4', 'Опоздает примерно на 45 мин', 'var(--red)', 'var(--red-bd)') +
+      alertRow('eta', 'warn', 'var(--amber-bg)', 'var(--amber)', 'Load 1128 · стоп 2 из 3', 'Впритык: запас 15 мин', 'var(--amber)') +
+      alertRow('groups', 'chat', 'var(--blue-bg)', 'var(--blue)', 'Группа Driver C', 'Бот не видит сообщения, нужно поправить', 'var(--sub)') + '</div>' +
+    '<div class="col" style="gap:12px"><div class="row" style="justify-content:space-between"><h3 style="font-size:18px">Функции</h3><button data-go="features" style="background:none;border:0;font-weight:600;font-size:13px;color:var(--mint-t)">Все функции</button></div>' +
+      '<button class="card pad row" data-go="board" style="text-align:left;background:#0F1A30;border-color:var(--blue-bd)"><span class="icon" style="background:var(--blue-bg);color:var(--blue)">' + ic('truck') + '</span><span class="col" style="flex:1;gap:3px"><span style="font-weight:600;font-size:15px">Доска грузов</span><span class="xs" style="color:var(--blue)">На компьютере открывается расширенным экраном</span></span>' + ic('chev', 18, 'var(--blue)', 2) + '</button>' +
+      '<div class="grid2">' +
+        tile('updates', 'send', 'Апдейты', 'По расписанию, после вашего «Отправить»') +
+        tile('eta', 'pin', 'Честный ETA', 'Пробки, часы водителя, погода, цепочка стопов') +
+        tile('groups', 'users', 'Группы', 'Читает чаты водителей на 4 языках') +
+        tile('features', 'doc', 'Отчёты и /proof', 'Скоро: отчёт смены и папка по грузу', true) + '</div></div>';
+}
+function alertRow(to, icon, bg, fg, title, sub, subColor, border) {
+  return '<button class="card row" data-go="' + to + '" style="text-align:left;padding:14px 16px;border-radius:18px;' + (border ? 'border-color:' + border : '') + '"><span class="icon" style="background:' + bg + ';color:' + fg + '">' + ic(icon, 22, 'currentColor', 2) + '</span><span class="col" style="flex:1;min-width:0;gap:3px"><span style="font-weight:600;font-size:15px">' + title + '</span><span class="small" style="color:' + subColor + '">' + sub + '</span></span>' + ic('chev', 18, 'var(--muted)', 2) + '</button>';
+}
+function tile(to, icon, title, sub, plan) {
+  return '<button class="card col" data-go="' + to + '" style="text-align:left;padding:14px;border-radius:18px;gap:10px">' + ic(icon, 24, plan ? 'var(--blue)' : 'var(--mint)') + '<span style="font-weight:600;font-size:15px">' + title + '</span><span class="xs" style="line-height:1.4;color:' + (plan ? 'var(--blue)' : 'var(--muted)') + '">' + sub + '</span></button>';
+}
+
+function vShift() {
+  const sch = schedule();
+  if (S.launched) {
+    return head('Смена', 'Бот пишет в группы только в выбранном режиме', 'home') +
+      '<div class="card" style="padding:20px;background:var(--mint-bg);border-color:var(--mint-bd);display:flex;flex-direction:column;gap:10px"><span class="icon" style="border-radius:50%;width:48px;height:48px;background:var(--mint)">' + ic('check', 24, '#06241A', 3) + '</span><h2 style="font-size:22px">Смена запущена</h2><div class="small" style="color:#C7E9D9">До ' + hh(16 + S.hours) + ' по времени США. Режим: ' + (S.mode === 'review' ? 'сначала показать мне' : 'авто') + '.</div></div>' +
+      '<div class="col" style="gap:10px"><div class="label">Расписание</div><div class="listcard list">' + sch.map((s) => '<div class="row" style="justify-content:space-between"><span>' + s[0] + '</span><span class="small muted">' + s[1] + '</span></div>').join('') + '</div></div>' +
+      '<button class="btn danger" data-act="stop">Остановить смену (/stop)</button>';
+  }
+  return head('Запуск смены', 'Пока смена не запущена, бот в группах молчит', 'home') +
+    '<div class="col" style="gap:10px"><div class="label">Длительность смены</div><div style="display:grid;grid-template-columns:repeat(4,1fr);gap:8px">' + [6,7,8,10].map((h) => '<button class="seg' + (S.hours === h ? ' on' : '') + '" data-hours="' + h + '">' + h + ' ч</button>').join('') + '</div></div>' +
+    '<div class="col" style="gap:10px"><div class="label">Апдейт каждые</div><div style="display:grid;grid-template-columns:repeat(3,1fr);gap:8px">' + [4,6,8].map((h) => '<button class="seg' + (S.interval === h ? ' on' : '') + '" data-interval="' + h + '">' + h + ' ч</button>').join('') + '</div><div class="xs muted">Чаще чем раз в 4 часа нельзя</div></div>' +
+    '<div class="col" style="gap:10px"><div class="label">Режим</div>' +
+      [['review','Сначала показать мне','Бот готовит апдейт, вы нажимаете «Отправить», «Изменить» или «Пропустить».'],['auto','Авто','Бот отправляет апдейты сам по расписанию. Включайте, когда доверяете расчётам.']].map((m) => {
+        const on = S.mode === m[0];
+        return '<button data-mode="' + m[0] + '" class="card col" style="text-align:left;gap:6px;padding:14px 16px;border-radius:16px;' + (on ? 'border-color:var(--mint);background:#10261F' : '') + '"><span class="row" style="justify-content:space-between"><span style="font-weight:600;font-size:15px">' + m[1] + '</span><span style="width:18px;height:18px;border-radius:50%;border:' + (on ? '6px solid var(--mint)' : '2px solid #4A5B7A') + '"></span></span><span class="small sub" style="line-height:1.45">' + m[2] + '</span></button>';
+      }).join('') + '</div>' +
+    '<div class="card pad col" style="gap:8px;border-radius:18px"><div class="row" style="justify-content:space-between;font-size:14px"><span class="muted">Смена</span><b>16:00–' + hh(16 + S.hours) + ' (США)</b></div><div class="row" style="justify-content:space-between;font-size:14px"><span class="muted">Апдейты</span><b>' + sch.map((s) => s[1]).join(', ') + '</b></div></div>' +
+    '<button class="btn primary" style="height:56px;font-size:17px" data-act="launch">Запустить смену</button><div class="xs muted" style="text-align:center">В демо кнопка ничего не отправляет. Запуск командой /shift в группе тоже планируется</div>';
+}
+
+function vUpdates() {
+  const pending = S.upd === 'pending', sent = S.upd === 'sent';
+  const badge = pending ? ['Ждёт вашего решения','var(--amber)','var(--amber-bd)'] : (sent ? ['Отправлено (демо)','var(--mint-t)','var(--mint-bd)'] : ['Пропущено','var(--muted)','var(--line)']);
+  return head('Апдейты', 'Ничего не уходит водителям без вас') +
+    '<div class="card pad col" style="gap:14px;border-color:' + badge[2] + '"><div class="row" style="justify-content:space-between"><span class="label" style="color:' + badge[1] + '">' + badge[0] + '</span><span class="xs muted">Группа Driver A · 20:00</span></div>' +
+    '<div class="mono">Update Load# 1042\nRolling near Barstow, CA, 62 mph\nNext stop (3 of 4): PDX9 Troutdale, OR\nAppt Fri 16:20 PST\nMiles left 612 · drive 9h 40m (+30m break)\nTraffic +25 min in next 40 mi\nETA 17:05 PST · probably late 45 min</div>' +
+    (pending ? '<div style="display:grid;grid-template-columns:repeat(3,1fr);gap:8px"><button class="btn primary" data-upd="sent">Отправить</button><button class="btn">Изменить</button><button class="btn ghost" data-upd="skipped">Пропустить</button></div>' : '<button class="btn ghost" data-upd="pending">Вернуть (демо)</button>') + '</div>' +
+    '<button class="card row" data-go="eta" style="justify-content:space-between;height:52px;padding:0 16px;border-radius:16px;font-weight:600">Как посчитан этот ETA' + ic('chev', 18, 'var(--muted)', 2) + '</button>' +
+    '<div class="col" style="gap:10px"><div class="label">Точность ETA</div><div class="card pad row" style="gap:14px;border-radius:18px"><h2 style="font-size:28px;color:#4A5B7A">—</h2><div class="small muted" style="line-height:1.5">Бот сравнит прогноз с реальным прибытием по GPS и покажет точность за последние 30 прогнозов. Скоро.</div></div></div>';
+}
+
+function vEta() {
+  const l = LOADS[0];
+  return head('Load 1042', 'Расчёт ETA · пример данных', 'home') +
+    '<div class="card col" style="padding:18px;gap:12px;background:var(--red-bg);border-color:var(--red-bd)"><span class="label" style="color:var(--red)">Probably late</span><div class="row" style="gap:8px;align-items:baseline"><h2 style="font-size:44px;line-height:1">+45</h2><span style="color:#FFC4C4">мин опоздания</span></div><div class="grid2"><div style="background:#120C0E;border-radius:14px;padding:10px 12px"><div class="xs" style="color:#C9A5A8">Приедет</div><b style="font-size:17px">17:05 PST</b></div><div style="background:#120C0E;border-radius:14px;padding:10px 12px"><div class="xs" style="color:#C9A5A8">Окно на складе</div><b style="font-size:17px">16:20 PST</b></div></div></div>' +
+    '<div class="col" style="gap:10px"><div class="label">Цепочка стопов</div><div class="card pad col" style="gap:12px;border-radius:18px">' + stopsHtml(l.stops) + '<div class="xs" style="color:var(--amber)">Стоп 4 по цепочке: впритык, запас 10 мин</div></div></div>' +
+    '<div class="col" style="gap:10px"><div class="label">Из чего сложилось время</div><div class="listcard list">' +
+      [['Осталось миль','612'],['В пути с пробками','9 ч 40 мин'],['Перерыв по часам водителя','+30 мин'],['Пробка на ближайших 40 милях','+25 мин'],['Погода по маршруту','предупреждений нет']].map((r) => '<div class="row" style="justify-content:space-between;font-size:14px"><span class="muted">' + r[0] + '</span><b>' + r[1] + '</b></div>').join('') + '</div></div>' +
+    '<div class="card pad small sub" style="border-radius:16px;line-height:1.5;background:#0F1626">Время считает код, а не ИИ: GPS, маршрут с пробками, часы водителя, погода, часовой пояс стопа. ИИ только объясняет результат словами.</div>';
+}
+function stopsHtml(stops) {
+  return stops.map((s) => {
+    const dot = s[2] === 'done' ? 'background:var(--mint)' : (s[2] === 'now' ? 'border:3px solid var(--red)' : 'border:2px solid #4A5B7A');
+    return '<div class="row" style="gap:10px"><span style="width:12px;height:12px;border-radius:50%;flex:none;' + dot + '"></span><span class="small" style="flex:1;color:' + (s[2] === 'done' ? 'var(--muted)' : 'var(--text)') + '">' + esc(s[0]) + '</span><span class="xs muted">' + esc(s[1]) + '</span></div>';
+  }).join('');
+}
+
+function vGroups() {
+  const list = [['a','Driver A','DA','Читает · 24 сообщения сегодня'],['b','Driver B','DB','Читает · 9 сообщений сегодня'],['team','Команда смены','КС','Здесь запускается смена']];
+  return head('Группы', 'Бот читает включённые группы 24/7. Писать в них начнёт только после запуска смены.') +
+    '<div class="col" style="gap:10px">' + list.map((g) => {
+      const on = S.groups[g[0]];
+      return '<div class="card row" style="padding:14px 16px;border-radius:18px"><span class="icon" style="width:40px;height:40px;background:var(--raised);font-weight:700;font-size:14px">' + g[2] + '</span><div style="flex:1;min-width:0"><div style="font-weight:600">' + g[1] + '</div><div class="small muted">' + (on ? g[3] : 'Чтение выключено') + '</div></div><button class="toggle' + (on ? ' on' : '') + '" data-group="' + g[0] + '" aria-label="Чтение: ' + g[1] + '"><span></span></button></div>';
+    }).join('') +
+    '<div class="card pad col" style="gap:12px;border-radius:18px;border-color:var(--amber-bd)"><div class="row"><span class="icon" style="width:40px;height:40px;background:var(--amber-bg);color:var(--amber);font-weight:700;font-size:14px">DC</span><div><div style="font-weight:600">Driver C</div><div class="small" style="color:var(--amber)">Бот не видит сообщения</div></div></div><div class="small sub" style="line-height:1.5">Сделайте бота администратором группы или удалите его из группы и добавьте снова.</div><button class="btn">Проверить ещё раз</button></div></div>' +
+    '<div class="col" style="gap:10px"><div class="label">Как добавить группу</div><div class="card pad col" style="gap:14px;border-radius:18px">' +
+      ['Откройте группу водителя в Telegram и добавьте туда бота.','Бот сам проверит, видит ли он сообщения, и напишет вам.','Группа появится здесь. Включите или выключите чтение переключателем.'].map((t, i) => '<div class="row" style="align-items:flex-start"><span class="icon" style="width:26px;height:26px;border-radius:50%;background:var(--raised);color:var(--mint-t);font-weight:700;font-size:13px">' + (i + 1) + '</span><span style="font-size:14px;line-height:1.45">' + t + '</span></div>').join('') + '</div></div>';
+}
+
+function vFeatures() {
+  const all = [].concat.apply([], FEATURES.map((s) => s[1]));
+  const n = (k) => all.filter((x) => x[2] === k).length;
+  const filters = [['all','Все · ' + all.length],[D,'Есть · ' + n(D)],[W,'В разработке · ' + n(W)],[P,'План · ' + n(P)]];
+  return head('Все функции', 'Что уже работает, что в разработке и что в плане. Все функции есть на любом тарифе.') +
+    '<div class="wrap">' + filters.map((f) => '<button class="pill' + (S.feat === f[0] ? ' on' : '') + '" data-feat="' + f[0] + '">' + f[1] + '</button>').join('') + '</div>' +
+    FEATURES.map((sec) => {
+      const items = sec[1].filter((x) => S.feat === 'all' || x[2] === S.feat);
+      if (!items.length) return '';
+      return '<div class="col" style="gap:10px"><h3 style="font-size:17px">' + sec[0] + '</h3><div class="listcard list">' + items.map((x) => '<div class="row" style="align-items:flex-start"><div style="flex:1;min-width:0"><div style="font-weight:600;font-size:14px;line-height:1.35">' + x[0] + '</div><div class="xs muted" style="margin-top:3px;line-height:1.45">' + x[1] + '</div></div><span class="chip ' + SM[x[2]][1] + '">' + SM[x[2]][0] + '</span></div>').join('') + '</div></div>';
+    }).join('');
+}
+
+function vHelp() {
+  const items = FAQ.map((x, i) => ['q' + (i + 1)].concat(x)).filter((x) => S.cat === 'all' || x[1] === S.cat);
+  return head('Инструкция', FAQ.length + ' вопросов и ответов', 'settings') +
+    '<div class="card pad col" style="gap:12px"><b>Быстрый старт за 3 шага</b>' + ['Нажмите /start и ответьте на 4 коротких вопроса.','Добавьте бота в группы водителей и подключите ELD.','В начале смены нажмите «Запустить смену».'].map((t, i) => '<div class="row" style="align-items:flex-start"><span class="icon" style="width:26px;height:26px;border-radius:50%;background:var(--mint);color:var(--on-mint);font-weight:700;font-size:13px">' + (i + 1) + '</span><span style="font-size:14px;line-height:1.45">' + t + '</span></div>').join('') + '</div>' +
+    '<div class="wrap">' + FAQ_CATS.map((c) => '<button class="pill' + (S.cat === c[0] ? ' on' : '') + '" data-cat="' + c[0] + '">' + c[1] + '</button>').join('') + '</div>' +
+    '<div class="col" style="gap:8px">' + items.map((x) => {
+      const open = S.open === x[0];
+      return '<div class="faq' + (open ? ' open' : '') + '"><button class="q" data-faq="' + x[0] + '" aria-expanded="' + open + '"><span style="flex:1;font-weight:600;font-size:14px;line-height:1.4">' + x[2] + '</span><span class="sign">' + (open ? '−' : '+') + '</span></button>' + (open ? '<div style="padding:0 14px 14px;font-size:13.5px;line-height:1.55;color:var(--sub)">' + x[3] + '</div>' : '') + '</div>';
+    }).join('') + '</div>' +
+    '<div class="card pad row" style="gap:14px;border-radius:18px"><div style="flex:1"><div style="font-weight:600">Не нашли ответ?</div><div class="small muted">Напишите владельцу командой /support</div></div><button class="btn primary" style="height:44px">Написать</button></div>';
+}
+
+function vSettings() {
+  const nl = [['late','Груз опаздывает','Сразу, как только расчёт показал опоздание'],['silent','Водитель молчит','Если долго нет ответа в группе'],['group','Проблема с группой или ELD','Бот не видит чат или ключ перестал работать']];
+  return '<h1 class="title">Настройки</h1>' +
+    '<button class="card row" data-go="help" style="text-align:left;padding:16px;background:var(--mint-bg);border-color:var(--mint-bd)"><span class="icon" style="width:48px;height:48px;border-radius:14px;background:var(--mint)">' + ic('help', 24, '#06241A', 2.2) + '</span><span class="col" style="flex:1"><b style="font-size:16px">Инструкция и вопросы</b><span class="small" style="color:#C7E9D9">Как всё работает: ' + FAQ.length + ' ответов</span></span>' + ic('chev', 18, 'var(--mint-t)', 2) + '</button>' +
+    '<div class="col" style="gap:10px"><div class="label">Язык бота</div><div style="display:grid;grid-template-columns:repeat(4,1fr);gap:8px">' + [['ru','RU'],['en','EN'],['tr','TR'],['uz','UZ']].map((l) => '<button class="seg' + (S.lang === l[0] ? ' on' : '') + '" data-lang="' + l[0] + '">' + l[1] + '</button>').join('') + '</div><div class="xs muted">' + (S.lang === 'tr' || S.lang === 'uz' ? 'Этот язык появится позже, пока окно и бот на русском' : 'Окно и бот переключаются на этот язык') + '</div></div>' +
+    '<div class="col" style="gap:10px"><div class="label">Доступ (демо)</div><div class="wrap">' + [['active','Оплачено'],['survey','Опрос не пройден'],['unpaid','Не оплачено']].map((x) => '<button class="pill' + (S.access === x[0] ? ' on' : '') + '" data-access="' + x[0] + '">' + x[1] + '</button>').join('') + '</div><div class="xs muted">Переключатель только для показа. В настоящем боте статус придёт с сервера.</div></div>' +
+    '<div class="col" style="gap:10px"><div class="label">Смена по умолчанию</div><div class="listcard list">' + [['Время смены','16:00–23:00 (США)'],['Мой часовой пояс','Ташкент, UTC+5'],['Апдейт каждые','4 часа'],['Режим','Сначала показать мне']].map((r) => '<div class="row" style="justify-content:space-between"><span>' + r[0] + '</span><span class="small muted">' + r[1] + '</span></div>').join('') + '</div><div class="xs muted">В марте время смены сдвигается вместе с переходом США на летнее время.</div></div>' +
+    '<div class="col" style="gap:10px"><div class="label">Подключения и команда</div><div class="listcard list"><div class="row" style="justify-content:space-between"><span>ELD · Samsara</span><span class="small" style="color:var(--mint-t)">Подключено (пример)</span></div><div class="row" style="justify-content:space-between"><span>Борд (Google Sheets)</span><span class="small muted">Update Board</span></div><div class="row" style="justify-content:space-between"><span>Тиммейты</span><span class="small muted">3 человека</span></div><div class="row" style="justify-content:space-between"><span>Amazon Relay</span><span class="chip c-plan">План</span></div></div></div>' +
+    '<div class="col" style="gap:10px"><div class="label">Уведомления мне</div><div class="listcard list">' + nl.map((t) => '<div class="row"><span class="col" style="flex:1"><span>' + t[1] + '</span><span class="xs muted">' + t[2] + '</span></span><button class="toggle' + (S.notif[t[0]] ? ' on' : '') + '" data-notif="' + t[0] + '" aria-label="' + t[1] + '"><span></span></button></div>').join('') + '</div></div>' +
+    '<div class="col" style="gap:10px"><div class="row" style="justify-content:space-between"><div class="label">Тариф и оплата</div><span class="chip c-plan">Скоро</span></div><div class="listcard list">' + [['Тариф','Старт · до 10 водителей'],['Пробная неделя','появится позже'],['Оплата','Click · Payme · другие'],['Оферта','готовится']].map((r) => '<div class="row" style="justify-content:space-between"><span>' + r[0] + '</span><span class="small muted">' + r[1] + '</span></div>').join('') + '</div><div class="xs muted">Тарифы отличаются только числом водителей. Оплата заработает после запуска сервера.</div></div>' +
+    '<div class="xs" style="text-align:center;color:var(--faint)">Modenzo AI · демо-версия окна</div>';
+}
+
+function inTab(l, t) { return t === 'all' || (t === 'risk' ? (l.v === 'late' || l.v === 'tight') && l.st !== 'delivered' : l.st === t); }
+function vBoard() {
+  const q = S.q.toLowerCase();
+  const tabs = [['all','Все'],['risk','Под риском'],['upcoming','Upcoming'],['dispatched','Dispatched'],['transit','In transit'],['delivered','Delivered']];
+  const rows = LOADS.filter((l) => inTab(l, S.tab) && (!q || (l.id + ' ' + l.driver + ' ' + l.stop).toLowerCase().indexOf(q) >= 0));
+  const sel = LOADS.find((l) => l.id === S.sel) || LOADS[0];
+  const kpi = [['В пути', LOADS.filter((l) => l.st === 'transit').length, 'var(--text)'], ['Rolling', LOADS.filter((l) => l.truck === 'Rolling').length, 'var(--mint-t)'], ['Stopped', LOADS.filter((l) => l.truck === 'Stopped' && l.st !== 'delivered').length, 'var(--amber)'], ['Опаздывают', LOADS.filter((l) => l.v === 'late').length, 'var(--red)'], ['Upcoming', LOADS.filter((l) => l.st === 'upcoming').length, 'var(--blue)']];
+  return '<div class="row" style="flex-wrap:wrap;gap:12px 16px"><div style="flex:1 1 240px">' + (isWide() ? '' : '<button class="back" data-go="home" aria-label="Назад" style="margin-bottom:10px">' + ic('back', 20, '#EAF0FA', 2) + '</button>') + '<h1 class="title" style="font-size:28px">Доска грузов</h1><div class="small muted">Пример данных. Нажмите на груз, чтобы открыть детали.</div></div>' +
+    '<label class="card row" style="flex:0 1 280px;min-width:200px;height:44px;border-radius:12px;padding:0 12px;gap:8px">' + ic('search', 16, 'var(--muted)', 2) + '<input id="q" aria-label="Поиск по грузам" value="' + esc(S.q) + '" placeholder="Load, водитель, склад" style="flex:1;min-width:0;background:transparent;border:0;outline:none;font-size:14px"></label></div>' +
+    (S.showNew ? '<div class="card row" style="flex-wrap:wrap;padding:12px 16px;border-radius:16px;background:#0F1A30;border-color:var(--blue-bd)"><span class="icon" style="width:36px;height:36px;border-radius:10px;background:var(--blue-bg);color:var(--blue)">' + ic('plus', 18, 'currentColor', 2) + '</span><span style="flex:1 1 240px;font-size:14px;line-height:1.45"><b>Новый груз 1231</b> появился в борде. Бот поставил статус Upcoming и ждёт назначения водителя.</span><button class="btn" style="height:40px;background:var(--blue);color:#0A1530;border:0" data-act="opennew">Показать</button><button class="btn ghost" style="height:40px;width:40px;padding:0" data-act="hidenew" aria-label="Скрыть">' + ic('x', 16, 'var(--blue)', 2) + '</button></div>' : '') +
+    '<div class="kpis">' + kpi.map((k) => '<div class="card" style="padding:14px 16px;border-radius:16px"><h2 style="font-size:26px;color:' + k[2] + '">' + k[1] + '</h2><div class="small muted">' + k[0] + '</div></div>').join('') + '</div>' +
+    '<div class="wrap" role="tablist">' + tabs.map((t) => '<button role="tab" aria-selected="' + (S.tab === t[0]) + '" class="pill' + (S.tab === t[0] ? ' on' : '') + '" data-tab="' + t[0] + '">' + t[1] + ' · ' + LOADS.filter((l) => inTab(l, t[0])).length + '</button>').join('') + '</div>' +
+    '<div class="board"><div class="card" style="flex:999 1 800px;min-width:0;overflow:hidden"><div class="tbl"><div style="min-width:800px"><div class="trow thead" style="cursor:default"><span>Груз и водитель</span><span>Статус</span><span>Грузовик</span><span>Следующий стоп</span><span>ETA</span></div>' +
+      (rows.length ? rows.map((l) => '<button class="trow' + (S.sel === l.id ? ' on' : '') + '" data-sel="' + l.id + '"><span class="col"><b style="font-size:14px">' + l.id + '</b><span class="xs muted">' + esc(l.driver) + '</span></span><span><span class="chip ' + ST[l.st][1] + '">' + ST[l.st][0] + '</span></span><span class="col"><span class="row" style="gap:6px;font-size:13px;font-weight:600;color:' + TC(l.truck) + '"><span class="dot" style="background:' + TC(l.truck) + '"></span>' + l.truck + '</span><span class="xs muted">' + esc(l.truckSub) + '</span></span><span class="col"><span style="font-size:13px;font-weight:600">' + esc(l.stop) + '</span><span class="xs muted">' + l.appt + '</span></span><span class="col"><span style="font-size:13px;font-weight:600">' + l.eta + '</span><span class="xs" style="font-weight:600;color:' + VC[l.v] + '">' + l.verdict + '</span></span></button>').join('') : '<div class="small muted" style="padding:28px;text-align:center">Нет грузов с таким статусом</div>') +
+    '</div></div></div>' +
+    '<div class="card col" style="flex:1 1 300px;min-width:0;padding:18px;gap:16px"><div class="row" style="justify-content:space-between;align-items:flex-start"><div><h2 style="font-size:22px">Load ' + sel.id + '</h2><div class="small muted">' + esc(sel.driver) + ' · трак ' + sel.truckNo + '</div></div><span class="chip ' + ST[sel.st][1] + '">' + ST[sel.st][0] + '</span></div>' +
+      '<div class="grid2"><div style="background:var(--bg);border:1px solid var(--line2);border-radius:14px;padding:10px 12px"><div class="xs muted">Грузовик</div><b style="font-size:14px;color:' + TC(sel.truck) + '">' + sel.truck + '</b><div class="xs muted">' + esc(sel.truckSub) + '</div></div><div style="background:var(--bg);border:1px solid var(--line2);border-radius:14px;padding:10px 12px"><div class="xs muted">Вердикт ETA</div><b style="font-size:14px;color:' + VC[sel.v] + '">' + sel.verdict + '</b><div class="xs muted">' + sel.eta + '</div></div></div><div class="row small" style="justify-content:space-between"><span class="muted">Осталось вождения</span><b>' + sel.hos + '</b></div>' +
+      '<div class="col" style="gap:8px"><div class="label" style="font-size:11px">Стопы</div>' + stopsHtml(sel.stops) + '</div>' +
+      '<div class="col" style="gap:8px"><div class="label" style="font-size:11px">Последнее из группы</div>' + (sel.msgs.length ? sel.msgs.map((m) => '<div style="background:var(--bg);border:1px solid var(--line2);border-radius:12px;padding:10px 12px" class="col"><div class="row xs muted" style="justify-content:space-between"><span>' + esc(m[0]) + '</span><span>' + m[1] + '</span></div><div class="small" style="line-height:1.45;margin-top:4px">' + esc(m[2]) + '</div>' + (m[3] ? '<div class="xs" style="color:var(--blue);margin-top:4px">' + esc(m[3]) + '</div>' : '') + '</div>').join('') : '<div class="small muted">Сообщений по этому грузу пока нет</div>') + '</div>' +
+      '<div class="grid2"><button class="btn primary" style="height:44px;font-size:14px" data-lockgo="updates">Подготовить апдейт</button><button class="btn" style="height:44px;font-size:14px" data-go="eta">Разбор ETA</button></div></div></div>' +
+    '<div class="xs" style="color:var(--faint)">Статусы грузов будут браться из борда, позже из Amazon Relay; Rolling и Stopped из ELD.</div>';
+}
+
+function vDrivers() {
+  return head('Водители', 'Кто едет, кто стоит и сколько часов вождения осталось. Пример данных.', isWide() ? '' : 'home') +
+    '<div style="display:grid;grid-template-columns:repeat(auto-fill,minmax(260px,1fr));gap:14px">' + LOADS.filter((l) => l.truckNo !== '—').map((l) => {
+      const c = l.hosPct < 35 ? 'var(--red)' : (l.hosPct < 60 ? 'var(--amber)' : 'var(--mint)');
+      return '<div class="card pad col" style="gap:12px;border-radius:18px"><div class="row"><span class="icon" style="width:42px;height:42px;border-radius:12px;background:var(--raised);font-weight:700;font-size:14px">' + l.driver.split(' ').map((w) => w[0]).join('') + '</span><div style="flex:1;min-width:0"><div style="font-weight:600">' + esc(l.driver) + '</div><div class="xs muted">Трак ' + l.truckNo + ' · Load ' + l.id + '</div></div><span class="row xs" style="gap:6px;font-weight:600;color:' + TC(l.truck) + '"><span class="dot" style="background:' + TC(l.truck) + '"></span>' + l.truck + '</span></div><div class="small sub">' + esc(l.truckSub) + '</div><div class="col" style="gap:6px"><div class="row xs muted" style="justify-content:space-between"><span>Осталось вождения</span><b style="color:var(--text)">' + l.hos + '</b></div><div style="height:6px;border-radius:3px;background:var(--line);overflow:hidden"><div style="height:100%;width:' + l.hosPct + '%;background:' + c + '"></div></div></div></div>';
+    }).join('') + '</div>';
+}
+
+const VIEWS = { home:vHome, shift:vShift, updates:vUpdates, eta:vEta, groups:vGroups, features:vFeatures, help:vHelp, settings:vSettings, board:vBoard, drivers:vDrivers };
+const TABS = [['home','Главная','home'],['updates','Апдейты','send'],['groups','Группы','users'],['features','Функции','grid'],['settings','Настройки','sliders']];
+const NAV = [['home','Главная','home'],['board','Доска грузов','truck'],['drivers','Водители','wheel'],['updates','Апдейты','send'],['eta','Расчёт ETA','pin'],['groups','Группы','users'],['features','Все функции','grid'],['help','Инструкция','help'],['settings','Настройки','sliders']];
+const TAB_OF = { shift:'home', eta:'home', board:'home', drivers:'home', help:'settings' };
+
+const EN = {
+'Расширенный экран':'Expanded view','Главная':'Home','Доска грузов':'Load board','Водители':'Drivers','Апдейты':'Updates','Расчёт ETA':'ETA breakdown','Группы':'Groups','Все функции':'All features','Инструкция':'Guide','Настройки':'Settings',
+'Открыть отдельным окном':'Open in a separate window','На весь экран':'Full screen','Выйти из полного экрана':'Exit full screen','Компактный вид':'Compact view',
+'Смена не запущена':'Shift not started','Смена идёт':'Shift running','Демо · данные примерные':'Demo · sample data','Помощник диспетчера 24/7':'24/7 dispatcher assistant',
+'Бот пока только слушает':'The bot is only listening','В группы водителей ничего не пишет до запуска':'It posts nothing to driver groups until you start',
+'Запустить смену':'Start shift','Управлять сменой':'Manage shift','Требует внимания':'Needs attention','Пример данных':'Sample data',
+'Опоздает примерно на 45 мин':'About 45 min late','Впритык: запас 15 мин':'Tight: 15 min buffer','Группа Driver C':'Driver C group','Бот не видит сообщения, нужно поправить':'The bot cannot see messages, needs a fix',
+'Функции':'Features','На компьютере открывается расширенным экраном':'Opens as an expanded view on a computer','По расписанию, после вашего «Отправить»':'On schedule, after you tap “Send”',
+'Честный ETA':'Honest ETA','Пробки, часы водителя, погода, цепочка стопов':'Traffic, driver hours, weather, stop chain','Читает чаты водителей на 4 языках':'Reads driver chats in 4 languages',
+'Отчёты и /proof':'Reports and /proof','Скоро: отчёт смены и папка по грузу':'Coming: shift report and load folder','Разделы':'Sections','Прогресс смены':'Shift progress',
+'Запуск смены':'Start a shift','Пока смена не запущена, бот в группах молчит':'Until the shift starts, the bot stays silent in groups','Длительность смены':'Shift length','Апдейт каждые':'Update every',
+'Чаще чем раз в 4 часа нельзя':'Not more often than every 4 hours','Режим':'Mode','Сначала показать мне':'Show me first',
+'Бот готовит апдейт, вы нажимаете «Отправить», «Изменить» или «Пропустить».':'The bot drafts the update, you tap “Send”, “Edit” or “Skip”.',
+'Авто':'Auto','Бот отправляет апдейты сам по расписанию. Включайте, когда доверяете расчётам.':'The bot sends updates on schedule by itself. Turn on once you trust the numbers.',
+'Смена':'Shift','В демо кнопка ничего не отправляет. Запуск командой /shift в группе тоже планируется':'In the demo this button sends nothing. Starting with /shift in a group is also planned',
+'Назад':'Back','Ничего не уходит водителям без вас':'Nothing goes to drivers without you','Ждёт вашего решения':'Waiting for your decision','Отправить':'Send','Изменить':'Edit','Пропустить':'Skip',
+'Как посчитан этот ETA':'How this ETA was calculated','Точность ETA':'ETA accuracy',
+'Бот сравнит прогноз с реальным прибытием по GPS и покажет точность за последние 30 прогнозов. Скоро.':'The bot will compare its forecast with the real GPS arrival and show its accuracy over the last 30 forecasts. Coming soon.',
+'Отправлено (демо)':'Sent (demo)','Вернуть (демо)':'Undo (demo)','Пропущено':'Skipped','Расчёт ETA · пример данных':'ETA breakdown · sample data','мин опоздания':'min late','Приедет':'Arrives','Окно на складе':'Warehouse window',
+'Цепочка стопов':'Stop chain','пройден':'done','Стоп 4 по цепочке: впритык, запас 10 мин':'Stop 4 down the chain: tight, 10 min buffer','Из чего сложилось время':'What the time is made of','Осталось миль':'Miles left',
+'В пути с пробками':'Drive time with traffic','Перерыв по часам водителя':'Break required by driver hours','Пробка на ближайших 40 милях':'Traffic in the next 40 miles','Погода по маршруту':'Weather on the route','предупреждений нет':'no alerts',
+'Время считает код, а не ИИ: GPS, маршрут с пробками, часы водителя, погода, часовой пояс стопа. ИИ только объясняет результат словами.':'The time is calculated by code, not AI: GPS, route with traffic, driver hours, weather, stop time zone. AI only explains the result in words.',
+'Бот читает включённые группы 24/7. Писать в них начнёт только после запуска смены.':'The bot reads enabled groups 24/7. It posts to them only after a shift starts.',
+'Чтение выключено':'Reading off','КС':'ST','Команда смены':'Shift team','Здесь запускается смена':'Shifts are started here','Бот не видит сообщения':'The bot cannot see messages',
+'Сделайте бота администратором группы или удалите его из группы и добавьте снова.':'Make the bot a group admin, or remove it from the group and add it again.','Проверить ещё раз':'Check again','Как добавить группу':'How to add a group',
+'Откройте группу водителя в Telegram и добавьте туда бота.':'Open the driver group in Telegram and add the bot.','Бот сам проверит, видит ли он сообщения, и напишет вам.':'The bot checks whether it can see messages and tells you.',
+'Группа появится здесь. Включите или выключите чтение переключателем.':'The group appears here. Turn reading on or off with the switch.',
+'Что уже работает, что в разработке и что в плане. Все функции есть на любом тарифе.':'What works now, what is in development and what is planned. Every plan includes all features.',
+'Чтение чатов и память':'Chat reading and memory','Запись сообщений из групп водителей':'Saving messages from driver groups','Всё, что пишут водители, сохраняется в базе':'Everything drivers write is stored in the database','Есть':'Live',
+'Проверка, видит ли бот группу':'Checking that the bot can see a group','Если не видит, подскажет, что сделать':'If not, it tells you what to do','«Как решали раньше»':'“How we solved it before”','Подсказки по прошлым ответам сотрудников':'Hints from earlier staff replies',
+'В разработке':'In development','Разбор фото: BOL, пломба, номер трейлера':'Photo reading: BOL, seal, trailer number','Фото из чата как данные по грузу':'Chat photos as load data','План':'Planned',
+'Водитель и груз':'Driver and load','GPS из Samsara':'GPS from Samsara','Где грузовик сейчас':'Where the truck is now','Проверка ключа ELD':'ELD key check','GPS из Motive и Geotab':'GPS from Motive and Geotab','Сейчас GPS берётся только из Samsara':'GPS currently comes from Samsara only',
+'Часы водителя (HOS)':'Driver hours (HOS)','Перерыв 30 мин после 8 ч, отдых 10 ч':'30 min break after 8 h, 10 h rest','Грузовик: Rolling, Stopped, Off duty':'Truck: Rolling, Stopped, Off duty','По данным ELD, со скоростью и временем стоянки':'From ELD data, with speed and stop time',
+'Маршрут с пробками и погода':'Route with traffic and weather','Mapbox и служба погоды США (NWS)':'Mapbox and the US weather service (NWS)','Вердикт: вовремя, впритык, опоздает на N мин':'Verdict: on time, tight, late by N min','Запас 30+ мин, 0–30 мин или опоздание':'Buffer 30+ min, 0–30 min, or late',
+'Часовой пояс стопа и цепочка стопов':'Stop time zone and stop chain','Опоздание на 3-м стопе сразу видно на 4-м':'Lateness at stop 3 shows at stop 4 right away','Точность за последние 30 прогнозов':'Accuracy over the last 30 forecasts','Сравнение прогноза с реальным прибытием':'Forecast compared with real arrival',
+'Команда /eta за секунду':'/eta answer in a second','Расчёт заранее, в фоне':'Calculated ahead, in the background','Смена и апдейты':'Shift and updates','Длительность, интервал, режим. До запуска бот молчит':'Length, interval, mode. The bot is silent until started',
+'Режим «сначала показать мне»':'“Show me first” mode','Отправить, изменить или пропустить':'Send, edit or skip','Автоапдейты 3–6 раз в сутки':'Auto updates 3–6 times a day','Не чаще раза в 4 часа, время выбираете вы':'Not more often than every 4 hours, you pick the times',
+'Остановка смены (/stop)':'Stopping a shift (/stop)','Бот сразу перестаёт писать в группы':'The bot stops posting to groups right away','Ответы и языки':'Answers and languages','Ответы на вопросы по логистике':'Answers to logistics questions','Amazon Relay, Street и другие':'Amazon Relay, Street and more',
+'Только логистика':'Logistics only','Другие темы бот вежливо отклоняет':'The bot politely declines other topics','Русский и английский':'Russian and English','Интерфейс и ответы':'Interface and answers','Турецкий и узбекский':'Turkish and Uzbek',
+'Перевод для водителя':'Translation for the driver','Вы пишете по-русски, водитель получает по-английски':'You write in Russian, the driver gets English','Предупреждения':'Alerts','Груз опаздывает: раньше, чем позвонит брокер':'Load running late: before the broker calls',
+'Какой груз и на сколько':'Which load and by how much','Тревога «водитель молчит»':'“Driver silent” alert','Если водитель долго не отвечает':'When a driver does not reply for a long time','Проблемы с группой или ключом ELD':'Problems with a group or ELD key','Сообщение владельцу':'Message to the owner',
+'Отчёты и доказательства':'Reports and proof','Отчёт после смены и передача смены':'End-of-shift report and handover','Кто требует внимания, что не решено':'Who needs attention, what is unresolved','Утренняя сводка владельцу':'Morning summary for the owner','Коротко о ночи':'The night in brief',
+'Папка /proof по грузу':'/proof folder per load','GPS, фото, сообщения и письмо брокеру при простое':'GPS, photos, messages and a broker email for detention','Приложение и интеграции':'App and integrations','Это окно (Mini App)':'This window (Mini App)','Сейчас демо с примерными данными':'Currently a demo with sample data',
+'Доска грузов на компьютере, окно растягивается':'Load board on a computer, resizable window','Статусы грузов':'Load statuses','Новый груз':'New load','Бот замечает новый груз в борде и ставит статус':'The bot spots a new load on the board and sets its status','Чтение Amazon Relay':'Amazon Relay reading',
+'Расширение Chrome, только чтение. Прототип 0.1':'Chrome extension, read-only. Prototype 0.1','Сервер и оплата (в самом конце)':'Server and payments (last)','Работа 24/7 на сервере':'Running 24/7 on a server','Сейчас бот работает на компьютере владельца':'The bot currently runs on the owner’s computer',
+'Данные каждого клиента отдельно':'Separate data for each client','Шифрование ключей ELD':'ELD key encryption','Тарифы, оферта, пробная неделя':'Plans, terms, trial week','Тарифы отличаются только числом водителей':'Plans differ only by number of drivers','Оплата: Click, Payme и другие':'Payment: Click, Payme and others','Появится после запуска сервера':'Arrives after the server launch',
+'Быстрый старт за 3 шага':'Quick start in 3 steps','Нажмите /start и ответьте на 4 коротких вопроса.':'Tap /start and answer 4 short questions.','Добавьте бота в группы водителей и подключите ELD.':'Add the bot to driver groups and connect your ELD.','В начале смены нажмите «Запустить смену».':'At the start of a shift tap “Start shift”.',
+'Все':'All','Начало':'Getting started','Языки':'Languages','Безопасность':'Security','Тариф и оплата':'Plan and payment',
+'Что такое Modenzo AI?':'What is Modenzo AI?','Помощник диспетчера в Telegram. Он читает чаты водителей, смотрит GPS и часы работы, считает честный ETA и заранее предупреждает, какой груз опаздывает и на сколько. Апдейты отправляет только с вашего согласия.':'A dispatcher assistant in Telegram. It reads driver chats, checks GPS and driver hours, calculates an honest ETA and warns you early which load is running late and by how much. It sends updates only with your approval.',
+'Как начать работу?':'How do I get started?','Нажмите /start и ответьте на 4 вопроса: язык, борд, тип грузов, ключ ELD. Потом добавьте бота в группы водителей. В начале смены нажмите «Запустить смену».':'Tap /start and answer 4 questions: language, board, freight type, ELD key. Then add the bot to driver groups. At the start of a shift tap “Start shift”.',
+'Как добавить бота в группу водителя?':'How do I add the bot to a driver group?','Откройте группу в Telegram и добавьте бота как участника. Бот сам проверит, видит ли он сообщения. Если нет, подскажет: обычно нужно сделать его администратором или добавить заново.':'Open the group in Telegram and add the bot as a member. The bot checks whether it can see messages. If not, it tells you what to do: usually make it an admin or add it again.',
+'Как подключить ELD?':'How do I connect my ELD?','В /start или в Настройках, раздел «Подключения». Вставьте API-ключ ELD вашей компании, бот проверит его. Проверка ключа работает для Samsara, Motive и Geotab. GPS пока берётся только из Samsara.':'In /start or in Settings, “Connections”. Paste your company’s ELD API key and the bot checks it. The key check works for Samsara, Motive and Geotab. GPS currently comes from Samsara only.',
+'Нужно ли водителям что-то устанавливать?':'Do drivers need to install anything?','Нет. Водители пишут в свои группы как обычно. Бот работает внутри этих групп.':'No. Drivers write in their groups as usual. The bot works inside those groups.',
+'Бот будет сам писать водителям?':'Will the bot message drivers by itself?','Нет. Пока вы не запустили смену, бот только читает и анализирует. В группы он пишет только после запуска смены и только в выбранном вами режиме.':'No. Until you start a shift, the bot only reads and analyses. It posts to groups only after a shift starts and only in the mode you chose.',
+'Как запустить смену?':'How do I start a shift?','На главной нажмите «Управлять сменой». Выберите длительность (6, 7, 8 или 10 часов), как часто слать апдейты и режим. Потом нажмите «Запустить смену».':'On Home tap “Manage shift”. Pick the length (6, 7, 8 or 10 hours), how often to send updates and the mode. Then tap “Start shift”.',
+'Чем «Сначала показать мне» отличается от «Авто»?':'How is “Show me first” different from “Auto”?','В режиме «Сначала показать мне» бот готовит апдейт, а вы нажимаете «Отправить», «Изменить» или «Пропустить». В режиме «Авто» бот отправляет апдейты сам по расписанию.':'In “Show me first” the bot drafts the update and you tap “Send”, “Edit” or “Skip”. In “Auto” the bot sends updates on schedule by itself.',
+'Как часто приходят автоапдейты?':'How often do auto updates go out?','От 3 до 6 раз в сутки, не чаще одного раза в 4 часа. Время каждого апдейта выбираете вы.':'3 to 6 times a day, not more often than every 4 hours. You pick the time of each update.',
+'Как остановить бота?':'How do I stop the bot?','Нажмите «Остановить смену» на экране смены или отправьте команду /stop. Бот сразу перестанет писать в группы.':'Tap “Stop shift” on the shift screen or send /stop. The bot stops posting to groups right away.',
+'Работает ли бот вне моей смены?':'Does the bot work outside my shift?','Да, он читает и анализирует 24/7, но в группы вне смены не пишет. Это подходит для любой смены, не только ночной.':'Yes, it reads and analyses 24/7 but does not post to groups outside a shift. It fits any shift, not only nights.',
+'Как бот считает ETA?':'How does the bot calculate ETA?','Считает код, а не ИИ: где грузовик по GPS, маршрут с пробками, сколько часов осталось у водителя, погода по пути и часовой пояс стопа. ИИ только объясняет результат словами.':'Code calculates it, not AI: truck position from GPS, route with traffic, hours the driver has left, weather on the way and the stop time zone. AI only explains the result in words.',
+'Что значат On time, Tight и Probably late?':'What do On time, Tight and Probably late mean?','On time: запас больше 30 минут. Tight: запас от 0 до 30 минут. Probably late: опоздание, бот пишет на сколько минут и почему.':'On time: more than 30 minutes of buffer. Tight: 0 to 30 minutes. Probably late: the bot says by how many minutes and why.',
+'Почему время указано не по-моему?':'Why is the time not in my time zone?','Срок доставки сравнивается во времени самого стопа, потому что так его видит склад и брокер.':'The appointment is compared in the stop’s own time, because that is how the warehouse and broker see it.',
+'Что если в грузе несколько стопов?':'What if a load has several stops?','Бот считает до стопа, к которому водитель едет сейчас, и дальше по цепочке. Если опоздание на 3-м стопе, сразу видно, что будет на 4-м.':'The bot calculates to the stop the driver is heading to now and on down the chain. If stop 3 is late, you see right away what happens at stop 4.',
+'Насколько точен ETA?':'How accurate is the ETA?','Идеально точного прогноза не бывает: пробки и водители меняются. Бот будет сравнивать прогноз с реальным прибытием и показывать свою точность за последние 30 прогнозов (в плане).':'No forecast is perfect: traffic and drivers change. The bot will compare its forecast with the real arrival and show its accuracy over the last 30 forecasts (planned).',
+'Учитываются ли ограничения для грузовиков?':'Are truck restrictions taken into account?','Пока нет. Сервис маршрутов не знает низких мостов и запретных для грузовиков дорог. Это стоит помнить на сложных маршрутах.':'Not yet. The routing service does not know low bridges or roads closed to trucks. Keep that in mind on tricky routes.',
+'Что если грузовик стоит?':'What if the truck is stopped?','Бот не гадает, сколько он простоит. Он считает, как будто водитель выедет сейчас, и пишет это в пояснении.':'The bot does not guess how long it will stay. It calculates as if the driver leaves now and says so in the explanation.',
+'Какие языки поддерживаются?':'Which languages are supported?','Русский и английский уже работают. Турецкий и узбекский появятся позже.':'Russian and English work now. Turkish and Uzbek are coming later.',
+'О чём можно спрашивать бота?':'What can I ask the bot?','Только о логистике: грузы, стопы, часы водителя, Amazon Relay, Street и похожее. Другие темы бот вежливо отклонит.':'Only logistics: loads, stops, driver hours, Amazon Relay, Street and similar. The bot politely declines other topics.',
+'Может ли бот переводить для водителя?':'Can the bot translate for the driver?','Это в разработке: вы пишете на русском, узбекском или турецком, водитель получает текст на английском.':'In development: you write in Russian, Uzbek or Turkish and the driver gets English.',
+'Кто видит мои ключи и данные?':'Who can see my keys and data?','Ключи хранятся только на сервере и нигде не показываются. Раздельное хранение данных каждого клиента и шифрование ключей появятся до того, как бот начнут использовать другие компании.':'Keys are stored only on the server and are never shown. Separate storage for each client and key encryption will be in place before other companies use the bot.',
+'Может ли кто-то управлять ботом через сообщение в чате?':'Can someone control the bot with a chat message?','Нет. Сообщения, фото и текст в них для бота только данные. Команды вроде «забудь правила» или «пришли ключ» он не выполняет.':'No. Messages, photos and the text in them are only data to the bot. It does not follow commands like “forget your rules” or “send me the key”.',
+'Бот читает Amazon Relay?':'Does the bot read Amazon Relay?','Это последний этап. Чтение будет через расширение Chrome и только на чтение: бот ничего не нажимает и не меняет в Relay.':'That is the last stage. Reading will go through a Chrome extension, read-only: the bot clicks and changes nothing in Relay.',
+'Сколько стоит?':'How much does it cost?','Тарифы отличаются только числом водителей, все функции есть на любом тарифе. План цен: от $9 в месяц до 10 водителей. Цены окончательно не утверждены.':'Plans differ only by number of drivers, every plan has all features. Planned pricing: from $9 a month for up to 10 drivers. Prices are not final.',
+'Есть ли пробный период?':'Is there a trial?','Планируется пробная неделя: если не подойдёт, вернём деньги за вычетом использованных дней. Точная формула будет в оферте.':'A trial week is planned: if it does not fit, you get your money back minus the days used. The exact formula will be in the terms.',
+'Как оплатить?':'How do I pay?','Оплата через Click, Payme и другие способы появится позже, после запуска сервера.':'Payment via Click, Payme and other methods will come later, after the server launch.',
+'Не нашли ответ?':'Did not find an answer?','Напишите владельцу командой /support':'Message the owner with /support','Написать':'Write',
+'Инструкция и вопросы':'Guide and FAQ','Язык бота':'Bot language','Окно и бот переключаются на этот язык':'The window and the bot switch to this language','Этот язык появится позже, пока окно и бот на русском':'This language is coming later, for now the window and bot use Russian',
+'Доступ (демо)':'Access (demo)','Оплачено':'Paid','Опрос не пройден':'Survey not finished','Не оплачено':'Not paid','Переключатель только для показа. В настоящем боте статус придёт с сервера.':'This switch is only for the demo. In the real bot the status comes from the server.',
+'Смена по умолчанию':'Default shift','Время смены':'Shift hours','Мой часовой пояс':'My time zone','Ташкент, UTC+5':'Tashkent, UTC+5','4 часа':'4 hours','В марте время смены сдвигается вместе с переходом США на летнее время.':'In March the shift hours move with the US switch to daylight saving time.',
+'Подключения и команда':'Connections and team','Подключено (пример)':'Connected (sample)','Борд (Google Sheets)':'Board (Google Sheets)','Тиммейты':'Teammates','3 человека':'3 people','Уведомления мне':'My notifications','Груз опаздывает':'Load running late',
+'Сразу, как только расчёт показал опоздание':'As soon as the calculation shows lateness','Водитель молчит':'Driver silent','Если долго нет ответа в группе':'If there is no reply in the group for a long time','Проблема с группой или ELD':'Group or ELD problem','Бот не видит чат или ключ перестал работать':'The bot cannot see a chat or the key stopped working',
+'Скоро':'Soon','Тариф':'Plan','Старт · до 10 водителей':'Start · up to 10 drivers','Пробная неделя':'Trial week','появится позже':'coming later','Оплата':'Payment','Click · Payme · другие':'Click · Payme · others','Оферта':'Terms','готовится':'in preparation',
+'Тарифы отличаются только числом водителей. Оплата заработает после запуска сервера.':'Plans differ only by number of drivers. Payment starts working after the server launch.','Modenzo AI · демо-версия окна':'Modenzo AI · demo window',
+'Пример данных. Нажмите на груз, чтобы открыть детали.':'Sample data. Click a load to open its details.','Новый груз 1231':'New load 1231','появился в борде. Бот поставил статус Upcoming и ждёт назначения водителя.':'appeared on the board. The bot set it to Upcoming and is waiting for a driver to be assigned.',
+'Показать':'Show','В пути':'In transit','Опаздывают':'Running late','Груз и водитель':'Load and driver','Статус':'Status','Грузовик':'Truck','Следующий стоп':'Next stop','Вовремя':'On time','Водитель не назначен':'No driver assigned','Нет трака':'No truck','Ждёт назначения':'Waiting for assignment',
+'Пока не считается':'Not calculated yet','Выходной':'Day off','Разгружен':'Unloaded','Доставлен вовремя':'Delivered on time','Вердикт ETA':'ETA verdict','Осталось вождения':'Drive time left','Стопы':'Stops','Последнее из группы':'Latest from the group',
+'Пробка перед Redding, еду медленно':'Traffic before Redding, moving slowly','Для брокера: Heavy traffic before Redding':'For the broker: Heavy traffic before Redding','Бот':'Bot','Расчёт обновлён: +25 мин из-за пробки':'Calculation updated: +25 min because of traffic',
+'Подготовить апдейт':'Prepare update','Разбор ETA':'ETA breakdown','Статусы грузов будут браться из борда, позже из Amazon Relay; Rolling и Stopped из ELD.':'Load statuses will come from the board, later from Amazon Relay; Rolling and Stopped from the ELD.',
+'Поиск по грузам':'Search loads','Load, водитель, склад':'Load, driver, warehouse','Скрыть':'Hide','Перевод: забрал груз, в пути':'Translation: picked up the load, on the way','Заправляюсь, через 20 минут выезжаю':'Fueling, leaving in 20 minutes','погрузка':'pickup',
+'Перевод: стою в очереди, третий':'Translation: waiting in line, third','Ложусь на отдых, утром на погрузку':'Going on rest, pickup in the morning','Сообщений по этому грузу пока нет':'No messages for this load yet','Разгрузился, POD отправил':'Unloaded, POD sent',
+'Нет грузов с таким статусом':'No loads with this status','Кто едет, кто стоит и сколько часов вождения осталось. Пример данных.':'Who is moving, who is stopped and how much drive time is left. Sample data.',
+'Бот пишет в группы только в выбранном режиме':'The bot posts to groups only in the chosen mode','Смена запущена':'Shift started','Расписание':'Schedule','Итоговый апдейт':'Final update','Остановить смену (/stop)':'Stop shift (/stop)',
+'Только просмотр':'View only','Пройдите опрос /start до конца, чтобы включить функции.':'Finish the /start survey to turn features on.','Пройти опрос':'Take survey','Тариф не оплачен. Функции включатся после оплаты.':'The plan is not paid. Features turn on after payment.',
+'Доступно после опроса /start':'Available after the /start survey','Доступно после оплаты тарифа':'Available after the plan is paid','Вернитесь в чат с ботом и нажмите /start':'Go back to the bot chat and tap /start','Оплата появится позже, после запуска сервера':'Payment will come later, after the server launch',
+'Telegram не дал включить полный экран на этом устройстве':'Telegram did not allow full screen on this device','Отдых 10 ч, до 04:00':'10 h rest, until 04:00','после отдыха 11 ч':'11 h after rest','У шиппера · 40 мин':'At shipper · 40 min'
+};
+const EN_RULES = [
+[/^Смена (\d\d:\d\d)–(\d\d:\d\d) \(время США\)$/, 'Shift $1–$2 (US time)'],
+[/^(\d\d:\d\d)–(\d\d:\d\d) \(время США\)$/, '$1–$2 (US time)'],
+[/^(\d\d:\d\d)–(\d\d:\d\d) \(США\)$/, '$1–$2 (US)'],
+[/^(\d+) ч (\d+) мин из (\d+) ч$/, '$1 h $2 min of $3 h'],
+[/^(\d+) ч (\d+) мин$/, '$1 h $2 min'],
+[/^(\d+) ч$/, '$1 h'],
+[/^Решения · (\d+)$/, 'Decisions · $1'],
+[/^Все · (\d+)$/, 'All · $1'],
+[/^Есть · (\d+)$/, 'Live · $1'],
+[/^В разработке · (\d+)$/, 'In development · $1'],
+[/^План · (\d+)$/, 'Planned · $1'],
+[/^Под риском · (\d+)$/, 'At risk · $1'],
+[/^(\d+) вопросов и ответов$/, '$1 questions and answers'],
+[/^Как всё работает: (\d+) ответов$/, 'How it all works: $1 answers'],
+[/^Читает · (\d+) сообщени[яей]+ сегодня$/, 'Reading · $1 messages today'],
+[/^Чтение: Команда смены$/, 'Reading: Shift team'],
+[/^Чтение: (.+)$/, 'Reading: $1'],
+[/^Группа (.+) · (\d\d:\d\d)$/, '$1 group · $2'],
+[/^Водитель не назначен · трак —$/, 'No driver assigned · truck —'],
+[/^(.+) · трак (\S+)$/, '$1 · truck $2'],
+[/^Трак (\S+) · Load (\S+)$/, 'Truck $1 · Load $2'],
+[/^Load (\S+) · стоп (\d+) из (\d+)$/, 'Load $1 · stop $2 of $3'],
+[/^(.+) · (\d+) из (\d+)$/, '$1 · $2 of $3'],
+[/^(.+) · погрузка$/, '$1 · pickup'],
+[/^(.+) · доставлен$/, '$1 · delivered'],
+[/^Окно (\d\d:\d\d) (\w+)$/, 'Window $1 $2'],
+[/^Опоздает ~(\d+) мин$/, '~$1 min late'],
+[/^Впритык, запас (\d+) мин$/, 'Tight, $1 min buffer'],
+[/^Пт (.+)$/, 'Fri $1'],
+[/^Сб (.+)$/, 'Sat $1'],
+[/^(\d+) мин · (.+)$/, '$1 min · $2'],
+[/^\+(\d+) мин$/, '+$1 min'],
+[/^Апдейт (\d+)$/, 'Update $1'],
+[/^Следующий апдейт в (\d\d:\d\d)$/, 'Next update at $1'],
+[/^До (\d\d:\d\d) по времени США\. Режим: сначала показать мне\.$/, 'Until $1 US time. Mode: show me first.'],
+[/^До (\d\d:\d\d) по времени США\. Режим: авто\.$/, 'Until $1 US time. Mode: auto.']
+];
+function trText(t) {
+  const k = t.trim();
+  if (!k || !/[А-Яа-яЁё]/.test(k)) return t;
+  if (EN[k] !== undefined) return t.replace(k, EN[k]);
+  for (const r of EN_RULES) { if (r[0].test(k)) return t.replace(k, k.replace(r[0], r[1])); }
+  return t;
+}
+function translateDom(root) {
+  const w = document.createTreeWalker(root, NodeFilter.SHOW_TEXT);
+  const nodes = []; while (w.nextNode()) nodes.push(w.currentNode);
+  nodes.forEach((n) => { const v = trText(n.nodeValue); if (v !== n.nodeValue) n.nodeValue = v; });
+  if (root.querySelectorAll) root.querySelectorAll('[aria-label],[placeholder]').forEach((el) => {
+    ['aria-label','placeholder'].forEach((a) => { const v = el.getAttribute(a); if (v) { const t2 = trText(v); if (t2 !== v) el.setAttribute(a, t2); } });
+  });
+}
+function render() {
+  const app = document.getElementById('app');
+  app.className = 'app' + (isWide() ? ' wide' : '') + (locked() ? ' locked' : '');
+  document.documentElement.lang = S.lang === 'en' ? 'en' : 'ru';
+  const active = TAB_OF[S.view] || S.view;
+  const side = '<aside class="side"><div class="row" style="gap:10px;padding:0 6px">' + LOGO + '<div><h2 style="font-size:18px">Modenzo AI</h2><div class="xs muted">Расширенный экран</div></div></div><nav class="col" style="gap:4px" aria-label="Разделы">' +
+    NAV.map((n) => '<button class="navbtn' + (S.view === n[0] ? ' on' : '') + '" data-go="' + n[0] + '">' + ic(n[2], 18) + n[1] + '</button>').join('') + '</nav>' +
+    '<div class="col" style="margin-top:auto;gap:8px">' + windowBar() + '<div class="card col" style="padding:12px;border-radius:16px;gap:4px;border-color:' + (S.launched ? 'var(--mint-bd)' : 'var(--amber-bd)') + '"><span class="xs" style="font-weight:600;color:' + (S.launched ? 'var(--mint-t)' : 'var(--amber)') + '">' + (S.launched ? 'Смена идёт' : 'Смена не запущена') + '</span><span class="small sub">16:00–' + hh(16 + S.hours) + ' (время США)</span></div><div class="xs" style="color:var(--faint);padding:0 6px">Демо · данные примерные</div></div></aside>';
+  const tabbar = '<nav class="tabbar" aria-label="Разделы">' + TABS.map((t) => '<button class="tab' + (active === t[0] ? ' on' : '') + '" data-go="' + t[0] + '">' + ic(t[2], 22, 'currentColor', 1.8) + t[1] + '</button>').join('') + '</nav>';
+  app.innerHTML = side + '<div class="main"><div class="content">' + lockBanner() + VIEWS[S.view]() + '</div>' + tabbar + '</div>';
+  if (S.lang === 'en') translateDom(app);
+  const q = document.getElementById('q');
+  if (q) q.addEventListener('input', (e) => { S.q = e.target.value; const pos = e.target.selectionStart; render(); const n = document.getElementById('q'); if (n) { n.focus(); n.setSelectionRange(pos, pos); } });
+  if (tg && tg.BackButton) { try { if (S.view !== 'home') tg.BackButton.show(); else tg.BackButton.hide(); } catch (e) {} }
+}
+
+document.addEventListener('click', (e) => {
+  const b = e.target.closest('button');
+  if (!b) return;
+  const d = b.dataset;
+  if (locked() && (d.upd || d.group || d.notif || d.hours || d.interval || d.mode || d.lockgo || d.act === 'launch' || d.act === 'stop')) {
+    toast(S.access === 'survey' ? 'Доступно после опроса /start' : 'Доступно после оплаты тарифа');
+    return;
+  }
+  if (d.lockgo) return go(d.lockgo);
+  if (d.go) return go(d.go);
+  if (d.hours) S.hours = +d.hours;
+  else if (d.interval) S.interval = +d.interval;
+  else if (d.mode) S.mode = d.mode;
+  else if (d.upd) S.upd = d.upd;
+  else if (d.group) S.groups[d.group] = !S.groups[d.group];
+  else if (d.feat) S.feat = d.feat;
+  else if (d.cat) S.cat = d.cat;
+  else if (d.faq) S.open = S.open === d.faq ? '' : d.faq;
+  else if (d.lang) { S.lang = d.lang; try { localStorage.setItem('mz_lang', d.lang); } catch (x) {} }
+  else if (d.notif) S.notif[d.notif] = !S.notif[d.notif];
+  else if (d.tab) S.tab = d.tab;
+  else if (d.sel) S.sel = d.sel;
+  else if (d.act === 'launch') { S.launched = true; if (tg && tg.HapticFeedback) try { tg.HapticFeedback.notificationOccurred('success'); } catch (x) {} }
+  else if (d.act === 'stop') S.launched = false;
+  else if (d.act === 'opennew') { S.tab = 'upcoming'; S.sel = '1231'; S.showNew = false; }
+  else if (d.act === 'hidenew') S.showNew = false;
+  else if (d.act === 'separate') { openSeparate(); return; }
+  else if (d.act === 'unlock') { toast(S.access === 'survey' ? 'Вернитесь в чат с ботом и нажмите /start' : 'Оплата появится позже, после запуска сервера'); return; }
+  else if (d.access) S.access = d.access;
+  else if (d.act === 'fs') { try { if (fsOn()) tg.exitFullscreen(); else tg.requestFullscreen(); } catch (x) {} return; }
+  else if (d.act === 'compact') { S.compact = !S.compact; if (S.compact && (S.view === 'board' || S.view === 'drivers')) S.view = 'home'; }
+  else return;
+  render();
+});
+if (tg && tg.BackButton) { try { tg.BackButton.onClick(() => go(TAB_OF[S.view] && S.view !== 'help' ? 'home' : (S.view === 'help' ? 'settings' : 'home'))); } catch (e) {} }
+window.addEventListener('resize', () => render());
+if (tg && tg.onEvent) { try { tg.onEvent('fullscreenChanged', render); tg.onEvent('fullscreenFailed', () => { try { tg.showAlert && tg.showAlert('Telegram не дал включить полный экран на этом устройстве'); } catch (x) {} }); } catch (e) {} }
+try { const v = new URLSearchParams(location.search).get('view'); if (v && VIEWS[v]) S.view = v; } catch (e) {}
+render();
+</script>
+</body>
+</html>
