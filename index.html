@@ -83,7 +83,7 @@ h1,h2,h3{margin:0;font-family:'Space Grotesk',Inter,sans-serif;letter-spacing:-0
 .board{display:flex;flex-wrap:wrap;gap:20px;align-items:flex-start}
 .kpis{display:grid;grid-template-columns:repeat(auto-fit,minmax(140px,1fr));gap:12px}
 .desk-only{display:none}
-.app.locked [data-act="save"],.app.locked [data-slot],.app.locked [data-smode],.app.locked [data-son],.app.locked [data-act="launch"],.app.locked [data-act="stop"],.app.locked [data-upd],.app.locked [data-group],.app.locked [data-notif],.app.locked [data-hours],.app.locked [data-interval],.app.locked [data-mode],.app.locked [data-lockgo]{opacity:.45;filter:grayscale(.7)}
+.app.locked [data-act="save"],.app.locked [data-slot],.app.locked [data-smode],.app.locked [data-son],.app.locked [data-act="launch"],.app.locked [data-act="stop"],.app.locked [data-upd],.app.locked [data-group],.app.locked [data-notif],.app.locked [data-hours],.app.locked [data-interval],.app.locked [data-mode],.app.locked [data-lockgo],.app.locked [data-agt],.app.locked [data-agn],.app.locked [data-agar],.app.locked [data-act="saveag"]{opacity:.45;filter:grayscale(.7)}
 .app.locked [data-act="save"]::after,.app.locked [data-act="launch"]::after,.app.locked [data-upd]::after,.app.locked [data-lockgo]::after{content:'';width:14px;height:14px;margin-left:8px;background:currentColor;-webkit-mask:url("data:image/svg+xml;utf8,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 24 24' fill='none' stroke='black' stroke-width='2.4' stroke-linecap='round' stroke-linejoin='round'><rect x='4' y='11' width='16' height='10' rx='2'/><path d='M8 11V7a4 4 0 0 1 8 0v4'/></svg>") center/contain no-repeat;mask:url("data:image/svg+xml;utf8,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 24 24' fill='none' stroke='black' stroke-width='2.4' stroke-linecap='round' stroke-linejoin='round'><rect x='4' y='11' width='16' height='10' rx='2'/><path d='M8 11V7a4 4 0 0 1 8 0v4'/></svg>") center/contain no-repeat;display:inline-block;flex:none}
 .toast{position:fixed;left:50%;bottom:calc(92px + env(safe-area-inset-bottom));transform:translateX(-50%);max-width:min(92vw,420px);background:#1B2740;border:1px solid var(--line);color:var(--text);padding:12px 16px;border-radius:14px;font-size:14px;line-height:1.4;z-index:20;box-shadow:0 8px 24px rgba(0,0,0,.4)}
 @media (min-width: 900px){
@@ -239,22 +239,27 @@ const FAQ = [
   ['safe','Кто видит мои ключи и данные?','Ключи хранятся только на сервере и нигде не показываются. Раздельное хранение данных каждого клиента и шифрование ключей появятся до того, как бот начнут использовать другие компании.'],
   ['safe','Может ли кто-то управлять ботом через сообщение в чате?','Нет. Сообщения, фото и текст в них для бота только данные. Команды вроде «забудь правила» или «пришли ключ» он не выполняет.'],
   ['safe','Бот читает Amazon Relay?','Это последний этап. Чтение будет через расширение Chrome и только на чтение: бот ничего не нажимает и не меняет в Relay.'],
-  ['pay','Сколько стоит?','Тарифы отличаются только числом водителей, все функции есть на любом тарифе: Лайт до 5, Старт до 10, Про до 25, Макс до 50 водителей. Цены ещё не утверждены.'],
-  ['pay','Как сменить тариф?','«Настройки» → «Сменить тариф» или командой в чате, например: /plan pro. Функции не меняются, меняется только лимит водителей. Апдейты и окно сразу подстраиваются.'],
-  ['pay','Что если групп больше, чем в тарифе?','Бот читает все группы, но апдейты отправляет только по первым группам в пределах тарифа (по дате добавления). Когда добавляете лишнюю группу, бот сразу пишет об этом. Например, на Лайт апдейты идут по 5 группам.'],
+  ['pay','Сколько стоит?','Тарифы отличаются только числом водителей, все функции есть на любом тарифе: Лайт до 10, Старт до 20, Про до 40, Макс до 80 водителей. Цены ещё не утверждены.'],
+  ['pay','Как сменить тариф?','«Настройки» → «Сменить тариф» или командой в чате, например: /plan start. Тариф больше включается сразу, тариф меньше со следующего периода (30 дней), до этого его можно отменить. Функции не меняются, меняется только лимит водителей.'],
+  ['pay','Что если групп больше, чем в тарифе?','Лишняя группа встаёт на паузу: бот сохраняет её сообщения, но апдейтов и проверок по ней нет. Бот сразу предложит три варианта: заменить другую группу, перейти на тариф больше или выйти из группы. Какие группы в работе, можно поменять командой /drivers.'],
+  ['pay','На борде водителей больше, чем в тарифе?','Бот следит только за водителями, чьи группы в работе, и раз в день пишет, кого не видит и какой тариф нужен для всех. Чтение борда в разработке.'],
+  ['pay','Что будет, если не оплатить?','Бот напомнит за 3 дня и за 1 день до конца периода. После конца ещё 3 дня всё работает, потом апдейты и агенты останавливаются, окно только для просмотра. Данные не удаляются. Оплата появится позже.'],
+  ['start','Что такое агенты?','Это проверки, которые работают 24/7 и пишут только вам: водитель ждёт ответа, водитель молчит, тревожные слова, долгая стоянка, нет GPS, опоздание. Настройка: окно → «Агенты» или команда /agents.'],
+  ['start','Бот будет сам отвечать водителям?','Только если вы включите автоответ «Авто». По умолчанию бот предлагает ответ, а отправляете вы. Тревожные сообщения (авария, поломка, полиция) бот сам не отвечает никогда. Например: /agents autoreply suggest'],
   ['pay','Есть ли пробный период?','Планируется пробная неделя: если не подойдёт, вернём деньги за вычетом использованных дней. Точная формула будет в оферте.'],
   ['pay','Как оплатить?','Оплата через Click, Payme и другие способы появится позже, после запуска сервера.']
 ];
 const FAQ_CATS = [['all','Все'],['start','Начало'],['shift','Апдейты'],['eta','ETA'],['lang','Языки'],['safe','Безопасность'],['pay','Тариф и оплата']];
 
 /* ---------- тарифы: отличаются только числом водителей (1 группа = 1 водитель) ---------- */
-const PLANS = [['lite','Лайт',5],['start','Старт',10],['pro','Про',25],['max','Макс',50]];
+const PLANS = [['lite','Лайт',10],['start','Старт',20],['pro','Про',40],['max','Макс',80]];
 function planOf(id) { return PLANS.filter((p) => p[0] === id)[0]; }
 function planName(id) { if (id === 'owner') return 'Владелец'; const p = planOf(id); return p ? p[1] : '—'; }
 
 /* ---------- состояние ---------- */
 const S = {
-  plan:'lite', lim:5, used:3, req:'', pay:false,
+  plan:'lite', lim:10, used:3, pz:0, pe:'', nx:'', req:'', pay:false,
+  ag:{ on:{ waiting:true, silent:true, risk:true, stopped:true, gps:true, late:true }, waiting:15, silent:45, stopped:90, ar:'s' },
   view:'home', slots:['08:00','14:00','20:00'], smode:'review', son:false, bot:'', tz:'Asia/Tashkent', saving:false,
   upd:'pending', groups:{ a:true, b:true, team:true }, feat:'all', cat:'all', open:'q1',
   lang:'ru', notif:{ late:true, silent:true, group:true },
@@ -285,32 +290,46 @@ try {
   if (/^\d+$/.test(q.get('used') || '')) S.used = +q.get('used');
   if (planOf(q.get('req') || '')) S.req = q.get('req');
   S.pay = q.get('pay') === '1';
+  if (/^\d+$/.test(q.get('pz') || '')) S.pz = +q.get('pz');
+  if (/^\d{8}$/.test(q.get('pe') || '')) S.pe = q.get('pe');
+  if (planOf(q.get('nx') || '')) S.nx = q.get('nx');
+  const ag = (q.get('ag') || '').match(/^([01]{6})-(\d+)-(\d+)-(\d+)-([osa])$/);
+  if (ag) { ['waiting','silent','risk','stopped','gps','late'].forEach((k, i) => { S.ag.on[k] = ag[1][i] === '1'; }); S.ag.waiting = +ag[2]; S.ag.silent = +ag[3]; S.ag.stopped = +ag[4]; S.ag.ar = ag[5]; }
 } catch (e) {}
+if (!S.pe && S.plan !== 'owner') { const d = new Date(Date.now() + 30 * 864e5); S.pe = '' + d.getFullYear() + String(d.getMonth() + 1).padStart(2, '0') + String(d.getDate()).padStart(2, '0'); }
 function locked() { return S.access !== 'active'; }
+function fdate(d) { return d && d.length === 8 ? d.slice(6, 8) + '.' + d.slice(4, 6) + '.' + d.slice(0, 4) : ''; }
 function planCard(withBtn) {
   if (S.plan === 'owner') return '<div class="card row" style="padding:14px 16px;border-radius:16px"><span class="col" style="flex:1;gap:3px"><b style="font-size:15px">Владелец бота</b><span class="small muted">Без лимита водителей</span></span></div>';
-  const over = S.used > S.lim, pct = Math.min(100, Math.round(S.used / Math.max(1, S.lim) * 100));
-  return '<div class="card col" style="padding:14px 16px;border-radius:16px;gap:10px' + (over ? ';border-color:var(--amber-bd)' : '') + '">' +
-    '<div class="row" style="justify-content:space-between"><span class="row" style="gap:8px"><span class="small muted">Тариф</span><b style="font-size:16px">' + planName(S.plan) + '</b></span><span class="small" style="color:' + (over ? 'var(--amber)' : 'var(--sub)') + '">Водителей: ' + S.used + ' из ' + S.lim + '</span></div>' +
-    '<div style="height:8px;border-radius:4px;background:var(--raised);overflow:hidden"><div style="width:' + pct + '%;height:100%;border-radius:4px;background:' + (over ? 'var(--amber)' : 'var(--mint)') + '"></div></div>' +
-    (over ? '<div class="xs" style="color:var(--amber);line-height:1.45">Апдейты идут только по первым ' + S.lim + ' группам</div>' : '<div class="xs muted">Свободно мест: ' + (S.lim - S.used) + '</div>') +
-    (S.req ? '<div class="xs" style="color:var(--blue)">Заявка на тариф ' + planName(S.req) + ' ждёт оплаты</div>' : '') +
-    (withBtn ? '<button class="btn" data-go="plans" style="height:40px;font-size:13px">Сменить тариф</button>' : '') + '</div>';
+  const full = S.used >= S.lim, pct = Math.min(100, Math.round(S.used / Math.max(1, S.lim) * 100));
+  return '<div class="card col" style="padding:14px 16px;border-radius:16px;gap:10px' + (S.pz ? ';border-color:var(--amber-bd)' : '') + '">' +
+    '<div class="row" style="justify-content:space-between"><span class="row" style="gap:8px"><span class="small muted">Тариф</span><b style="font-size:16px">' + planName(S.plan) + '</b></span><span class="small" style="color:' + (full ? 'var(--amber)' : 'var(--sub)') + '">В работе: ' + S.used + ' из ' + S.lim + '</span></div>' +
+    '<div style="height:8px;border-radius:4px;background:var(--raised);overflow:hidden"><div style="width:' + pct + '%;height:100%;border-radius:4px;background:' + (full ? 'var(--amber)' : 'var(--mint)') + '"></div></div>' +
+    (S.pz ? '<div class="xs" style="color:var(--amber);line-height:1.45">На паузе: ' + S.pz + '</div><div class="xs muted" style="line-height:1.45">По группам на паузе нет апдейтов и проверок. Бот сохраняет их сообщения.</div>' : '<div class="xs muted">Свободно мест: ' + Math.max(0, S.lim - S.used) + '</div>') +
+    (S.pe ? '<div class="xs muted">Период до ' + fdate(S.pe) + '</div>' : '') +
+    (S.nx && planOf(S.nx) ? '<div class="xs" style="color:var(--blue)">С ' + fdate(S.pe) + ' тариф ' + planName(S.nx) + '</div>' : '') +
+    (S.req && planOf(S.req) ? '<div class="xs" style="color:var(--blue)">Заявка на тариф ' + planName(S.req) + ' ждёт оплаты</div>' : '') +
+    (withBtn ? '<div class="grid2"><button class="btn" data-go="plans" style="height:40px;font-size:13px">Сменить тариф</button><button class="btn" data-plan="drivers" style="height:40px;font-size:13px">Группы в тарифе</button></div>' : '') + '</div>';
 }
-function choosePlan(id) {
-  const p = planOf(id); if (!p) return;
-  if (S.access === 'survey') { toast('Доступно после опроса /start'); return; }
-  if (S.pay) S.req = id; else { S.plan = id; S.lim = p[2]; S.req = ''; }
-  render();
+function sendToBot(start, cmd) {
   if (tg && S.bot && tg.openTelegramLink) {
     try { if (tg.HapticFeedback) tg.HapticFeedback.notificationOccurred('success'); } catch (x) {}
-    tg.openTelegramLink('https://t.me/' + S.bot + '?start=plan-' + id);
+    tg.openTelegramLink('https://t.me/' + S.bot + '?start=' + start);
     return;
   }
-  const cmd = '/plan ' + id;
   try { navigator.clipboard.writeText(cmd).then(() => toast('Команда скопирована: отправьте её боту'), () => toast('Отправьте боту команду: ' + cmd)); } catch (x) { toast('Отправьте боту команду: ' + cmd); }
 }
-let toastTimer = null;
+function rankOf(id) { return PLANS.map((p) => p[0]).indexOf(id); }
+function choosePlan(id) {
+  if (S.access === 'survey') { toast('Доступно после опроса /start'); return; }
+  if (id === 'drivers') { sendToBot('plan-drivers', '/drivers'); return; }
+  if (id === 'keep') { S.nx = ''; S.req = ''; render(); sendToBot('plan-keep', '/plan ' + S.plan); return; }
+  const p = planOf(id); if (!p || S.plan === 'owner') return;
+  if (rankOf(id) > rankOf(S.plan)) { if (S.pay) S.req = id; else { S.plan = id; S.lim = p[2]; S.nx = ''; const on = Math.min(S.pz, S.lim - S.used); if (on > 0) { S.used += on; S.pz -= on; } } }
+  else if (rankOf(id) < rankOf(S.plan)) { S.nx = id; S.req = ''; }
+  render();
+  sendToBot('plan-' + id, '/plan ' + id);
+}
 function toast(text) {
   let el = document.getElementById('toast');
   if (!el) { el = document.createElement('div'); el.id = 'toast'; el.className = 'toast'; el.setAttribute('role', 'status'); document.body.appendChild(el); }
@@ -411,6 +430,7 @@ function vHome() {
       '<div class="grid2">' +
         tile('updates', 'send', 'Апдейты', 'По расписанию, после вашего «Отправить»') +
         tile('eta', 'pin', 'Честный ETA', 'Пробки, часы водителя, погода, цепочка стопов') +
+        tile('agents', 'warn', 'Агенты 24/7', 'Ждёт ответа, молчит, тревога, стоянка, автоответ') +
         tile('groups', 'users', 'Группы', 'Читает чаты водителей на 4 языках') +
         tile('features', 'doc', 'Отчёты и /proof', 'Скоро: отчёт смены и папка по грузу', true) + '</div></div>';
 }
@@ -480,21 +500,57 @@ function vGroups() {
 }
 
 function vPlans() {
-  const owner = S.plan === 'owner';
-  return head('Тарифы', 'Все функции на любом тарифе. Отличается только число водителей.', 'settings') +
+  const owner = S.plan === 'owner', total = S.used + S.pz;
+  return head('Тарифы', 'Все функции и агенты на любом тарифе. Отличается только число водителей.', 'settings') +
     planCard(false) +
     '<div class="col" style="gap:10px">' + PLANS.map((p) => {
-      const cur = S.plan === p[0], small = !owner && S.used > p[2], req = S.req === p[0];
+      const cur = S.plan === p[0], next = S.nx === p[0], req = S.req === p[0];
+      const up = !owner && rankOf(p[0]) > rankOf(S.plan), small = !owner && total > p[2];
+      let right = '';
+      if (cur) right = '<span class="chip c-done">Ваш тариф</span>';
+      else if (next) right = '<span class="chip c-plan">С ' + fdate(S.pe) + '</span>';
+      else if (req) right = '<span class="chip c-plan">Ждёт оплаты</span>';
+      else if (!owner) right = '<button class="btn' + (up ? ' primary' : '') + '" style="height:40px;font-size:13px;padding:0 14px" data-plan="' + p[0] + '">' + (up ? 'Перейти сейчас' : 'Со след. периода') + '</button>';
       return '<div class="card row" style="padding:16px;border-radius:18px;align-items:flex-start;' + (cur ? 'border-color:var(--mint);background:#10261F' : '') + '"><span class="col" style="flex:1;gap:4px;min-width:0"><b style="font-size:17px">' + p[1] + '</b><span class="small sub">до ' + p[2] + ' водителей</span>' +
-        (small ? '<span class="xs" style="color:var(--amber);line-height:1.45">У вас ' + S.used + ' групп: апдейты пойдут по первым ' + p[2] + '</span>' : '') +
-        '<span class="xs muted">Цена уточняется</span></span>' +
-        (cur ? '<span class="chip c-done">Ваш тариф</span>' : (req ? '<span class="chip c-plan">Ждёт оплаты</span>' : (owner ? '' : '<button class="btn primary" style="height:40px;font-size:13px;padding:0 16px" data-plan="' + p[0] + '">Выбрать</button>'))) + '</div>';
+        (small ? '<span class="xs" style="color:var(--amber);line-height:1.45">У вас ' + total + ' групп: ' + (total - p[2]) + ' будут на паузе</span>' : '') +
+        '<span class="xs muted">Цена уточняется</span></span>' + right + '</div>';
     }).join('') + '</div>' +
+    (S.nx && !owner ? '<button class="btn" data-plan="keep">Оставить тариф ' + planName(S.plan) + '</button>' : '') +
+    '<div class="col" style="gap:10px"><div class="label">Как меняется тариф</div><div class="listcard list">' +
+      [['Тариф больше','Включается сразу. ' + (S.pay ? 'Доплата только за оставшиеся дни периода.' : 'Пока оплата не подключена, без доплаты.')],['Тариф меньше','Со следующего периода. До этого можно отменить.'],['Период','30 дней. Напоминание за 3 дня и за 1 день до конца.'],['Не хватает мест','Новая группа встаёт на паузу. Бот предложит заменить другую группу, перейти на тариф больше или выйти из группы.'],['Борд больше тарифа','Бот следит только за водителями, чьи группы в работе, и раз в день пишет, кто не вошёл.']].map((r) => '<div class="col" style="gap:3px;align-items:flex-start"><b style="font-size:14px">' + r[0] + '</b><span class="small sub" style="line-height:1.45">' + r[1] + '</span></div>').join('') + '</div></div>' +
     '<div class="col" style="gap:10px"><div class="label">Одинаково на любом тарифе</div><div class="listcard list">' +
-      ['Все функции бота','Апдейты 3–6 раз в день','Честный ETA','Окно и расширенный экран','Русский и английский, турецкий и узбекский позже'].map((t) => '<div class="row" style="gap:10px">' + ic('check', 18, 'var(--mint)', 2.4) + '<span>' + t + '</span></div>').join('') + '</div>' +
-      '<div class="xs muted">1 группа водителя = 1 водитель. Если групп больше, чем в тарифе, бот читает все, а апдейты отправляет только по первым группам (по дате добавления).</div></div>' +
-    '<div class="card pad col" style="gap:8px;border-radius:16px;background:#0F1626"><div class="small sub">Можно и командой в чате с ботом. Например:</div><div class="mono" style="padding:10px 12px">/plan pro</div><div class="xs muted">' + (S.pay ? 'Новый тариф включится после оплаты. Оплата появится позже.' : 'Пока оплата не подключена, тариф включается сразу.') + ' Посмотреть свой тариф: /plan</div></div>';
+      ['Все функции бота','Все агенты и автоответ','Апдейты 3–6 раз в день','Окно и расширенный экран'].map((t) => '<div class="row" style="gap:10px">' + ic('check', 18, 'var(--mint)', 2.4) + '<span>' + t + '</span></div>').join('') + '</div></div>' +
+    '<div class="card pad col" style="gap:8px;border-radius:16px;background:#0F1626"><div class="small sub">Можно и командой в чате с ботом. Например:</div><div class="mono" style="padding:10px 12px">/plan start</div><div class="xs muted">Свой тариф: /plan. Какие группы в работе: /drivers</div></div>';
 }
+
+/* ---------- агенты ---------- */
+const AGENTS = [
+  ['waiting','Водитель ждёт ответа','Сигнал, если команда не ответила водителю','waiting',[10,15,20,30,45]],
+  ['silent','Водитель молчит','Команда задала вопрос, а водитель не отвечает','silent',[30,45,60,90,120]],
+  ['risk','Тревожные слова','Авария, поломка, полиция, отказ, пломба и другие, на 4 языках','',[]],
+  ['stopped','Долгая стоянка','Трак стоит, а водитель не писал о перерыве или отдыхе','stopped',[60,90,120,180]],
+  ['gps','Нет GPS','Последние данные GPS старше 60 минут','',[]],
+  ['late','Опоздание','По борду и честному расчёту ETA','',[]]
+];
+function vAgents() {
+  const owner = S.plan === 'owner';
+  const note = (k) => (k === 'stopped' || k === 'gps') && !owner ? '<span class="xs" style="color:var(--blue)">Для вас: после подключения вашего ELD к серверу (в плане)</span>' : (k === 'late' ? '<span class="xs" style="color:var(--blue)">Ждёт подключения борда</span>' : '');
+  return head('Агенты', 'Проверяют группы 24/7 и пишут только вам', 'home') +
+    '<div class="col" style="gap:10px">' + AGENTS.map((a) => {
+      const on = S.ag.on[a[0]];
+      return '<div class="card col" style="padding:14px 16px;border-radius:18px;gap:10px"><div class="row"><span class="col" style="flex:1;gap:3px;min-width:0"><b style="font-size:15px">' + a[1] + '</b><span class="small sub" style="line-height:1.45">' + a[2] + '</span>' + note(a[0]) + '</span><button class="toggle' + (on ? ' on' : '') + '" data-agt="' + a[0] + '" aria-label="' + a[1] + '"><span></span></button></div>' +
+        (a[3] && on ? '<div class="col" style="gap:6px"><span class="xs muted">Через сколько минут</span><div class="wrap">' + (a[4].indexOf(S.ag[a[3]]) >= 0 ? a[4] : a[4].concat([S.ag[a[3]]]).sort((x, y) => x - y)).map((n) => '<button class="pill' + (S.ag[a[3]] === n ? ' on' : '') + '" data-agn="' + a[3] + ':' + n + '">' + n + ' мин</button>').join('') + '</div></div>' : '') + '</div>';
+    }).join('') + '</div>' +
+    '<div class="col" style="gap:10px"><div class="label">Автоответ водителю</div>' +
+      [['o','Выключен','Только сигнал вам'],['s','Предлагать ответ','Бот пишет черновик ответа, вы нажимаете «Отправить», «Изменить» или «Пропустить»'],['a','Авто','Бот отвечает сам, если команда молчит ' + S.ag.waiting + ' мин. Тревожные сообщения не трогает, о каждом ответе сообщает вам']].map((m) => {
+        const on = S.ag.ar === m[0];
+        return '<button data-agar="' + m[0] + '" class="card col" style="text-align:left;gap:6px;padding:14px 16px;border-radius:16px;' + (on ? 'border-color:var(--mint);background:#10261F' : '') + '"><span class="row" style="justify-content:space-between"><span style="font-weight:600;font-size:15px">' + m[1] + '</span><span style="width:18px;height:18px;border-radius:50%;border:' + (on ? '6px solid var(--mint)' : '2px solid #4A5B7A') + '"></span></span><span class="small sub" style="line-height:1.45">' + m[2] + '</span></button>';
+      }).join('') + '</div>' +
+    '<div class="xs muted" style="line-height:1.5">В группы водителей бот пишет только после вашего «Отправить» или в режиме «Авто». Сообщения водителей для бота только данные, команды из них он не выполняет.</div>' +
+    '<button class="btn primary" style="height:56px;font-size:17px" data-act="saveag">Сохранить</button>' +
+    '<div class="card pad col" style="gap:8px;border-radius:16px;background:#0F1626"><div class="small sub">Можно и командой в чате с ботом. Например:</div><div class="mono" style="padding:10px 12px">/agents waiting 20</div><div class="xs muted">Автоответ: /agents autoreply suggest. Выключить агента: /agents risk off</div></div>';
+}
+function agPayload() { return AGENTS.map((a) => S.ag.on[a[0]] ? '1' : '0').join('') + '-' + S.ag.waiting + '-' + S.ag.silent + '-' + S.ag.stopped + '-' + S.ag.ar; }
 
 function vFeatures() {
   const all = [].concat.apply([], FEATURES.map((s) => s[1]));
@@ -528,7 +584,7 @@ function vSettings() {
     '<div class="col" style="gap:10px"><div class="label">Язык бота</div><div style="display:grid;grid-template-columns:repeat(4,1fr);gap:8px">' + [['ru','RU'],['en','EN'],['tr','TR'],['uz','UZ']].map((l) => '<button class="seg' + (S.lang === l[0] ? ' on' : '') + '" data-lang="' + l[0] + '">' + l[1] + '</button>').join('') + '</div><div class="xs muted">' + (S.lang === 'tr' || S.lang === 'uz' ? 'Этот язык появится позже, пока окно и бот на русском' : 'Окно и бот переключаются на этот язык') + '</div></div>' +
     '<div class="col" style="gap:10px"><div class="label">Доступ (демо)</div><div class="wrap">' + [['active','Оплачено'],['survey','Опрос не пройден'],['unpaid','Не оплачено']].map((x) => '<button class="pill' + (S.access === x[0] ? ' on' : '') + '" data-access="' + x[0] + '">' + x[1] + '</button>').join('') + '</div><div class="xs muted">Переключатель только для показа. В настоящем боте статус придёт с сервера.</div></div>' +
     '<div class="col" style="gap:10px"><div class="label">Расписание апдейтов</div><div class="listcard list">' + [['Время', S.slots.slice().sort().join(', ')],['Часовой пояс', tzLabel()],['Режим', S.smode === 'auto' ? 'Авто' : 'Сначала показать мне'],['Апдейты', S.son ? 'включены' : 'выключены']].map((r) => '<div class="row" style="justify-content:space-between"><span>' + r[0] + '</span><span class="small muted">' + esc(r[1]) + '</span></div>').join('') + '<button data-go="shift" class="row" style="justify-content:space-between;width:100%;background:none;border:0;font-size:15px;text-align:left;color:var(--mint-t);font-weight:600"><span>Изменить расписание</span>' + ic('chev', 16, 'var(--mint-t)', 2) + '</button></div><div class="xs muted">Или командой в чате, например: /times 08:00 14:00 20:00</div></div>' +
-    '<div class="col" style="gap:10px"><div class="label">Подключения и команда</div><div class="listcard list"><button data-go="groups" class="row" style="justify-content:space-between;width:100%;background:none;border:0;border-bottom:1px solid var(--line2);font-size:15px;text-align:left"><span>Группы водителей</span><span class="row small muted" style="gap:6px">' + (S.plan === 'owner' ? S.used : S.used + ' из ' + S.lim) + ' ' + ic('chev', 16, 'var(--muted)', 2) + '</span></button><div class="row" style="justify-content:space-between"><span>ELD · Samsara</span><span class="small" style="color:var(--mint-t)">Подключено (пример)</span></div><div class="row" style="justify-content:space-between"><span>Борд (Google Sheets)</span><span class="small muted">Update Board</span></div><div class="row" style="justify-content:space-between"><span>Тиммейты</span><span class="small muted">3 человека</span></div><div class="row" style="justify-content:space-between"><span>Amazon Relay</span><span class="chip c-plan">План</span></div></div></div>' +
+    '<div class="col" style="gap:10px"><div class="label">Подключения и команда</div><div class="listcard list"><button data-go="groups" class="row" style="justify-content:space-between;width:100%;background:none;border:0;border-bottom:1px solid var(--line2);font-size:15px;text-align:left"><span>Группы водителей</span><span class="row small muted" style="gap:6px">' + (S.plan === 'owner' ? S.used : S.used + ' из ' + S.lim) + ' ' + ic('chev', 16, 'var(--muted)', 2) + '</span></button><button data-go="agents" class="row" style="justify-content:space-between;width:100%;background:none;border:0;border-bottom:1px solid var(--line2);font-size:15px;text-align:left"><span>Агенты и автоответ</span><span class="row small muted" style="gap:6px">' + AGENTS.filter((a) => S.ag.on[a[0]]).length + ' из ' + AGENTS.length + ' ' + ic('chev', 16, 'var(--muted)', 2) + '</span></button><div class="row" style="justify-content:space-between"><span>ELD · Samsara</span><span class="small" style="color:var(--mint-t)">Подключено (пример)</span></div><div class="row" style="justify-content:space-between"><span>Борд (Google Sheets)</span><span class="small muted">Update Board</span></div><div class="row" style="justify-content:space-between"><span>Тиммейты</span><span class="small muted">3 человека</span></div><div class="row" style="justify-content:space-between"><span>Amazon Relay</span><span class="chip c-plan">План</span></div></div></div>' +
     '<div class="col" style="gap:10px"><div class="label">Уведомления мне</div><div class="listcard list">' + nl.map((t) => '<div class="row"><span class="col" style="flex:1"><span>' + t[1] + '</span><span class="xs muted">' + t[2] + '</span></span><button class="toggle' + (S.notif[t[0]] ? ' on' : '') + '" data-notif="' + t[0] + '" aria-label="' + t[1] + '"><span></span></button></div>').join('') + '</div></div>' +
     '<div class="col" style="gap:10px"><div class="label">Тариф и оплата</div>' + planCard(true) + '<div class="listcard list">' + [['Пробная неделя','появится позже'],['Оплата','Click · Payme · другие'],['Оферта','готовится']].map((r) => '<div class="row" style="justify-content:space-between"><span>' + r[0] + '</span><span class="small muted">' + r[1] + '</span></div>').join('') + '</div><div class="xs muted">Тарифы отличаются только числом водителей. Оплата заработает после запуска сервера.</div><div class="xs muted">Или командой в чате, например: /plan pro</div></div>' +
     '<div class="xs" style="text-align:center;color:var(--faint)">Modenzo AI · демо-версия окна</div>';
@@ -565,12 +621,13 @@ function vDrivers() {
     }).join('') + '</div>';
 }
 
-const VIEWS = { home:vHome, shift:vShift, updates:vUpdates, eta:vEta, groups:vGroups, features:vFeatures, help:vHelp, settings:vSettings, plans:vPlans, board:vBoard, drivers:vDrivers };
+const VIEWS = { home:vHome, shift:vShift, updates:vUpdates, eta:vEta, groups:vGroups, features:vFeatures, help:vHelp, settings:vSettings, plans:vPlans, agents:vAgents, board:vBoard, drivers:vDrivers };
 const TABS = [['home','Главная','home'],['updates','Апдейты','send'],['big','Большой экран','monitor'],['features','Функции','grid'],['settings','Настройки','sliders']];
-const NAV = [['home','Главная','home'],['board','Доска грузов','truck'],['drivers','Водители','wheel'],['updates','Апдейты','send'],['eta','Расчёт ETA','pin'],['groups','Группы','users'],['features','Все функции','grid'],['help','Инструкция','help'],['plans','Тарифы','doc'],['settings','Настройки','sliders']];
-const TAB_OF = { shift:'home', eta:'home', board:'home', drivers:'home', groups:'home', help:'settings', plans:'settings' };
+const NAV = [['home','Главная','home'],['board','Доска грузов','truck'],['drivers','Водители','wheel'],['updates','Апдейты','send'],['eta','Расчёт ETA','pin'],['agents','Агенты','warn'],['groups','Группы','users'],['features','Все функции','grid'],['help','Инструкция','help'],['plans','Тарифы','doc'],['settings','Настройки','sliders']];
+const TAB_OF = { shift:'home', eta:'home', board:'home', drivers:'home', groups:'home', help:'settings', plans:'settings', agents:'home' };
 
 const EN = {
+"Тарифы отличаются только числом водителей, все функции есть на любом тарифе: Лайт до 10, Старт до 20, Про до 40, Макс до 80 водителей. Цены ещё не утверждены.":"Plans differ only by number of drivers, every plan has all features: Lite up to 10, Start up to 20, Pro up to 40, Max up to 80 drivers. Prices are not approved yet.","«Настройки» → «Сменить тариф» или командой в чате, например: /plan start. Тариф больше включается сразу, тариф меньше со следующего периода (30 дней), до этого его можно отменить. Функции не меняются, меняется только лимит водителей.":"“Settings” → “Change plan”, or with a command in the chat, for example: /plan start. A bigger plan starts now, a smaller one from the next period (30 days) and can be cancelled until then. Features stay the same, only the driver limit changes.","Лишняя группа встаёт на паузу: бот сохраняет её сообщения, но апдейтов и проверок по ней нет. Бот сразу предложит три варианта: заменить другую группу, перейти на тариф больше или выйти из группы. Какие группы в работе, можно поменять командой /drivers.":"An extra group is paused: the bot saves its messages, but there are no updates or checks for it. The bot offers three choices right away: swap it for another group, move to a bigger plan, or leave the group. Change which groups are working with /drivers.","На борде водителей больше, чем в тарифе?":"The board has more drivers than my plan?","Бот следит только за водителями, чьи группы в работе, и раз в день пишет, кого не видит и какой тариф нужен для всех. Чтение борда в разработке.":"The bot follows only drivers whose groups are working, and once a day tells you who is left out and which plan covers everyone. Board reading is in development.","Что будет, если не оплатить?":"What happens if I do not pay?","Бот напомнит за 3 дня и за 1 день до конца периода. После конца ещё 3 дня всё работает, потом апдейты и агенты останавливаются, окно только для просмотра. Данные не удаляются. Оплата появится позже.":"The bot reminds you 3 days and 1 day before the period ends. After the end everything works 3 more days, then updates and agents stop and the window is view-only. Data is kept. Payment comes later.","Что такое агенты?":"What are agents?","Это проверки, которые работают 24/7 и пишут только вам: водитель ждёт ответа, водитель молчит, тревожные слова, долгая стоянка, нет GPS, опоздание. Настройка: окно → «Агенты» или команда /agents.":"Checks that run 24/7 and write only to you: driver waiting, driver silent, alarm words, long stop, no GPS, late. Set them up: window → “Agents” or the /agents command.","Бот будет сам отвечать водителям?":"Will the bot answer drivers by itself?","Только если вы включите автоответ «Авто». По умолчанию бот предлагает ответ, а отправляете вы. Тревожные сообщения (авария, поломка, полиция) бот сам не отвечает никогда. Например: /agents autoreply suggest":"Only if you turn auto-reply “Auto” on. By default the bot suggests a reply and you send it. The bot never answers alarm messages (accident, breakdown, police) by itself. Example: /agents autoreply suggest","Агенты и автоответ":"Agents and auto-reply","Агенты":"Agents","Агенты 24/7":"Agents 24/7","Ждёт ответа, молчит, тревога, стоянка, автоответ":"Waiting, silent, alarm, long stop, auto-reply","Все функции и агенты на любом тарифе. Отличается только число водителей.":"Every plan has all features and agents. Only the number of drivers differs.","Перейти сейчас":"Switch now","Со след. периода":"From next period","Как меняется тариф":"How plan changes work","Тариф больше":"Bigger plan","Включается сразу. Пока оплата не подключена, без доплаты.":"Starts now. While payment is not connected, no extra charge.","Включается сразу. Доплата только за оставшиеся дни периода.":"Starts now. You pay only for the days left in the period.","Тариф меньше":"Smaller plan","Со следующего периода. До этого можно отменить.":"From the next period. You can cancel until then.","Период":"Period","30 дней. Напоминание за 3 дня и за 1 день до конца.":"30 days. Reminders 3 days and 1 day before the end.","Не хватает мест":"No room left","Новая группа встаёт на паузу. Бот предложит заменить другую группу, перейти на тариф больше или выйти из группы.":"A new group is paused. The bot offers to swap another group, move to a bigger plan or leave the group.","Борд больше тарифа":"Board bigger than the plan","Бот следит только за водителями, чьи группы в работе, и раз в день пишет, кто не вошёл.":"The bot follows only drivers whose groups are working and tells you once a day who is left out.","Все агенты и автоответ":"All agents and auto-reply","Свой тариф: /plan. Какие группы в работе: /drivers":"Your plan: /plan. Which groups are working: /drivers","Группы в тарифе":"Groups in the plan","Проверяют группы 24/7 и пишут только вам":"They check groups 24/7 and write only to you","Водитель ждёт ответа":"Driver waiting","Сигнал, если команда не ответила водителю":"Alert when the team has not answered a driver","Через сколько минут":"After how many minutes","Водитель молчит":"Driver silent","Команда задала вопрос, а водитель не отвечает":"The team asked a question and the driver does not answer","Тревожные слова":"Alarm words","Авария, поломка, полиция, отказ, пломба и другие, на 4 языках":"Accident, breakdown, police, rejected, seal and more, in 4 languages","Долгая стоянка":"Long stop","Трак стоит, а водитель не писал о перерыве или отдыхе":"The truck stands and the driver said nothing about a break or rest","Для вас: после подключения вашего ELD к серверу (в плане)":"For you: after your ELD is connected on the server (planned)","Нет GPS":"No GPS","Последние данные GPS старше 60 минут":"The latest GPS data is older than 60 minutes","Опоздание":"Late","По борду и честному расчёту ETA":"By the board and the honest ETA math","Ждёт подключения борда":"Waits for the board","Автоответ водителю":"Auto-reply to drivers","Выключен":"Off","Только сигнал вам":"Only an alert to you","Предлагать ответ":"Suggest a reply","Бот пишет черновик ответа, вы нажимаете «Отправить», «Изменить» или «Пропустить»":"The bot writes a draft reply, you tap “Send”, “Edit” or “Skip”","В группы водителей бот пишет только после вашего «Отправить» или в режиме «Авто». Сообщения водителей для бота только данные, команды из них он не выполняет.":"The bot posts in driver groups only after your “Send” or in “Auto” mode. Driver messages are only data for the bot, it does not follow commands in them.","Автоответ: /agents autoreply suggest. Выключить агента: /agents risk off":"Auto-reply: /agents autoreply suggest. Turn an agent off: /agents risk off","По группам на паузе нет апдейтов и проверок. Бот сохраняет их сообщения.":"Paused groups get no updates or checks. The bot saves their messages.",
 "Лайт":"Lite","Старт":"Start","Про":"Pro","Макс":"Max","Владелец":"Owner","Тарифы":"Plans","Владелец бота":"Bot owner","Без лимита водителей":"No driver limit","Сменить тариф":"Change plan","Все функции на любом тарифе. Отличается только число водителей.":"Every plan has all features. Only the number of drivers differs.","Цена уточняется":"Price to be set","Ваш тариф":"Your plan","Ждёт оплаты":"Awaiting payment","Выбрать":"Choose","Одинаково на любом тарифе":"The same on every plan","Все функции бота":"All bot features","Апдейты 3–6 раз в день":"3–6 updates a day","Честный ETA":"Honest ETA","Окно и расширенный экран":"Window and expanded screen","Русский и английский, турецкий и узбекский позже":"Russian and English, Turkish and Uzbek later","1 группа водителя = 1 водитель. Если групп больше, чем в тарифе, бот читает все, а апдейты отправляет только по первым группам (по дате добавления).":"1 driver group = 1 driver. If you have more groups than the plan covers, the bot reads them all but sends updates only to the first groups (by the date they were added).","Новый тариф включится после оплаты. Оплата появится позже. Посмотреть свой тариф: /plan":"A new plan turns on after payment. Payment comes later. See your plan: /plan","Пока оплата не подключена, тариф включается сразу. Посмотреть свой тариф: /plan":"While payment is not connected, a plan turns on at once. See your plan: /plan","Или командой в чате, например: /plan pro":"Or with a command in the chat, for example: /plan pro","От 3 до 6 раз в сутки, не чаще чем раз в 4 часа. Одинаково на любом тарифе.":"3 to 6 times a day, not more often than every 4 hours. The same on every plan.","Тарифы отличаются только числом водителей, все функции есть на любом тарифе: Лайт до 5, Старт до 10, Про до 25, Макс до 50 водителей. Цены ещё не утверждены.":"Plans differ only by number of drivers, every plan has all features: Lite up to 5, Start up to 10, Pro up to 25, Max up to 50 drivers. Prices are not approved yet.","Как сменить тариф?":"How do I change my plan?","«Настройки» → «Сменить тариф» или командой в чате, например: /plan pro. Функции не меняются, меняется только лимит водителей. Апдейты и окно сразу подстраиваются.":"“Settings” → “Change plan”, or with a command in the chat, for example: /plan pro. Features stay the same, only the driver limit changes. Updates and the window adjust right away.","Что если групп больше, чем в тарифе?":"What if I have more groups than my plan covers?","Бот читает все группы, но апдейты отправляет только по первым группам в пределах тарифа (по дате добавления). Когда добавляете лишнюю группу, бот сразу пишет об этом. Например, на Лайт апдейты идут по 5 группам.":"The bot reads every group but sends updates only to the first groups within the plan (by the date they were added). When you add an extra group, the bot tells you right away. For example, on Lite updates go to 5 groups.",
 'Расширенный экран':'Expanded view','Главная':'Home','Доска грузов':'Load board','Водители':'Drivers','Апдейты':'Updates','Расчёт ETA':'ETA breakdown','Группы':'Groups','Все функции':'All features','Инструкция':'Guide','Настройки':'Settings',
 'Открыть отдельным окном':'Open in a separate window','На весь экран':'Full screen','Выйти из полного экрана':'Exit full screen','Компактный вид':'Compact view',
@@ -670,6 +727,15 @@ const EN = {
 'Telegram не дал включить полный экран на этом устройстве':'Telegram did not allow full screen on this device','Отдых 10 ч, до 04:00':'10 h rest, until 04:00','после отдыха 11 ч':'11 h after rest','У шиппера · 40 мин':'At shipper · 40 min'
 };
 const EN_RULES = [
+[/^(\d+) мин$/, '$1 min'],
+[/^В работе: (\d+) из (\d+)$/, 'Working: $1 of $2'],
+[/^На паузе: (\d+)$/, 'Paused: $1'],
+[/^Период до (\S+)$/, 'Period until $1'],
+[/^С (\d\d\.\d\d\.\d{4}) тариф (\S+)$/, (m, d, a) => 'From ' + d + ': plan ' + (EN[a] || a)],
+[/^С (\d\d\.\d\d\.\d{4})$/, 'From $1'],
+[/^У вас (\d+) групп: (\d+) будут на паузе$/, 'You have $1 groups: $2 will be paused'],
+[/^Оставить тариф (\S+)$/, (m, a) => 'Keep the ' + (EN[a] || a) + ' plan'],
+[/^Бот отвечает сам, если команда молчит (\d+) мин\. Тревожные сообщения не трогает, о каждом ответе сообщает вам$/, 'The bot replies by itself if the team is silent for $1 min. It never answers alarm messages and tells you about every reply'],
 [/^Водителей: (\d+) из (\d+)$/, 'Drivers: $1 of $2'],
 [/^(\d+) из (\d+)$/, '$1 of $2'],
 [/^Апдейты идут только по первым (\d+) группам$/, 'Updates go only to the first $1 groups'],
@@ -767,6 +833,11 @@ document.addEventListener('click', (e) => {
     return;
   }
   if (d.plan) { choosePlan(d.plan); return; }
+  if (locked() && (d.agt || d.agn || d.agar || d.act === 'saveag')) { toast(S.access === 'survey' ? 'Доступно после опроса /start' : 'Доступно после оплаты тарифа'); return; }
+  if (d.agt) { S.ag.on[d.agt] = !S.ag.on[d.agt]; render(); return; }
+  if (d.agn) { const x = d.agn.split(':'); S.ag[x[0]] = +x[1]; render(); return; }
+  if (d.agar) { S.ag.ar = d.agar; render(); return; }
+  if (d.act === 'saveag') { sendToBot('agt-' + agPayload(), S.ag.ar === 'a' ? '/agents autoreply auto' : '/agents'); return; }
   if (d.lockgo) return go(d.lockgo);
   if (d.go) return go(d.go);
   if (d.slot) { const i = S.slots.indexOf(d.slot); if (i >= 0) S.slots.splice(i, 1); else S.slots.push(d.slot); S.slots.sort(); }
