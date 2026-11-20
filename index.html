@@ -83,7 +83,7 @@ h1,h2,h3{margin:0;font-family:'Space Grotesk',Inter,sans-serif;letter-spacing:-0
 .board{display:flex;flex-wrap:wrap;gap:20px;align-items:flex-start}
 .kpis{display:grid;grid-template-columns:repeat(auto-fit,minmax(140px,1fr));gap:12px}
 .desk-only{display:none}
-.app.locked [data-act="save"],.app.locked [data-slot],.app.locked [data-smode],.app.locked [data-son],.app.locked [data-act="launch"],.app.locked [data-act="stop"],.app.locked [data-upd],.app.locked [data-group],.app.locked [data-notif],.app.locked [data-hours],.app.locked [data-interval],.app.locked [data-mode],.app.locked [data-lockgo],.app.locked [data-agt],.app.locked [data-wtstart],.app.locked [data-wtbase],.app.locked [data-wtday],.app.locked [data-wtal],.app.locked [data-tzc],.app.locked [data-act="savewt"],.app.locked [data-act="savetz"],.app.locked [data-gtog],.app.locked [data-act="savegroups"],.app.locked [data-agn],.app.locked [data-agar],.app.locked [data-act="saveag"]{opacity:.45;filter:grayscale(.7)}
+.app.locked [data-act="save"],.app.locked [data-slot],.app.locked [data-smode],.app.locked [data-son],.app.locked [data-act="launch"],.app.locked [data-act="stop"],.app.locked [data-upd],.app.locked [data-group],.app.locked [data-notif],.app.locked [data-hours],.app.locked [data-interval],.app.locked [data-mode],.app.locked [data-lockgo],.app.lockupd [data-son],.app.lockupd [data-lockgo="updates"],.app.locked [data-agt],.app.locked [data-wtstart],.app.locked [data-wtbase],.app.locked [data-wtday],.app.locked [data-wtal],.app.locked [data-tzc],.app.locked [data-act="savewt"],.app.locked [data-act="savetz"],.app.locked [data-gtog],.app.locked [data-act="savegroups"],.app.locked [data-agn],.app.locked [data-agar],.app.locked [data-act="saveag"]{opacity:.45;filter:grayscale(.7)}
 .app.locked [data-act="save"]::after,.app.locked [data-act="launch"]::after,.app.locked [data-upd]::after,.app.locked [data-lockgo]::after{content:'';width:14px;height:14px;margin-left:8px;background:currentColor;-webkit-mask:url("data:image/svg+xml;utf8,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 24 24' fill='none' stroke='black' stroke-width='2.4' stroke-linecap='round' stroke-linejoin='round'><rect x='4' y='11' width='16' height='10' rx='2'/><path d='M8 11V7a4 4 0 0 1 8 0v4'/></svg>") center/contain no-repeat;mask:url("data:image/svg+xml;utf8,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 24 24' fill='none' stroke='black' stroke-width='2.4' stroke-linecap='round' stroke-linejoin='round'><rect x='4' y='11' width='16' height='10' rx='2'/><path d='M8 11V7a4 4 0 0 1 8 0v4'/></svg>") center/contain no-repeat;display:inline-block;flex:none}
 .toast{position:fixed;left:50%;bottom:calc(92px + env(safe-area-inset-bottom));transform:translateX(-50%);max-width:min(92vw,420px);background:#1B2740;border:1px solid var(--line);color:var(--text);padding:12px 16px;border-radius:14px;font-size:14px;line-height:1.4;z-index:20;box-shadow:0 8px 24px rgba(0,0,0,.4)}
 @media (min-width: 900px){
@@ -249,6 +249,7 @@ const FAQ = [
   ['pay','Что если групп больше, чем в тарифе?','Лишняя группа встаёт на паузу: бот сохраняет её сообщения, но апдейтов и проверок по ней нет. Бот сразу предложит три варианта: заменить другую группу, перейти на тариф больше или выйти из группы. Какие группы в работе, можно поменять командой /drivers.'],
   ['pay','На борде водителей больше, чем в тарифе?','Бот следит только за водителями, чьи группы в работе, и раз в день пишет, кого не видит и какой тариф нужен для всех. Чтение борда в разработке.'],
   ['pay','Что будет, если не оплатить?','Бот напомнит за 3 дня и за 1 день до конца периода. После конца ещё 3 дня всё работает, потом апдейты и агенты останавливаются, окно только для просмотра. Данные не удаляются. Оплата появится позже.'],
+  ['start','Почему некоторые кнопки с замком?','Пока активация не закончена, часть функций закрыта, чтобы ничего не сломать. Шаги: опрос, тариф, ELD, хотя бы одна группа водителя. Нажмите на кнопку с замком: окно подскажет, какой шаг остался, и даст кнопку, чтобы его сделать. Например, ELD подключается командой /eld'],
   ['start','Что такое агенты?','Это проверки, которые работают 24/7 и пишут только вам: водитель ждёт ответа, водитель молчит, тревожные слова, долгая стоянка, нет GPS, опоздание. Изменить: «Настройки» → «Агенты и автоответ» или команда /settings.'],
   ['start','Бот будет сам отвечать водителям?','Только если вы включите автоответ «Авто». По умолчанию бот предлагает ответ, а отправляете вы. Тревожные сообщения (авария, поломка, полиция) бот сам не отвечает никогда. Например: /agents autoreply suggest'],
   ['pay','Есть ли пробный период?','Планируется пробная неделя: если не подойдёт, вернём деньги за вычетом использованных дней. Точная формула будет в оферте.'],
@@ -346,7 +347,7 @@ const S = {
   upd:'pending', groups:{ a:true, b:true, team:true }, feat:'all', cat:'all', open:'q1',
   lang:'ru', notif:{ late:true, silent:true, group:true },
   tab:'transit', sel:'1042', q:'', showNew:true, queue:{}, compact:false,
-  access:'active', fromBot:false
+  access:'active', fromBot:false, act:{ s:1, p:1, e:1, g:1 }, lockSheet:''
 };
 /* язык: ссылка ?lang=, потом сохранённый выбор, потом язык Telegram */
 (function initPrefs() {
@@ -383,13 +384,61 @@ try {
   const wt = (q.get('wt') || '').match(/^(\d{1,2})-(8|10|12)-([08ac]{7})-([01])$/);
   if (wt) S.wt = { start: +wt[1] % 24, base: +wt[2], days: wt[3], alarms: wt[4] === '1' };
   if (q.get('tzc')) S.tzc = q.get('tzc');
+  const ac = (q.get('act') || '').match(/^s([01])p([01])e([012])g([01])$/);
+  if (ac) S.act = { s: +ac[1], p: +ac[2], e: +ac[3], g: +ac[4] }; else syncAct();
   const of = (q.get('off') || '').match(/^(\d{2})(\d{2})(\d{2})-([-08ac]{1,60})$/);
   if (of) { for (let i = 0; i < of[4].length; i++) if (of[4][i] !== '-') S.offMap[ymd(2000 + +of[1], +of[2], +of[3] + i)] = of[4][i]; }
   const ag = (q.get('ag') || '').match(/^([01]{6})-(\d+)-(\d+)-(\d+)-([osa])$/);
   if (ag) { ['waiting','silent','risk','stopped','gps','late'].forEach((k, i) => { S.ag.on[k] = ag[1][i] === '1'; }); S.ag.waiting = +ag[2]; S.ag.silent = +ag[3]; S.ag.stopped = +ag[4]; S.ag.ar = ag[5]; }
 } catch (e) {}
 if (!S.pe && S.plan !== 'owner') { const d = new Date(Date.now() + 30 * 864e5); S.pe = '' + d.getFullYear() + String(d.getMonth() + 1).padStart(2, '0') + String(d.getDate()).padStart(2, '0'); }
-function locked() { return S.access !== 'active'; }
+function syncAct() { S.act = { s: S.access === 'survey' ? 0 : 1, p: S.access === 'unpaid' ? 0 : 1, e: 1, g: 1 }; }
+function locked() { return !S.act.s || !S.act.p; }
+function updLocked() { return locked() || !S.act.g || S.act.e !== 1; }
+/* what a button needs before it can work: '' = ready, otherwise the missing step */
+function blockedBy(d) {
+  const action = !!(d.slot || d.smode || d.son || d.upd || d.group || d.notif || d.lockgo || d.agt || d.agn || d.agar || d.gtog || d.wtstart || d.wtbase || d.wtday || d.wtal || d.pm || d.tzc || d.offd !== undefined ||
+    ['save','saveag','savegroups','savewt','savetz','saveoff','launch','stop'].indexOf(d.act) >= 0);
+  if (!S.act.s && (action || d.plan)) return 'survey';
+  if (!S.act.p && (action || d.plan === 'drivers' || d.plan === 'keep')) return 'paid';
+  const updOn = (d.son && !S.son) || d.lockgo === 'updates' || d.upd === 'sent' || (d.act === 'save' && S.son);
+  if (updOn && !S.act.g) return 'groups';
+  if (updOn && S.act.e !== 1) return S.act.e === 2 ? 'eldwait' : 'eld';
+  return '';
+}
+const STEPS = [
+  ['survey','Опрос','4 коротких вопроса в чате с ботом'],
+  ['paid','Тариф','Выбрать и оплатить'],
+  ['eld','ELD','Ключ, чтобы бот видел, где траки'],
+  ['groups','Группы водителей','Бот добавлен хотя бы в одну группу']
+];
+function stepState(k) { if (k === 'survey') return S.act.s ? 'ok' : 'todo'; if (k === 'paid') return S.act.p ? 'ok' : 'todo'; if (k === 'eld') return S.act.e === 1 ? 'ok' : (S.act.e === 2 ? 'wait' : 'todo'); return S.act.g ? 'ok' : 'todo'; }
+const LOCKS = {
+  survey: ['Сначала пройдите опрос','Это 4 коротких вопроса в чате с ботом: язык, борд, грузы, ключ ELD. После него функции включатся. Смотреть окно можно и сейчас.','Пройти опрос','setup:survey'],
+  paid: ['Выберите и оплатите тариф','Функции включатся после оплаты. Смотреть окно, тарифы и инструкцию можно и сейчас.','Выбрать тариф','go:plans'],
+  eld: ['Подключите ELD','Без ELD бот не видит, где траки, и апдейты будут без местоположения. Бот спросит, какой у вас ELD, и проверит ключ. Это пара минут.','Подключить ELD','setup:eld'],
+  eldwait: ['Ключ ELD на проверке','Ключ получен и проверяется. Как только он заработает, апдейты можно будет включить. Если ключ неверный, отправьте новый.','Отправить ключ заново','setup:eld'],
+  groups: ['Добавьте бота в группу водителя','Апдейты идут в группы водителей. Добавьте бота хотя бы в одну группу, и он сам проверит, видит ли сообщения.','Как добавить','go:groups']
+};
+function ctaBtn(spec, cls) { const x = spec.split(':'); return '<button class="btn ' + (cls || 'primary') + '" style="height:44px;font-size:14px" ' + (x[0] === 'go' ? 'data-go="' + x[1] + '"' : 'data-setup="' + x[1] + '"') + '>'; }
+function activationCard() {
+  const states = STEPS.map((st) => stepState(st[0]));
+  if (states.every((x) => x === 'ok')) return '';
+  const done = states.filter((x) => x === 'ok').length;
+  const first = STEPS[states.findIndex((x) => x !== 'ok')][0];
+  const lk = LOCKS[first === 'eld' && S.act.e === 2 ? 'eldwait' : first];
+  return '<div class="card col" style="padding:16px;border-radius:18px;gap:12px;border-color:var(--amber-bd);background:#1E1A10">' +
+    '<div class="row" style="justify-content:space-between"><b style="font-size:16px">Активация</b><span class="small" style="color:var(--amber)">' + done + ' из ' + STEPS.length + '</span></div>' +
+    STEPS.map((st, i) => { const x = states[i]; return '<div class="row" style="gap:10px;align-items:flex-start"><span class="icon" style="width:26px;height:26px;border-radius:50%;flex:none;background:' + (x === 'ok' ? 'var(--mint)' : (x === 'wait' ? 'var(--blue-bg)' : 'var(--raised)')) + ';color:' + (x === 'ok' ? 'var(--on-mint)' : (x === 'wait' ? 'var(--blue)' : 'var(--muted)')) + '">' + (x === 'ok' ? ic('check', 14, 'currentColor', 3) : (x === 'wait' ? ic('clock', 14, 'currentColor', 2.4) : '<span style="font-size:12px;font-weight:700">' + (i + 1) + '</span>')) + '</span><span class="col" style="gap:2px"><span style="font-size:14px;font-weight:600">' + st[1] + '</span><span class="xs muted">' + (x === 'wait' ? 'Ключ на проверке' : st[2]) + '</span></span></div>'; }).join('') +
+    '<div class="xs muted" style="line-height:1.5">' + (locked() ? 'Пока активация не закончена, окно работает только для просмотра.' : 'Настройки уже можно менять. Апдейты включатся после всех шагов.') + '</div>' +
+    ctaBtn(lk[3]) + lk[2] + '</button></div>';
+}
+function lockSheetHtml() {
+  const lk = LOCKS[S.lockSheet]; if (!lk) return '';
+  return '<div class="sheet-bg" data-act="closelock"><div class="sheet" role="dialog" aria-modal="true" aria-label="' + lk[0] + '"><div class="row" style="gap:14px"><span class="icon" style="width:52px;height:52px;border-radius:16px;background:var(--amber-bg);color:var(--amber)">' + ic('lock', 26, 'currentColor', 2.2) + '</span><h2 style="font-size:19px">' + lk[0] + '</h2></div>' +
+    '<div class="small sub" style="line-height:1.55">' + lk[1] + '</div>' +
+    '<div class="grid2"><button class="btn" data-act="closelock">Понятно</button>' + ctaBtn(lk[3]) + lk[2] + '</button></div></div></div>';
+}
 function fdate(d) { return d && d.length === 8 ? d.slice(6, 8) + '.' + d.slice(4, 6) + '.' + d.slice(0, 4) : ''; }
 function planCard(withBtn) {
   if (S.plan === 'owner') return '<div class="card row" style="padding:14px 16px;border-radius:16px"><span class="col" style="flex:1;gap:3px"><b style="font-size:15px">Владелец бота</b><span class="small muted">Без лимита водителей</span></span></div>';
@@ -813,6 +862,7 @@ const NAV = [['home','Главная','home'],['board','Доска грузов'
 const TAB_OF = { shift:'home', eta:'home', board:'home', drivers:'home', groups:'home', help:'settings', plans:'settings', agents:'settings', work:'settings', tz:'settings' };
 
 const EN = {
+"Активация":"Activation","Опрос":"Survey","4 коротких вопроса в чате с ботом":"4 short questions in the bot chat","Выбрать и оплатить":"Pick and pay","Ключ на проверке":"Key being checked","Бот добавлен хотя бы в одну группу":"The bot is in at least one group","Настройки уже можно менять. Апдейты включатся после всех шагов.":"You can change settings already. Updates turn on after all steps.","Отправить ключ заново":"Send the key again","Ключ ELD на проверке":"ELD key being checked","Ключ получен и проверяется. Как только он заработает, апдейты можно будет включить. Если ключ неверный, отправьте новый.":"The key is received and being checked. Once it works you can turn updates on. If the key is wrong, send a new one.","Почему некоторые кнопки с замком?":"Why do some buttons have a lock?","Пока активация не закончена, часть функций закрыта, чтобы ничего не сломать. Шаги: опрос, тариф, ELD, хотя бы одна группа водителя. Нажмите на кнопку с замком: окно подскажет, какой шаг остался, и даст кнопку, чтобы его сделать. Например, ELD подключается командой /eld":"Until activation is finished some features are closed so nothing breaks. Steps: survey, plan, ELD, at least one driver group. Tap a locked button: the window tells you which step is left and gives a button to do it. For example, the ELD is connected with /eld","Ключ, чтобы бот видел, где траки":"A key so the bot sees where trucks are","Пока активация не закончена, окно работает только для просмотра.":"Until activation is finished the window is view-only.","Сначала пройдите опрос":"Finish the survey first","Это 4 коротких вопроса в чате с ботом: язык, борд, грузы, ключ ELD. После него функции включатся. Смотреть окно можно и сейчас.":"It is 4 short questions in the bot chat: language, board, freight, ELD key. Then features turn on. You can look around the window already.","Выбрать тариф":"Pick a plan","Выберите и оплатите тариф":"Pick and pay for a plan","Функции включатся после оплаты. Смотреть окно, тарифы и инструкцию можно и сейчас.":"Features turn on after payment. You can look at the window, plans and guide already.","Подключите ELD":"Connect your ELD","Подключить ELD":"Connect ELD","Без ELD бот не видит, где траки, и апдейты будут без местоположения. Бот спросит, какой у вас ELD, и проверит ключ. Это пара минут.":"Without an ELD the bot cannot see where trucks are and updates have no location. The bot asks which ELD you have and checks the key. It takes a couple of minutes.","Добавьте бота в группу водителя":"Add the bot to a driver group","Апдейты идут в группы водителей. Добавьте бота хотя бы в одну группу, и он сам проверит, видит ли сообщения.":"Updates go to driver groups. Add the bot to at least one group and it checks by itself whether it can read messages.","Как добавить":"How to add","Пройти опрос":"Take survey","Группы водителей":"Driver groups","Тариф":"Plan","Понятно":"Got it",
 "Окно переключается на этот язык. Язык ответов бота: /start":"The window switches to this language. The bot's reply language: /start","Окно переключается на этот язык":"The window switches to this language",
 "Рабочее время и часовой пояс":"Working time and time zone","Можно взять выходной на несколько дней?":"Can I take several days off?","Да, в любой момент: «Настройки» → «Рабочее время» → календарь «Разовые выходные». Нажмите на нужные даты и «Сохранить даты». Или командой, например: /off 25.11-27.11 или /off 3. В эти дни бот не пишет в группы и не шлёт сигналы, а когда вы вернётесь, пришлёт сводку.":"Yes, at any time: “Settings” → “Working time” → the “One-off days off” calendar. Tap the dates and “Save dates”. Or with a command, for example: /off 25.11-27.11 or /off 3. On those days the bot does not post in groups or send alerts, and sends a summary when you are back.","Разовые даты":"One-off dates","Разовые выходные и длинные дни":"One-off days off and long days","Нажмите на дату: рабочий день станет выходным, а выходной по неделе станет разово рабочим. Например, отпуск на 3 дня.":"Tap a date: a working day becomes a day off, and a weekly day off becomes a one-off working day. For example, a 3-day vacation.","Нажмите на дату: рабочий день станет выходным (ещё нажатие: 12 ч), а выходной по неделе станет разово рабочим. Например, отпуск на 3 дня.":"Tap a date: a working day becomes a day off (tap again: 12 h), and a weekly day off becomes a one-off working day. For example, a 3-day vacation.","раб":"on","вых":"off","Цветом отмечены разовые изменения. Остальные дни идут по дням недели.":"Colored dates are one-off changes. Other days follow the weekdays.","Сохранить даты":"Save dates","Командой: /off 25.11-27.11 или /off 3 (три дня с сегодня)":"By command: /off 25.11-27.11 or /off 3 (three days from today)","Бот только анализирует. Сводка придёт в начале смены.":"The bot only analyses. A summary comes when the shift starts.",
 "«Настройки» → «Рабочее время» → «Часовой пояс»: США (EST, CST, MST, PST и другие), все зоны России, Узбекистан и соседние страны, Турция, Европа. Или командой, например: /tz us-e":"“Settings” → “Working time” → “Time zone”: USA (EST, CST, MST, PST and more), every Russian zone, Uzbekistan and neighbours, Türkiye, Europe. Or with a command, for example: /tz us-e","Перерыв считает сам бот: рабочее окно делится на число апдейтов в тарифе, от 1 до 4 часов. Для 24/7 это обычно 4 часа, для смены 8 ч на 4 апдейта — 2 часа.":"The bot works out the gap itself: the working window divided by the plan's number of updates, from 1 to 4 hours. For 24/7 it is usually 4 hours, for an 8-h shift with 4 updates it is 2 hours.","Что такое режим «Смена»?":"What is the “Shift” mode?","Тариф дешевле: бот пишет в группы и присылает сигналы только в ваше рабочее время (смена 8, 10 или 12 ч, дни выбираете вы). Вне смены он только анализирует, а в начале смены присылает сводку. Тревоги можно получать всегда. Например: /plan lite shift":"A cheaper plan: the bot posts in groups and sends alerts only during your working time (an 8, 10 or 12-h shift, you pick the days). Outside the shift it only analyses and sends a summary when the shift starts. Alarms can still come at any time. Example: /plan lite shift","Как настроить смену и выходные?":"How do I set the shift and days off?","«Настройки» → «Рабочее время»: начало смены, обычная длина и каждый день недели (выходной, 8, 10 или 12 ч). Или командой, например: /worktime 16:00 8, /worktime sat 12, /worktime sun off":"“Settings” → “Working time”: shift start, usual length and every weekday (off, 8, 10 or 12 h). Or with a command, for example: /worktime 16:00 8, /worktime sat 12, /worktime sun off","Как выбрать часовой пояс?":"How do I pick my time zone?","Почему нельзя ставить апдейты чаще?":"Why can't I set updates more often?","Рабочее время":"Working time","круглосуточно":"around the clock","Выходные":"Days off","Изменить рабочее время":"Change working time","Пн":"Mon","Вт":"Tue","Ср":"Wed","Чт":"Thu","Пт":"Fri","Сб":"Sat","Вс":"Sun","Все функции и агенты на любом тарифе. Отличаются число водителей, апдейтов в день и режим.":"Every plan has all features and agents. Plans differ by drivers, updates a day and mode.","дешевле":"cheaper","в любое время":"any time","Бот пишет в группы в любое время рабочих дней. Выходные дни можно отметить.":"The bot posts in groups at any time on working days. You can mark days off.","Смена → 24/7":"Shift → 24/7","Считается тарифом больше: включается сразу.":"Counts as a bigger plan: starts now.","24/7 → Смена":"24/7 → Shift","Со следующего периода.":"From the next period.","Ваш часовой пояс":"Your time zone","24/7: /plan start full. Свой тариф: /plan. Какие группы в работе: /drivers":"24/7: /plan start full. Your plan: /plan. Which groups are working: /drivers","Когда бот пишет в группы и присылает сигналы":"When the bot posts in groups and sends alerts","Сменить":"Change","Бот пишет в любое время рабочих дней. В выходные он только анализирует.":"The bot posts at any time on working days. On days off it only analyses.","Дни недели":"Weekdays","Работаем":"Working","Сейчас рабочее время":"Working time now","Круглосуточно в рабочие дни":"Around the clock on working days","Длинный день: /worktime sat 12. Выходной: /worktime sun off. Часовой пояс: /tz us-c":"Long day: /worktime sat 12. Day off: /worktime sun off. Time zone: /tz us-c","По нему бот считает апдейты, смену и даты":"The bot uses it for updates, the shift and dates","США":"USA","Россия":"Russia","Другие страны":"Other countries","Пунктир: время только в длинные дни":"Dashed: only on long days","Бот пишет в группы только в ваше рабочее время: смена 8, 10 или 12 ч, дни выбираете вы. Вне смены бот только анализирует, а в начале смены присылает сводку.":"The bot posts in groups only during your working time: an 8, 10 or 12-h shift, you pick the days. Outside the shift it only analyses and sends a summary when the shift starts.","Дешевле · цена уточняется":"Cheaper · price to be set","Бот пишет в группы и присылает сигналы только в смену. Вне смены он только анализирует, а в начале смены присылает сводку: что было, пока вас не было.":"The bot posts in groups and sends alerts only during the shift. Outside it, it only analyses and when the shift starts sends a summary of what happened while you were away.","Начало смены":"Shift start","Обычная длина смены":"Usual shift length","Вых":"Off","Например, обычно 8 ч, а в дни, когда напарник отдыхает, 12 ч.":"For example, usually 8 h, and 12 h on the days your partner rests.","Сейчас не рабочее время":"Not working time now","Тревоги вне смены":"Alarms outside the shift","Авария, поломка, полиция: присылать сразу":"Accident, breakdown, police: send right away","Режим":"Mode","Часовой пояс":"Time zone","Время":"Time","нет":"none","Смена":"Shift",
@@ -1028,7 +1078,7 @@ function render() {
 }
 function renderInner() {
   const app = document.getElementById('app');
-  app.className = 'app' + (isWide() ? ' wide' : '') + (locked() ? ' locked' : '');
+  app.className = 'app' + (isWide() ? ' wide' : '') + (locked() ? ' locked' : '') + (updLocked() ? ' lockupd' : '');
   document.documentElement.lang = S.lang === 'en' ? 'en' : 'ru';
   const active = TAB_OF[S.view] || S.view;
   const side = '<aside class="side"><div class="row" style="gap:10px;padding:0 6px">' + LOGO + '<div><h2 style="font-size:18px">Modenzo AI</h2><div class="xs muted">Расширенный экран</div></div></div><nav class="col" style="gap:4px" aria-label="Разделы">' +
@@ -1043,7 +1093,7 @@ function renderInner() {
     console.error('view ' + S.view, err);
     body = '<div class="card pad col" style="gap:10px;border-radius:18px;border-color:var(--amber-bd)"><b>Этот экран не открылся</b><div class="small sub" style="line-height:1.5">Пришлите скриншот разработчику: ' + esc(S.view + ': ' + (err && err.message || err)) + '</div><button class="btn" data-go="home">На главную</button></div>';
   }
-  app.innerHTML = side + '<div class="main"><div class="content">' + lockBanner() + body + '</div>' + tabbar + '</div>' + sheet;
+  app.innerHTML = side + '<div class="main"><div class="content">' + (S.view === 'home' || S.view === 'settings' || locked() ? activationCard() : '') + body + '</div>' + tabbar + '</div>' + sheet + lockSheetHtml();
   if (S.lang === 'en') translateDom(app);
   const q = document.getElementById('q');
   if (q) q.addEventListener('input', (e) => { S.q = e.target.value; const pos = e.target.selectionStart; render(); const n = document.getElementById('q'); if (n) { n.focus(); n.setSelectionRange(pos, pos); } });
@@ -1054,11 +1104,16 @@ document.addEventListener('click', (e) => {
   try { onClick(e); } catch (err) { console.error('click', err); toast('Ошибка: ' + (err && err.message || err)); }
 });
 function onClick(e) {
-  if (e.target.classList && e.target.classList.contains('sheet-bg')) { S.sheet = false; render(); return; }
+  if (e.target.classList && e.target.classList.contains('sheet-bg')) { S.sheet = false; S.lockSheet = ''; render(); return; }
   const t = e.target && e.target.nodeType === 3 ? e.target.parentElement : e.target;
   const b = t && t.closest ? t.closest('button') : null;
   if (!b) return;
   const d = b.dataset;
+  if (d.act === 'closelock') { S.lockSheet = ''; render(); return; }
+  if (d.setup) { S.lockSheet = ''; render(); sendToBot('setup-' + d.setup, d.setup === 'eld' ? '/eld' : '/start'); return; }
+  if (d.go && S.lockSheet) S.lockSheet = '';
+  const miss = blockedBy(d);
+  if (miss) { S.lockSheet = miss; render(); return; }
   if (locked() && (d.upd || d.group || d.notif || d.slot || d.smode || d.son || d.lockgo || d.act === 'save' || d.act === 'launch' || d.act === 'stop')) {
     toast(S.access === 'survey' ? 'Доступно после опроса /start' : 'Доступно после оплаты тарифа');
     return;
@@ -1107,7 +1162,7 @@ function onClick(e) {
   else if (d.act === 'closesheet') { S.sheet = false; }
   else if (d.act === 'copylink') { const url = location.origin + location.pathname + '?view=board'; try { navigator.clipboard.writeText(url).then(() => toast('Ссылка скопирована: откройте её на компьютере'), () => toast(url)); } catch (x) { toast(url); } S.sheet = false; }
   else if (d.act === 'unlock') { toast(S.access === 'survey' ? 'Вернитесь в чат с ботом и нажмите /start' : 'Оплата появится позже, после запуска сервера'); return; }
-  else if (d.access) S.access = d.access;
+  else if (d.access) { S.access = d.access; syncAct(); }
   else if (d.act === 'fs') { try { if (fsOn()) tg.exitFullscreen(); else tg.requestFullscreen(); } catch (x) {} return; }
   else if (d.act === 'compact') { S.compact = !S.compact; if (S.compact && (S.view === 'board' || S.view === 'drivers')) S.view = 'home'; }
   else return;
