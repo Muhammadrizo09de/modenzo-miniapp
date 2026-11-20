@@ -348,6 +348,7 @@ const S = {
   upd:'pending', groups:{ a:true, b:true, team:true }, feat:'all', cat:'all', open:'q1',
   lang:'ru', notif:{ late:true, silent:true, group:true },
   tab:'transit', sel:'1042', q:'', showNew:true, queue:{}, compact:false,
+  etaF:{ truck:'', addr:'', appt:'' },
   updText:'Update Load# 1042\nRolling near Barstow, CA, 62 mph\nNext stop (3 of 4): PDX9 Troutdale, OR\nAppt Fri 16:20 PST\nMiles left 612 · drive 9h 40m (+30m break)\nTraffic +25 min in next 40 mi\nETA 17:05 PST · probably late 45 min', updEditing:false, updDraft:'', updEdited:false,
   access:'active', fromBot:false, act:{ s:1, p:1, e:1, g:1 }, lockSheet:''
 };
@@ -643,9 +644,21 @@ function vUpdates() {
     '<div class="col" style="gap:10px"><div class="label">Точность ETA</div><div class="card pad row" style="gap:14px;border-radius:18px"><h2 style="font-size:28px;color:#4A5B7A">—</h2><div class="small muted" style="line-height:1.5">Бот сравнит прогноз с реальным прибытием по GPS и покажет точность за последние 30 прогнозов. Скоро.</div></div></div>';
 }
 
+function etaCommand() { const f = S.etaF; return '/eta ' + (f.truck.trim() || '2080') + ' ' + (f.addr.trim() || 'PDX9, Troutdale, OR') + (f.appt.trim() ? '; ' + f.appt.trim() : ''); }
 function vEta() {
-  const l = LOADS[0];
-  return mzHead('Load 1042', 'Расчёт ETA · пример данных', 'home') +
+  const l = LOADS[0], owner = S.plan === 'owner' || !S.fromBot;
+  const inp = (id, ph, v) => '<input id="' + id + '" placeholder="' + ph + '" value="' + esc(v) + '" style="width:100%;height:46px;padding:0 14px;border-radius:12px;border:1px solid var(--line);background:#0B1220;color:var(--text);font:inherit;font-size:15px">';
+  return mzHead('Расчёт ETA', 'От GPS трака до стопа: пробки, часы водителя, погода', 'home') +
+    '<div class="card col" style="padding:16px;border-radius:18px;gap:10px">' +
+      '<b style="font-size:15px">Посчитать ETA</b>' +
+      inp('etaTruck', 'Номер трака, например 2080', S.etaF.truck) +
+      inp('etaAddr', 'Адрес стопа, например PDX9, Troutdale, OR', S.etaF.addr) +
+      inp('etaAppt', 'Appointment по времени стопа, например 21.11 16:20', S.etaF.appt) +
+      '<div class="xs muted" style="line-height:1.5">Штат в адресе (OR, TX...) нужен, чтобы знать часовой пояс стопа. Appointment можно не писать.</div>' +
+      '<button class="btn primary" style="height:48px" data-act="etarun">Посчитать в чате с ботом</button>' +
+      '<div class="xs muted" style="line-height:1.5">Ответ придёт в чат с ботом.' + (owner ? '' : ' Пока /eta работает только у владельца бота: GPS берётся из его Samsara. У вас заработает после подключения вашего ELD на сервере (в плане).') + '</div>' +
+      '<div class="mono" style="padding:10px 12px;font-size:13px">' + esc(etaCommand()) + '</div></div>' +
+    '<div class="label">Пример разбора: Load 1042</div>' +
     '<div class="card col" style="padding:18px;gap:12px;background:var(--red-bg);border-color:var(--red-bd)"><span class="label" style="color:var(--red)">Probably late</span><div class="row" style="gap:8px;align-items:baseline"><h2 style="font-size:44px;line-height:1">+45</h2><span style="color:#FFC4C4">мин опоздания</span></div><div class="grid2"><div style="background:#120C0E;border-radius:14px;padding:10px 12px"><div class="xs" style="color:#C9A5A8">Приедет</div><b style="font-size:17px">17:05 PST</b></div><div style="background:#120C0E;border-radius:14px;padding:10px 12px"><div class="xs" style="color:#C9A5A8">Окно на складе</div><b style="font-size:17px">16:20 PST</b></div></div></div>' +
     '<div class="col" style="gap:10px"><div class="label">Цепочка стопов</div><div class="card pad col" style="gap:12px;border-radius:18px">' + stopsHtml(l.stops) + '<div class="xs" style="color:var(--amber)">Стоп 4 по цепочке: впритык, запас 10 мин</div></div></div>' +
     '<div class="col" style="gap:10px"><div class="label">Из чего сложилось время</div><div class="listcard list">' +
@@ -820,7 +833,8 @@ function vSettings() {
   const nl = [['late','Груз опаздывает','Сразу, как только расчёт показал опоздание'],['silent','Водитель молчит','Если долго нет ответа в группе'],['group','Проблема с группой или ELD','Бот не видит чат или ключ перестал работать']];
   return '<h1 class="title">Настройки</h1>' +
     '<button class="card row" data-go="help" style="text-align:left;padding:16px;background:var(--mint-bg);border-color:var(--mint-bd)"><span class="icon" style="width:48px;height:48px;border-radius:14px;background:var(--mint)">' + ic('help', 24, '#06241A', 2.2) + '</span><span class="col" style="flex:1"><b style="font-size:16px">Инструкция и вопросы</b><span class="small" style="color:#C7E9D9">Как всё работает: ' + FAQ.length + ' ответов</span></span>' + ic('chev', 18, 'var(--mint-t)', 2) + '</button>' +
-    '<div class="col" style="gap:10px"><div class="label">Язык бота</div><div style="display:grid;grid-template-columns:repeat(4,1fr);gap:8px">' + [['ru','RU'],['en','EN'],['tr','TR'],['uz','UZ']].map((l) => '<button class="seg' + (S.lang === l[0] ? ' on' : '') + '" data-lang="' + l[0] + '">' + l[1] + '</button>').join('') + '</div><div class="xs muted">' + (S.lang === 'tr' || S.lang === 'uz' ? 'Этот язык появится позже, пока окно и бот на русском' : (S.fromBot ? 'Окно переключается на этот язык. Язык ответов бота: /start' : 'Окно переключается на этот язык')) + '</div></div>' +
+    '<div class="grid2"><button class="btn" style="height:48px" data-setup="support">Написать в поддержку</button><button class="btn" style="height:48px" data-setup="help">Все команды бота</button></div>' +
+    '<div class="col" style="gap:10px"><div class="label">Язык бота</div><div style="display:grid;grid-template-columns:repeat(4,1fr);gap:8px">' + [['ru','RU'],['en','EN'],['tr','TR'],['uz','UZ']].map((l) => '<button class="seg' + (S.lang === l[0] ? ' on' : '') + '" data-lang="' + l[0] + '">' + l[1] + '</button>').join('') + '</div><div class="xs muted">' + (S.lang === 'tr' || S.lang === 'uz' ? 'Этот язык появится позже, пока окно и бот на русском' : (S.fromBot ? 'Окно и бот переключаются на этот язык' : 'Окно переключается на этот язык')) + '</div></div>' +
     (S.fromBot ? '' : '<div class="col" style="gap:10px"><div class="label">Доступ (демо)</div><div class="wrap">' + [['active','Оплачено'],['survey','Опрос не пройден'],['unpaid','Не оплачено']].map((x) => '<button class="pill' + (S.access === x[0] ? ' on' : '') + '" data-access="' + x[0] + '">' + x[1] + '</button>').join('') + '</div><div class="xs muted">Переключатель только для показа. В настоящем боте статус придёт с сервера.</div></div>') +
     '<div class="col" style="gap:10px"><div class="label">Рабочее время</div><div class="listcard list">' + [['Часовой пояс', tzLabel()],['Режим', modeName(S.pm)],[S.pm === 'shift' ? 'Смена' : 'Время', S.pm === 'shift' ? windowText() : 'круглосуточно'],['Выходные', DAYN.filter((d, i) => !dayLen(i)).join(', ') || 'нет'],['Разовые даты', Object.keys(S.offMap).filter((k) => k >= dayKey(0)).length ? Object.keys(S.offMap).filter((k) => k >= dayKey(0)).length + ' дн.' : 'нет']].map((r) => '<div class="row" style="justify-content:space-between;gap:12px"><span style="flex:none">' + r[0] + '</span><span class="small muted" style="text-align:right">' + esc(r[1]) + '</span></div>').join('') + '<button data-go="work" class="row" style="justify-content:space-between;width:100%;background:none;border:0;font-size:15px;text-align:left;color:var(--mint-t);font-weight:600"><span>Изменить рабочее время</span>' + ic('chev', 16, 'var(--mint-t)', 2) + '</button></div></div>' +
     '<div class="col" style="gap:10px"><div class="label">Расписание апдейтов</div><div class="listcard list">' + [['Время', S.slots.slice().sort().join(', ')],['Часовой пояс', tzLabel()],['Режим', S.smode === 'auto' ? 'Авто' : 'Сначала показать мне'],['Апдейты', S.son ? 'включены' : 'выключены']].map((r) => '<div class="row" style="justify-content:space-between"><span>' + r[0] + '</span><span class="small muted">' + esc(r[1]) + '</span></div>').join('') + '<button data-go="shift" class="row" style="justify-content:space-between;width:100%;background:none;border:0;font-size:15px;text-align:left;color:var(--mint-t);font-weight:600"><span>Изменить расписание</span>' + ic('chev', 16, 'var(--mint-t)', 2) + '</button></div><div class="xs muted">Или командой в чате, например: /times 08:00 14:00 20:00</div></div>' +
@@ -868,6 +882,7 @@ const NAV = [['home','Главная','home'],['board','Доска грузов'
 const TAB_OF = { shift:'home', eta:'home', board:'home', drivers:'home', groups:'home', help:'settings', plans:'settings', agents:'settings', work:'settings', tz:'settings' };
 
 const EN = {
+"Расчёт ETA":"ETA calculation","От GPS трака до стопа: пробки, часы водителя, погода":"From truck GPS to the stop: traffic, driver hours, weather","Посчитать ETA":"Calculate ETA","Номер трака, например 2080":"Truck number, for example 2080","Адрес стопа, например PDX9, Troutdale, OR":"Stop address, for example PDX9, Troutdale, OR","Appointment по времени стопа, например 21.11 16:20":"Appointment in stop time, for example 21.11 16:20","Штат в адресе (OR, TX...) нужен, чтобы знать часовой пояс стопа. Appointment можно не писать.":"The state in the address (OR, TX...) tells the stop time zone. The appointment is optional.","Посчитать в чате с ботом":"Calculate in the bot chat","Ответ придёт в чат с ботом.":"The answer comes to the bot chat.","Ответ придёт в чат с ботом. Пока /eta работает только у владельца бота: GPS берётся из его Samsara. У вас заработает после подключения вашего ELD на сервере (в плане).":"The answer comes to the bot chat. For now /eta works only for the bot owner: GPS comes from the owner's Samsara. It works for you after your ELD is connected on the server (planned).","Пример разбора: Load 1042":"Sample breakdown: Load 1042","Напишите номер трака и адрес стопа":"Write the truck number and the stop address","Команда скопирована: вставьте её в чат и отправьте":"Command copied: paste it in the chat and send","Окно и бот переключаются на этот язык":"The window and the bot switch to this language","Написать в поддержку":"Write to support","Все команды бота":"All bot commands",
 "Modenzo AI · версия окна 2026-11-20 14:40":"Modenzo AI · window version 2026-11-20 14:40",
 "Это пример. Настоящие черновики приходят в чат с ботом с теми же кнопками: «Отправить», «Изменить», «Пропустить».":"This is an example. Real drafts come to the bot chat with the same buttons: “Send”, “Edit”, “Skip”.","Сохранить текст":"Save text","Отмена":"Cancel","Текст изменён вами":"Text edited by you","Текст сохранён. Нажмите «Отправить»":"Text saved. Tap “Send”",
 "Активация":"Activation","Опрос":"Survey","7 коротких вопросов в чате с ботом":"7 short questions in the bot chat","Выбрать и оплатить":"Pick and pay","Ключ на проверке":"Key being checked","Бот добавлен хотя бы в одну группу":"The bot is in at least one group","Настройки уже можно менять. Апдейты включатся после всех шагов.":"You can change settings already. Updates turn on after all steps.","Отправить ключ заново":"Send the key again","Ключ ELD на проверке":"ELD key being checked","Ключ получен и проверяется. Как только он заработает, апдейты можно будет включить. Если ключ неверный, отправьте новый.":"The key is received and being checked. Once it works you can turn updates on. If the key is wrong, send a new one.","Почему некоторые кнопки с замком?":"Why do some buttons have a lock?","Пока активация не закончена, часть функций закрыта, чтобы ничего не сломать. Шаги: опрос, тариф, ELD, хотя бы одна группа водителя. Нажмите на кнопку с замком: окно подскажет, какой шаг остался, и даст кнопку, чтобы его сделать. Например, ELD подключается командой /eld":"Until activation is finished some features are closed so nothing breaks. Steps: survey, plan, ELD, at least one driver group. Tap a locked button: the window tells you which step is left and gives a button to do it. For example, the ELD is connected with /eld","Ключ, чтобы бот видел, где траки":"A key so the bot sees where trucks are","Пока активация не закончена, окно работает только для просмотра.":"Until activation is finished the window is view-only.","Сначала пройдите опрос":"Finish the survey first","Это 7 коротких вопросов в чате с ботом: борд, грузы, ELD, коллеги, часовой пояс, смена, число водителей. После него функции включатся. Смотреть окно можно и сейчас.":"It is 7 short questions in the bot chat: board, freight, ELD, teammates, time zone, shift, number of drivers. Then features turn on. You can look around the window already.","Выбрать тариф":"Pick a plan","Выберите и оплатите тариф":"Pick and pay for a plan","Функции включатся после оплаты. Смотреть окно, тарифы и инструкцию можно и сейчас.":"Features turn on after payment. You can look at the window, plans and guide already.","Подключите ELD":"Connect your ELD","Подключить ELD":"Connect ELD","Без ELD бот не видит, где траки, и апдейты будут без местоположения. Бот спросит, какой у вас ELD, и проверит ключ. Это пара минут.":"Without an ELD the bot cannot see where trucks are and updates have no location. The bot asks which ELD you have and checks the key. It takes a couple of minutes.","Добавьте бота в группу водителя":"Add the bot to a driver group","Апдейты идут в группы водителей. Добавьте бота хотя бы в одну группу, и он сам проверит, видит ли сообщения.":"Updates go to driver groups. Add the bot to at least one group and it checks by itself whether it can read messages.","Как добавить":"How to add","Пройти опрос":"Take survey","Группы водителей":"Driver groups","Тариф":"Plan","Понятно":"Got it",
@@ -1103,6 +1118,7 @@ function renderInner() {
   }
   app.innerHTML = side + '<div class="main"><div class="content">' + (S.view === 'home' || S.view === 'settings' || locked() ? activationCard() : '') + body + '</div>' + tabbar + '</div>' + sheet + lockSheetHtml();
   if (S.lang === 'en') translateDom(app);
+  [['etaTruck','truck'],['etaAddr','addr'],['etaAppt','appt']].forEach((x) => { const el = document.getElementById(x[0]); if (el) el.addEventListener('input', (e) => { S.etaF[x[1]] = e.target.value; const mono = el.parentNode.querySelector('.mono'); if (mono) mono.textContent = etaCommand(); }); });
   const ta = document.getElementById('updta');
   if (ta) ta.addEventListener('input', (e) => { S.updDraft = e.target.value; });
   const q = document.getElementById('q');
@@ -1120,7 +1136,7 @@ function onClick(e) {
   if (!b) return;
   const d = b.dataset;
   if (d.act === 'closelock') { S.lockSheet = ''; render(); return; }
-  if (d.setup) { S.lockSheet = ''; render(); sendToBot('setup-' + d.setup, d.setup === 'eld' ? '/eld' : '/start'); return; }
+  if (d.setup) { S.lockSheet = ''; render(); sendToBot('setup-' + d.setup, ({ eld:'/eld', support:'/support', help:'/help' })[d.setup] || '/start'); return; }
   if (d.go && S.lockSheet) S.lockSheet = '';
   const miss = blockedBy(d);
   if (miss) { S.lockSheet = miss; render(); return; }
@@ -1141,6 +1157,14 @@ function onClick(e) {
   if (d.act === 'updedit') { S.updEditing = true; S.updDraft = S.updText; render(); const ta = document.getElementById('updta'); if (ta) { ta.focus(); } return; }
   if (d.act === 'updsave') { const v = (S.updDraft || '').trim(); if (v) { S.updText = v; S.updEdited = true; } S.updEditing = false; render(); toast('Текст сохранён. Нажмите «Отправить»'); return; }
   if (d.act === 'updcancel') { S.updEditing = false; render(); return; }
+  if (d.act === 'etarun') {
+    if (!S.etaF.truck.trim() || !S.etaF.addr.trim()) { toast('Напишите номер трака и адрес стопа'); return; }
+    const cmd = etaCommand();
+    try { navigator.clipboard.writeText(cmd).then(() => {}, () => {}); } catch (x) {}
+    if (tg && S.bot && tg.openTelegramLink) { toast('Команда скопирована: вставьте её в чат и отправьте'); setTimeout(() => tg.openTelegramLink('https://t.me/' + S.bot), 600); }
+    else toast('Отправьте боту команду: ' + cmd);
+    return;
+  }
   if (d.pm) { S.pm = d.pm; render(); return; }
   if (d.tzc) { S.tzSel = d.tzc; render(); return; }
   if (d.act === 'savewt') { saveWt(); return; }
@@ -1164,7 +1188,7 @@ function onClick(e) {
   else if (d.feat) S.feat = d.feat;
   else if (d.cat) S.cat = d.cat;
   else if (d.faq) S.open = S.open === d.faq ? '' : d.faq;
-  else if (d.lang) { S.lang = d.lang; try { localStorage.setItem('mz_lang', d.lang); } catch (x) {} }
+  else if (d.lang) { S.lang = d.lang; try { localStorage.setItem('mz_lang', d.lang); } catch (x) {} if (S.fromBot && S.bot && (d.lang === 'ru' || d.lang === 'en')) { render(); sendToBot('lang-' + d.lang, '/language'); return; } }
   else if (d.notif) S.notif[d.notif] = !S.notif[d.notif];
   else if (d.tab) S.tab = d.tab;
   else if (d.sel) S.sel = d.sel;
