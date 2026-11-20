@@ -100,6 +100,7 @@ h1,h2,h3{margin:0;font-family:'Space Grotesk',Inter,sans-serif;letter-spacing:-0
 <body>
 <div id="app" class="app"></div>
 <script>
+(function () {
 'use strict';
 const tg = window.Telegram && window.Telegram.WebApp ? window.Telegram.WebApp : null;
 if (tg) { try { tg.ready(); tg.expand(); tg.setHeaderColor && tg.setHeaderColor('#0A101C'); tg.setBackgroundColor && tg.setBackgroundColor('#0A101C'); } catch (e) {} }
@@ -570,7 +571,7 @@ function nextSlot() {
 function timesCommand() { return '/times ' + S.slots.slice().sort().join(' '); }
 
 /* ---------- экраны ---------- */
-function head(title, sub, backTo) {
+function mzHead(title, sub, backTo) {
   return '<div class="row">' + (backTo ? '<button class="back" data-go="' + backTo + '" aria-label="Назад">' + ic('back', 20, '#EAF0FA', 2) + '</button>' : '') +
     '<div><h1 class="title" style="font-size:' + (backTo ? 24 : 26) + 'px">' + title + '</h1>' + (sub ? '<div class="small muted" style="margin-top:3px">' + sub + '</div>' : '') + '</div></div>';
 }
@@ -609,7 +610,7 @@ function vShift() {
   const chk = schedCheck(S.slots);
   const hours = [];
   for (let h = 0; h < 24; h++) hours.push((h < 10 ? '0' : '') + h + ':00');
-  return head('Расписание апдейтов', 'Бот работает 24/7 и пишет в группы только в это время', 'home') +
+  return mzHead('Расписание апдейтов', 'Бот работает 24/7 и пишет в группы только в это время', 'home') +
     '<div class="col" style="gap:10px"><div class="label">Время апдейтов · ' + tzLabel() + '</div>' +
       '<div style="display:grid;grid-template-columns:repeat(6,minmax(0,1fr));gap:6px">' + hours.map((t) => { const st = hourState(t); return st === 'out' && S.slots.indexOf(t) < 0 ? '<button class="seg" style="height:44px;font-size:14px;opacity:.3" data-slotoff="' + t + '" aria-label="' + t + ' вне смены">' + t + '</button>' : '<button class="seg' + (S.slots.indexOf(t) >= 0 ? ' on' : '') + '" style="height:44px;font-size:14px' + (st === 'long' ? ';border-style:dashed' : '') + '" data-slot="' + t + '">' + t + '</button>'; }).join('') + '</div>' +
       (chk.plan ? '<div class="card col" style="padding:14px 16px;border-radius:16px;gap:10px;border-color:var(--blue-bd);background:#0F1A30"><div class="row" style="align-items:flex-start;gap:10px"><span class="icon" style="width:34px;height:34px;border-radius:10px;background:var(--blue-bg);color:var(--blue)">' + ic('doc', 18, 'currentColor', 2) + '</span><span class="col" style="flex:1;gap:3px"><b style="font-size:14px">' + chk.msg + '</b><span class="small sub" style="line-height:1.45">' + (chk.up ? 'Для ' + S.slots.length + ' апдейтов нужен тариф ' + chk.up[1] + '. Или уберите лишнее время.' : 'Больше 12 апдейтов в день нельзя. Уберите лишнее время.') + '</span></span></div>' + (chk.up ? '<button class="btn primary" style="height:42px;font-size:14px" data-plan="' + chk.up[0] + '">Перейти на ' + chk.up[1] + '</button>' : '') + '</div>'
@@ -629,7 +630,7 @@ function vShift() {
 function vUpdates() {
   const pending = S.upd === 'pending', sent = S.upd === 'sent';
   const badge = pending ? ['Ждёт вашего решения','var(--amber)','var(--amber-bd)'] : (sent ? ['Отправлено (демо)','var(--mint-t)','var(--mint-bd)'] : ['Пропущено','var(--muted)','var(--line)']);
-  return head('Апдейты', 'Ничего не уходит водителям без вас') +
+  return mzHead('Апдейты', 'Ничего не уходит водителям без вас') +
     '<div class="card pad col" style="gap:14px;border-color:' + badge[2] + '"><div class="row" style="justify-content:space-between"><span class="label" style="color:' + badge[1] + '">' + badge[0] + '</span><span class="xs muted">Группа Driver A · 20:00</span></div>' +
     '<div class="mono">Update Load# 1042\nRolling near Barstow, CA, 62 mph\nNext stop (3 of 4): PDX9 Troutdale, OR\nAppt Fri 16:20 PST\nMiles left 612 · drive 9h 40m (+30m break)\nTraffic +25 min in next 40 mi\nETA 17:05 PST · probably late 45 min</div>' +
     (pending ? '<div style="display:grid;grid-template-columns:repeat(3,1fr);gap:8px"><button class="btn primary" data-upd="sent">Отправить</button><button class="btn">Изменить</button><button class="btn ghost" data-upd="skipped">Пропустить</button></div>' : '<button class="btn ghost" data-upd="pending">Вернуть (демо)</button>') + '</div>' +
@@ -639,7 +640,7 @@ function vUpdates() {
 
 function vEta() {
   const l = LOADS[0];
-  return head('Load 1042', 'Расчёт ETA · пример данных', 'home') +
+  return mzHead('Load 1042', 'Расчёт ETA · пример данных', 'home') +
     '<div class="card col" style="padding:18px;gap:12px;background:var(--red-bg);border-color:var(--red-bd)"><span class="label" style="color:var(--red)">Probably late</span><div class="row" style="gap:8px;align-items:baseline"><h2 style="font-size:44px;line-height:1">+45</h2><span style="color:#FFC4C4">мин опоздания</span></div><div class="grid2"><div style="background:#120C0E;border-radius:14px;padding:10px 12px"><div class="xs" style="color:#C9A5A8">Приедет</div><b style="font-size:17px">17:05 PST</b></div><div style="background:#120C0E;border-radius:14px;padding:10px 12px"><div class="xs" style="color:#C9A5A8">Окно на складе</div><b style="font-size:17px">16:20 PST</b></div></div></div>' +
     '<div class="col" style="gap:10px"><div class="label">Цепочка стопов</div><div class="card pad col" style="gap:12px;border-radius:18px">' + stopsHtml(l.stops) + '<div class="xs" style="color:var(--amber)">Стоп 4 по цепочке: впритык, запас 10 мин</div></div></div>' +
     '<div class="col" style="gap:10px"><div class="label">Из чего сложилось время</div><div class="listcard list">' +
@@ -655,7 +656,7 @@ function stopsHtml(stops) {
 
 function vGroups() {
   const owner = S.plan === 'owner', onN = S.glist.filter((g) => g.on).length;
-  return head('Группы', 'Бот работает с группами в тарифе 24/7. Писать в них будет только в выбранное время апдейтов.') +
+  return mzHead('Группы', 'Бот работает с группами в тарифе 24/7. Писать в них будет только в выбранное время апдейтов.') +
     planCard(false) +
     (owner ? '<div class="xs muted" style="line-height:1.5">Вы владелец: бот работает со всеми группами UNIT, лимита нет.</div>' : '') +
     (!S.gReal ? '<div class="xs muted">Пример данных. Ваши группы появятся здесь, когда вы добавите бота в группы водителей.</div>' : '') +
@@ -676,7 +677,7 @@ function saveGroups() {
 }
 function vPlans() {
   const owner = S.plan === 'owner', total = S.used + S.pz, vm = S.planMode || S.pm;
-  return head('Тарифы', 'Все функции и агенты на любом тарифе. Отличаются число водителей, апдейтов в день и режим.', 'settings') +
+  return mzHead('Тарифы', 'Все функции и агенты на любом тарифе. Отличаются число водителей, апдейтов в день и режим.', 'settings') +
     planCard(false) +
     '<div style="display:grid;grid-template-columns:1fr 1fr;gap:8px">' + [['shift','Смена','дешевле'],['full','24/7','в любое время']].map((m) => '<button class="seg' + (vm === m[0] ? ' on' : '') + '" style="height:56px;display:flex;flex-direction:column;align-items:center;justify-content:center;gap:2px" data-pview="' + m[0] + '"><b style="font-size:15px">' + m[1] + '</b><span class="xs">' + m[2] + '</span></button>').join('') + '</div>' +
     '<div class="xs muted" style="line-height:1.5">' + (vm === 'shift' ? 'Бот пишет в группы только в ваше рабочее время: смена 8, 10 или 12 ч, дни выбираете вы. Вне смены бот только анализирует, а в начале смены присылает сводку.' : 'Бот пишет в группы в любое время рабочих дней. Выходные дни можно отметить.') + '</div>' +
@@ -704,7 +705,7 @@ function vPlans() {
 function vWork() {
   const owner = S.plan === 'owner', shift = S.pm === 'shift', now = workingNow();
   const lenBtns = [['0','Вых'],['8','8 ч'],['a','10 ч'],['c','12 ч']];
-  return head('Рабочее время', 'Когда бот пишет в группы и присылает сигналы', 'settings') +
+  return mzHead('Рабочее время', 'Когда бот пишет в группы и присылает сигналы', 'settings') +
     '<button class="card row" data-go="tz" style="text-align:left;padding:14px 16px;border-radius:16px"><span class="col" style="flex:1;gap:3px;min-width:0"><span class="small muted">Часовой пояс</span><b style="font-size:15px">' + tzLabel() + '</b><span class="xs muted">Сейчас у вас ' + nowInTz() + '</span></span>' + ic('chev', 18, 'var(--muted)', 2) + '</button>' +
     '<div class="col" style="gap:10px"><div class="label">Режим</div>' +
       (owner ? '<div style="display:grid;grid-template-columns:1fr 1fr;gap:8px">' + [['shift','Смена'],['full','24/7']].map((m) => '<button class="seg' + (S.pm === m[0] ? ' on' : '') + '" data-pm="' + m[0] + '">' + m[1] + '</button>').join('') + '</div>'
@@ -746,7 +747,7 @@ function saveOff() {
 }
 function vTz() {
   const sel = S.tzSel || tzRow(S.tzc)[0];
-  return head('Часовой пояс', 'По нему бот считает апдейты, смену и даты', 'work') +
+  return mzHead('Часовой пояс', 'По нему бот считает апдейты, смену и даты', 'work') +
     [['us','США'],['ru','Россия'],['other','Другие страны']].map((g) => '<div class="col" style="gap:8px"><div class="label">' + g[1] + '</div><div class="listcard list">' +
       TZS.filter((t) => t[2] === g[0]).map((t) => '<button class="row" data-tzc="' + t[0] + '" style="justify-content:space-between;width:100%;background:none;border:0;font-size:14px;text-align:left;gap:10px"><span>' + (S.lang === 'en' ? t[4] : t[3]) + '</span><span style="flex:none;width:18px;height:18px;border-radius:50%;border:' + (sel === t[0] ? '6px solid var(--mint)' : '2px solid #4A5B7A') + '"></span></button>').join('') + '</div></div>').join('') +
     '<button class="btn primary" style="height:56px;font-size:17px;position:sticky;bottom:96px" data-act="savetz">Сохранить</button>';
@@ -768,7 +769,7 @@ const AGENTS = [
 function vAgents() {
   const owner = S.plan === 'owner';
   const note = (k) => (k === 'stopped' || k === 'gps') && !owner ? '<span class="xs" style="color:var(--blue)">Для вас: после подключения вашего ELD к серверу (в плане)</span>' : (k === 'late' ? '<span class="xs" style="color:var(--blue)">Ждёт подключения борда</span>' : '');
-  return head('Агенты и автоответ', 'Проверяют группы 24/7 и пишут только вам', 'settings') +
+  return mzHead('Агенты и автоответ', 'Проверяют группы 24/7 и пишут только вам', 'settings') +
     '<div class="col" style="gap:10px">' + AGENTS.map((a) => {
       const on = S.ag.on[a[0]];
       return '<div class="card col" style="padding:14px 16px;border-radius:18px;gap:10px"><div class="row"><span class="col" style="flex:1;gap:3px;min-width:0"><b style="font-size:15px">' + a[1] + '</b><span class="small sub" style="line-height:1.45">' + a[2] + '</span>' + note(a[0]) + '</span><button class="toggle' + (on ? ' on' : '') + '" data-agt="' + a[0] + '" aria-label="' + a[1] + '"><span></span></button></div>' +
@@ -789,7 +790,7 @@ function vFeatures() {
   const all = [].concat.apply([], FEATURES.map((s) => s[1]));
   const n = (k) => all.filter((x) => x[2] === k).length;
   const filters = [['all','Все · ' + all.length],[D,'Есть · ' + n(D)],[W,'В разработке · ' + n(W)],[P,'План · ' + n(P)]];
-  return head('Все функции', 'Что уже работает, что в разработке и что в плане. Все функции есть на любом тарифе.') +
+  return mzHead('Все функции', 'Что уже работает, что в разработке и что в плане. Все функции есть на любом тарифе.') +
     '<div class="wrap">' + filters.map((f) => '<button class="pill' + (S.feat === f[0] ? ' on' : '') + '" data-feat="' + f[0] + '">' + f[1] + '</button>').join('') + '</div>' +
     FEATURES.map((sec) => {
       const items = sec[1].filter((x) => S.feat === 'all' || x[2] === S.feat);
@@ -800,7 +801,7 @@ function vFeatures() {
 
 function vHelp() {
   const items = FAQ.map((x, i) => ['q' + (i + 1)].concat(x)).filter((x) => S.cat === 'all' || x[1] === S.cat);
-  return head('Инструкция', FAQ.length + ' вопросов и ответов', 'settings') +
+  return mzHead('Инструкция', FAQ.length + ' вопросов и ответов', 'settings') +
     '<div class="card pad col" style="gap:12px"><b>Быстрый старт за 3 шага</b>' + ['Нажмите /start и ответьте на 4 коротких вопроса.','Добавьте бота в группы водителей и подключите ELD.','Выберите время апдейтов в «Расписании».'].map((t, i) => '<div class="row" style="align-items:flex-start"><span class="icon" style="width:26px;height:26px;border-radius:50%;background:var(--mint);color:var(--on-mint);font-weight:700;font-size:13px">' + (i + 1) + '</span><span style="font-size:14px;line-height:1.45">' + t + '</span></div>').join('') + '</div>' +
     '<div class="wrap">' + FAQ_CATS.map((c) => '<button class="pill' + (S.cat === c[0] ? ' on' : '') + '" data-cat="' + c[0] + '">' + c[1] + '</button>').join('') + '</div>' +
     '<div class="col" style="gap:8px">' + items.map((x) => {
@@ -849,7 +850,7 @@ function vBoard() {
 }
 
 function vDrivers() {
-  return head('Водители', 'Кто едет, кто стоит и сколько часов вождения осталось. Пример данных.', isWide() ? '' : 'home') +
+  return mzHead('Водители', 'Кто едет, кто стоит и сколько часов вождения осталось. Пример данных.', isWide() ? '' : 'home') +
     '<div style="display:grid;grid-template-columns:repeat(auto-fill,minmax(260px,1fr));gap:14px">' + LOADS.filter((l) => l.truckNo !== '—').map((l) => {
       const c = l.hosPct < 35 ? 'var(--red)' : (l.hosPct < 60 ? 'var(--amber)' : 'var(--mint)');
       return '<div class="card pad col" style="gap:12px;border-radius:18px"><div class="row"><span class="icon" style="width:42px;height:42px;border-radius:12px;background:var(--raised);font-weight:700;font-size:14px">' + l.driver.split(' ').map((w) => w[0]).join('') + '</span><div style="flex:1;min-width:0"><div style="font-weight:600">' + esc(l.driver) + '</div><div class="xs muted">Трак ' + l.truckNo + ' · Load ' + l.id + '</div></div><span class="row xs" style="gap:6px;font-weight:600;color:' + TC(l.truck) + '"><span class="dot" style="background:' + TC(l.truck) + '"></span>' + l.truck + '</span></div><div class="small sub">' + esc(l.truckSub) + '</div><div class="col" style="gap:6px"><div class="row xs muted" style="justify-content:space-between"><span>Осталось вождения</span><b style="color:var(--text)">' + l.hos + '</b></div><div style="height:6px;border-radius:3px;background:var(--line);overflow:hidden"><div style="height:100%;width:' + l.hosPct + '%;background:' + c + '"></div></div></div></div>';
@@ -1173,6 +1174,10 @@ window.addEventListener('resize', () => render());
 if (tg && tg.onEvent) { try { tg.onEvent('fullscreenChanged', render); tg.onEvent('fullscreenFailed', () => { try { tg.showAlert && tg.showAlert('Telegram не дал включить полный экран на этом устройстве'); } catch (x) {} }); } catch (e) {} }
 try { const v = new URLSearchParams(location.search).get('view'); if (v && VIEWS[v]) S.view = v; } catch (e) {}
 render();
+
+/* for tests only: the app itself uses the private names above */
+try { Object.assign(window, { S, go, render, VIEWS, LOADS, FAQ, nowParts, dayKey, nextSlot, trText, schedCheck }); } catch (e) {}
+})();
 </script>
 </body>
 </html>
