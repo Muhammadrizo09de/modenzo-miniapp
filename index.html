@@ -128,6 +128,7 @@ const I = {
   x:'<path d="M6 6l12 12M18 6L6 18"/>',
   search:'<circle cx="11" cy="11" r="7"/><path d="M20 20l-3.5-3.5"/>',
   monitor:'<rect x="2" y="4" width="20" height="13" rx="2"/><path d="M8 21h8M12 17v4"/>',
+  bell:'<path d="M18 8a6 6 0 0 0-12 0c0 7-3 9-3 9h18s-3-2-3-9"/><path d="M13.7 21a2 2 0 0 1-3.4 0"/>',
   lock:'<rect x="4" y="11" width="16" height="10" rx="2"/><path d="M8 11V7a4 4 0 0 1 8 0v4"/>'
 };
 function ic(name, size, color, sw) {
@@ -196,6 +197,7 @@ const FEATURES = [
     ['Перевод для водителя','Команда /tr: русский → английский для водителя и обратно',K]]],
   ['Предупреждения', [
     ['Груз опаздывает: раньше, чем позвонит брокер','Какой груз и на сколько. После подключения борда',W],
+    ['Update Board: дела по водителям','Бот находит «разбуди», «позвони», перерыв, документы, поломку и напоминает за 10 минут и в срок',K],
     ['Агенты 24/7','Водитель ждёт ответа, молчит, тревога, автоответ. Стоянка и «нет GPS» пока только у владельца',K],
     ['Тревога «водитель молчит»','Если водитель долго не отвечает',K],
     ['Проблемы с группой или ключом ELD','Сообщение владельцу',K]]],
@@ -353,6 +355,7 @@ const S = {
   tab:'transit', sel:'1042', q:'', showNew:true, queue:{}, compact:false,
   etaF:{ truck:'', addr:'', appt:'' },
   updText:'Update Load# 1042\nRolling near Barstow, CA, 62 mph\nNext stop (3 of 4): PDX9 Troutdale, OR\nAppt Fri 16:20 PST\nMiles left 612 · drive 9h 40m (+30m break)\nTraffic +25 min in next 40 mi\nETA 17:05 PST · probably late 45 min', updEditing:false, updDraft:'', updEdited:false,
+  tk:[], ub:[], tkOps:{ d:{}, i:{}, x:{} }, tkF:'all', tkForm:{ who:'', time:'', note:'' }, tkSel:'', tkAt:0, tkReal:false,
   botLang:'ru', access:'active', fromBot:false, act:{ s:1, p:1, e:1, g:1 }, lockSheet:''
 };
 /* язык: ссылка ?lang=, потом сохранённый выбор, потом язык Telegram */
@@ -409,8 +412,8 @@ function locked() { return !S.act.s || !S.act.p; }
 function updLocked() { return locked() || !S.act.g || S.act.e !== 1; }
 /* what a button needs before it can work: '' = ready, otherwise the missing step */
 function blockedBy(d) {
-  const action = !!(d.slot || d.smode || d.son || d.upd || d.group || d.notif || d.lockgo || d.agt || d.agn || d.agar || d.gtog || d.wtstart || d.wtbase || d.wtday || d.wtal || d.pm || d.tzc || d.offd !== undefined ||
-    ['save','saveag','savegroups','savewt','savetz','saveoff','launch','stop','updedit','updsave'].indexOf(d.act) >= 0);
+  const action = !!(d.tkd || d.tki || d.tkx || d.slot || d.smode || d.son || d.upd || d.group || d.notif || d.lockgo || d.agt || d.agn || d.agar || d.gtog || d.wtstart || d.wtbase || d.wtday || d.wtal || d.pm || d.tzc || d.offd !== undefined ||
+    ['save','saveag','savegroups','savewt','savetz','saveoff','launch','stop','updedit','updsave','tksave','tkadd'].indexOf(d.act) >= 0);
   if (!S.act.s && (action || d.plan)) return 'survey';
   if (!S.act.p && (action || d.plan === 'drivers' || d.plan === 'keep')) return 'paid';
   const updOn = (d.son && !S.son) || d.lockgo === 'updates' || d.upd === 'sent' || (d.act === 'save' && S.son);
@@ -601,6 +604,7 @@ function vHome() {
       '<div class="col" style="gap:3px;flex:1;min-width:0"><div class="small muted">Следующий апдейт</div><h2 style="font-size:30px">' + (S.son ? nextSlot() : '—') + '</h2><div class="xs sub">' + (S.son ? 'по времени: ' + tzLabel() + ' · режим: ' + modeName : 'Включите апдейты в «Расписании»') + '</div></div></div>' +
       '<div class="wrap">' + S.slots.slice().sort().map((t) => '<span class="pill" style="display:inline-flex;align-items:center;height:30px;' + (S.son && t === nextSlot() ? 'border-color:var(--mint);color:var(--mint-t)' : '') + '">' + t + '</span>').join('') + '</div>' +
       '<div class="grid2"><button class="btn primary" data-go="shift">Расписание</button><button class="btn" data-go="updates">Решения · ' + (S.upd === 'pending' ? 1 : 0) + '</button></div></div>' +
+    tkHomeCard() +
     '<div class="col" style="gap:12px"><div class="row" style="justify-content:space-between"><h3 style="font-size:18px">Требует внимания</h3><span class="xs muted">Пример данных</span></div>' +
       alertRow('eta', 'clock', 'var(--red-bg)', 'var(--red)', 'Load 1042 · стоп 3 из 4', 'Опоздает примерно на 45 мин', 'var(--red)', 'var(--red-bd)') +
       alertRow('eta', 'warn', 'var(--amber-bg)', 'var(--amber)', 'Load 1128 · стоп 2 из 3', 'Впритык: запас 15 мин', 'var(--amber)') +
@@ -856,7 +860,7 @@ function vSettings() {
     '<div class="col" style="gap:10px"><div class="label">Подключения и команда</div><div class="listcard list"><button data-go="groups" class="row" style="justify-content:space-between;width:100%;background:none;border:0;border-bottom:1px solid var(--line2);font-size:15px;text-align:left"><span>Группы водителей</span><span class="row small muted" style="gap:6px">' + (S.plan === 'owner' ? S.used : S.used + ' из ' + S.lim) + ' ' + ic('chev', 16, 'var(--muted)', 2) + '</span></button><div class="row" style="justify-content:space-between"><span>ELD · Samsara</span><span class="small" style="color:var(--mint-t)">Подключено (пример)</span></div><div class="row" style="justify-content:space-between"><span>Борд (Google Sheets)</span><span class="small muted">Update Board</span></div><div class="row" style="justify-content:space-between"><span>Тиммейты</span><span class="small muted">3 человека</span></div><div class="row" style="justify-content:space-between"><span>Amazon Relay</span><span class="chip c-plan">План</span></div></div></div>' +
     '<div class="col" style="gap:10px"><div class="label">Уведомления мне</div><div class="listcard list">' + nl.map((t) => '<div class="row"><span class="col" style="flex:1"><span>' + t[1] + '</span><span class="xs muted">' + t[2] + '</span></span><button class="toggle' + (S.notif[t[0]] ? ' on' : '') + '" data-notif="' + t[0] + '" aria-label="' + t[1] + '"><span></span></button></div>').join('') + '</div></div>' +
     '<div class="col" style="gap:10px"><div class="label">Тариф и оплата</div>' + planCard(true) + '<div class="listcard list">' + [['Пробная неделя','появится позже'],['Оплата','Click · Payme · другие'],['Оферта','готовится']].map((r) => '<div class="row" style="justify-content:space-between"><span>' + r[0] + '</span><span class="small muted">' + r[1] + '</span></div>').join('') + '</div><div class="xs muted">Тарифы отличаются числом водителей и апдейтов в день. Оплата заработает после запуска сервера.</div><div class="xs muted">Или командой в чате, например: /plan pro</div></div>' +
-    '<div class="xs" style="text-align:center;color:var(--faint)">Modenzo AI · версия окна 2026-11-20 19:55</div>';
+    '<div class="xs" style="text-align:center;color:var(--faint)">Modenzo AI · версия окна 2026-11-20 21:30</div>';
 }
 
 function inTab(l, t) { return t === 'all' || (t === 'risk' ? (l.v === 'late' || l.v === 'tight') && l.st !== 'delivered' : l.st === t); }
@@ -890,17 +894,187 @@ function vDrivers() {
     }).join('') + '</div>';
 }
 
-const VIEWS = { home:vHome, shift:vShift, updates:vUpdates, eta:vEta, groups:vGroups, features:vFeatures, help:vHelp, settings:vSettings, plans:vPlans, agents:vAgents, work:vWork, tz:vTz, board:vBoard, drivers:vDrivers };
+/* ---------------- Update Board: to-dos per driver, found by the bot in driver messages ---------------- */
+const TK_TZ = { c:'America/Chicago', e:'America/New_York', m:'America/Denver', p:'America/Los_Angeles', z:'America/Phoenix', a:'America/Anchorage', h:'Pacific/Honolulu', d:'America/Detroit', i:'America/Indiana/Indianapolis', b:'America/Boise' };
+const TK_KIND = { w:['Разбудить водителя','⏰'], c:['Позвонить водителю','📞'], r:['Водитель снова на линии','😴'], a:['Appointment: успевает ли','📍'], d:['Проверить документы','📄'], i:['Проблема: связаться с водителем','🚨'], m:['Напоминание водителя','🔔'], k:['Дело','✔️'] };
+const TK_PRIO = [['обычное','#4A5B7A'],['важное','var(--amber)'],['срочное','var(--red)']];
+const TK_DAYS = { en:['Mon','Tue','Wed','Thu','Fri','Sat','Sun'], uz:['Du','Se','Ch','Pa','Ju','Sh','Ya'] };
+function tr3(ru, en, uz) { return S.lang === 'en' ? en : (S.lang === 'uz' ? uz : ru); }
+function tkB36(s) { return parseInt(s, 36); }
+function tkParse(q) {
+  const tk = q.get('tk'), ub = q.get('ub'), tkn = q.get('tkn');
+  if (tk === null && ub === null && tkn === null) return false;
+  S.tk = (tk || '').split('~').filter(Boolean).map((x) => { const f = x.split('|'); return { id: f[0], who: f[1] || '?', due: f[2] ? tkB36(f[2]) * 60000 : 0, kind: TK_KIND[f[3]] ? f[3] : 'k', prio: Math.min(2, +f[4] || 0), st: f[5] === 'd' ? 'd' : 'o', tz: TK_TZ[(f[6] || 'c')[0]] || 'America/Chicago', sure: (f[6] || '').indexOf('?') < 0, text: f[7] || '', by: f[8] === 'u' ? 'u' : 'a' }; });
+  S.ub = (ub || '').split('~').filter(Boolean).map((x) => { const f = x.split('|'); return { who: f[0] || '?', upd: f[1] ? tkB36(f[1]) * 60000 : 0, updText: f[2] || '', drv: f[3] ? tkB36(f[3]) * 60000 : 0, drvText: f[4] || '', flag: f[5] || '' }; });
+  S.tkAt = tkn ? tkB36(tkn) * 60000 : Date.now();
+  S.tkReal = true;
+  return true;
+}
+function tkDemo() {
+  const n = Date.now(), m = 60000;
+  S.tk = [
+    { id:'1', who:'2080', due:n + 7 * m, kind:'w', prio:2, st:'o', tz:'America/Chicago', sure:true, text:'wake me up at 5am pls', by:'a' },
+    { id:'2', who:'2081', due:n - 12 * m, kind:'c', prio:1, st:'o', tz:'America/New_York', sure:true, text:'call me when you are free, about the next load', by:'a' },
+    { id:'3', who:'3011', due:0, kind:'i', prio:2, st:'o', tz:'America/Denver', sure:true, text:'flat tire on I-80, waiting for road service', by:'a' },
+    { id:'4', who:'2075', due:n + 38 * m, kind:'d', prio:0, st:'o', tz:'America/Chicago', sure:true, text:'will send BOL later', by:'a' },
+    { id:'5', who:'1999', due:n + 200 * m, kind:'r', prio:1, st:'o', tz:'America/Los_Angeles', sure:true, text:'taking my 10 hour break now', by:'a' },
+    { id:'6', who:'2080', due:n + 300 * m, kind:'k', prio:1, st:'o', tz:'America/Chicago', sure:true, text:'позвонить брокеру про detention', by:'u' },
+    { id:'7', who:'2042', due:n - 50 * m, kind:'w', prio:2, st:'d', tz:'America/Chicago', sure:true, text:'wake me up at 4', by:'a' }
+  ];
+  S.ub = [
+    { who:'2080', upd:n - 95 * m, updText:'Truck 2080 is rolling near Amarillo, TX. ETA 16:30 CST', drv:n - 20 * m, drvText:'wake me up at 5am pls', flag:'' },
+    { who:'2081', upd:n - 180 * m, updText:'Truck 2081 at the receiver, door 14', drv:n - 14 * m, drvText:'call me when you are free, about the next load', flag:'w' },
+    { who:'3011', upd:n - 120 * m, updText:'Truck 3011 rolling, ETA 18:10 MST', drv:n - 9 * m, drvText:'flat tire on I-80, waiting for road service', flag:'r' },
+    { who:'2075', upd:n - 40 * m, updText:'Loaded, leaving the shipper', drv:n - 7 * m, drvText:'will send BOL later', flag:'' },
+    { who:'1999', upd:n - 300 * m, updText:'Truck 1999 delivered, empty', drv:n - 70 * m, drvText:'taking my 10 hour break now', flag:'' },
+    { who:'2042', upd:n - 30 * m, updText:'Truck 2042 rolling to SMF3', drv:n - 35 * m, drvText:"I'm up, rolling", flag:'' }
+  ];
+  S.tkAt = n; S.tkReal = false;
+}
+function tkHm(ms, tz) {
+  try { return new Intl.DateTimeFormat('en-GB', { timeZone: tz, hour: '2-digit', minute: '2-digit', hourCycle: 'h23' }).format(new Date(ms)).slice(0, 5); }
+  catch (e) { const d = new Date(ms); return String(d.getHours()).padStart(2, '0') + ':' + String(d.getMinutes()).padStart(2, '0'); }
+}
+function tkZone(ms, tz) {
+  try { const p = new Intl.DateTimeFormat('en-US', { timeZone: tz, timeZoneName: 'short' }).formatToParts(new Date(ms)).filter((x) => x.type === 'timeZoneName')[0]; return p ? p.value : ''; } catch (e) { return ''; }
+}
+function tkDay(ms, tz) {
+  try { const p = new Intl.DateTimeFormat('en-US', { timeZone: tz, weekday: 'short', day: 'numeric' }).formatToParts(new Date(ms)); return { wd: ['Mon','Tue','Wed','Thu','Fri','Sat','Sun'].indexOf(p.filter((x) => x.type === 'weekday')[0].value), d: p.filter((x) => x.type === 'day')[0].value }; }
+  catch (e) { const d = new Date(ms); return { wd: (d.getDay() + 6) % 7, d: String(d.getDate()) }; }
+}
+function tkMine(ms) {
+  const a = tkDay(ms, S.tz), b = tkDay(Date.now(), S.tz);
+  return (a.d !== b.d ? (TK_DAYS[S.lang] || DAYN)[a.wd] + ' ' : '') + tkHm(ms, S.tz);
+}
+function tkDur(a) { return a < 60 ? a + ' ' + tr3('мин', 'min', 'daq') : Math.floor(a / 60) + ' ' + tr3('ч', 'h', 'soat') + ' ' + String(a % 60).padStart(2, '0') + ' ' + tr3('мин', 'min', 'daq'); }
+function tkLeft(ms) {
+  const d = Math.round((ms - Date.now()) / 60000), a = Math.abs(d);
+  if (d >= 1) return tr3('через ' + tkDur(a), 'in ' + tkDur(a), tkDur(a) + 'dan keyin');
+  if (d > -1) return tr3('сейчас', 'now', 'hozir');
+  return tr3('просрочено на ' + tkDur(a), 'late by ' + tkDur(a), tkDur(a) + ' kechikdi');
+}
+function tkAgo(ms) { const a = Math.max(0, Math.round((Date.now() - ms) / 60000)); return a < 1 ? tr3('только что', 'just now', 'hozirgina') : tr3(tkDur(a) + ' назад', tkDur(a) + ' ago', tkDur(a) + ' oldin'); }
+function tkBucket(t) {
+  if (t.st === 'd') return 'done';
+  if (!t.due) return 'now';
+  const d = t.due - Date.now();
+  if (d <= 10 * 60000) return 'now';
+  return d <= 60 * 60000 ? 'soon' : 'later';
+}
+function tkOpen() { return S.tk.filter((t) => t.st !== 'd' && !S.tkOps.x[t.id]); }
+function tkLabel(t) { return t.by === 'u' && t.text ? esc(t.text) : TK_KIND[t.kind][0]; }
+function tkOpsCount() { return Object.keys(S.tkOps.d).length + Object.keys(S.tkOps.x).length + Object.keys(S.tkOps.i).filter((k) => S.tkOps.i[k] % 3).length; }
+function tkPayload() {
+  const parts = [], rest = { d:{}, i:{}, x:{} };
+  let p = 'tk';
+  const add = (op, ids, key) => {
+    let cur = '';
+    ids.forEach((id) => {
+      const piece = (cur ? '.' : '-' + op) + id;
+      if ((p + cur + piece).length <= 64) cur += piece; else rest[key][id] = key === 'i' ? 1 : true;
+    });
+    p += cur;
+  };
+  add('d', Object.keys(S.tkOps.d), 'd');
+  add('x', Object.keys(S.tkOps.x), 'x');
+  const iIds = []; Object.keys(S.tkOps.i).forEach((id) => { for (let k = 0; k < S.tkOps.i[id] % 3; k++) iIds.push(id); });
+  add('i', iIds, 'i');
+  return { p, rest };
+}
+function tkRadar() {
+  const now = Date.now(), span = 12 * 3600000, open = tkOpen().filter((t) => t.due);
+  const step = (isWide() ? 2 : 3) * 3600000, first = Math.ceil(now / 3600000) * 3600000;
+  let ticks = '<span style="position:absolute;left:0;top:0;bottom:22px;border-left:2px solid var(--mint)"></span><span class="xs" style="position:absolute;left:0;bottom:0;color:var(--mint-t);font-weight:600">' + tr3('сейчас', 'now', 'hozir') + '</span>';
+  for (let ms = first; ms <= now + span; ms += 3600000) {
+    const x = (ms - now) / span * 100;
+    if (x < 9 || Math.round((ms - first) / 3600000) % (step / 3600000)) continue;
+    ticks += '<span style="position:absolute;left:' + x + '%;top:0;bottom:22px;border-left:1px dashed #22304A"></span><span class="xs" style="position:absolute;left:' + x + '%;bottom:0;transform:translateX(' + (x > 94 ? '-100%' : '-50%') + ');color:var(--muted)">' + tkHm(ms, S.tz) + '</span>';
+  }
+  const pins = open.map((t, i) => {
+    const x = Math.max(0, Math.min(1, (t.due - now) / span)) * 100, late = t.due < now, col = late ? 'var(--red)' : TK_PRIO[t.prio][1];
+    const top = 8 + (i % 3) * 22;
+    return '<button data-tksel="' + t.id + '" title="' + esc(t.who) + '" style="position:absolute;left:' + x + '%;top:' + top + 'px;transform:translateX(' + (x < 7 ? '0' : (x > 93 ? '-100%' : '-50%')) + ');display:flex;align-items:center;gap:4px;height:20px;padding:0 7px;border-radius:10px;border:1px solid ' + col + ';background:' + (S.tkSel === t.id ? col : '#0B1220') + ';color:' + (S.tkSel === t.id ? '#06241A' : 'var(--text)') + ';font-size:11px;font-weight:700;white-space:nowrap">' + TK_KIND[t.kind][1] + ' ' + esc(t.who) + '</button>';
+  }).join('');
+  const beyond = open.filter((t) => t.due > now + span).length;
+  return '<div class="card" style="padding:14px 16px 10px;border-radius:18px"><div class="row" style="justify-content:space-between;margin-bottom:6px"><span class="label">Следующие 12 часов</span><span class="xs muted">' + (beyond ? tr3('позже: ' + beyond, 'later: ' + beyond, 'keyinroq: ' + beyond) : '') + '</span></div>' +
+    '<div style="position:relative;height:100px">' + ticks + pins + '</div></div>';
+}
+function tkCard(t) {
+  const late = t.st !== 'd' && t.due && t.due < Date.now(), col = t.st === 'd' ? 'var(--mint)' : (late ? 'var(--red)' : TK_PRIO[t.prio][1]);
+  const drv = t.due ? tkHm(t.due, t.tz) + ' ' + tkZone(t.due, t.tz) : '';
+  const sameZone = t.due && tkHm(t.due, t.tz) === tkHm(t.due, S.tz);
+  return '<div class="card col" id="tk-' + t.id + '" style="padding:14px;border-radius:16px;gap:9px;border-left:4px solid ' + col + (S.tkSel === t.id ? ';box-shadow:0 0 0 2px ' + col : '') + (t.st === 'd' ? ';opacity:.6' : '') + '">' +
+    '<div class="row" style="gap:12px;align-items:flex-start"><span class="icon" style="width:40px;height:40px;border-radius:12px;background:var(--raised);font-size:20px;flex:none">' + TK_KIND[t.kind][1] + '</span>' +
+      '<div class="col" style="flex:1;min-width:0;gap:4px"><b style="font-size:15px;line-height:1.3' + (t.st === 'd' ? ';text-decoration:line-through' : '') + '">' + tkLabel(t) + '</b>' +
+        '<div class="wrap" style="gap:6px"><span class="chip c-gray">' + ic('truck', 12) + '&nbsp;' + esc(t.who) + '</span><span class="chip" style="border-color:' + col + ';color:' + col + '">' + (t.st === 'd' ? 'сделано' : TK_PRIO[t.prio][0]) + '</span><span class="xs muted">' + (t.by === 'u' ? 'добавили вы' : 'нашёл бот') + '</span></div></div>' +
+      (t.due ? '<div class="col" style="align-items:flex-end;gap:2px;flex:none"><b style="font-size:20px;line-height:1">' + tkHm(t.due, sameZone ? S.tz : t.tz) + '</b><span class="xs muted">' + (sameZone ? '' : tkZone(t.due, t.tz)) + '</span></div>' : '') + '</div>' +
+    (t.due ? '<div class="row" style="gap:8px;flex-wrap:wrap"><span class="xs" style="font-weight:700;color:' + (late ? 'var(--red)' : 'var(--mint-t)') + '" data-due="' + t.due + '">' + (t.st === 'd' ? '' : tkLeft(t.due)) + '</span>' + (sameZone ? '' : '<span class="xs muted">' + tr3('у вас ', 'yours ', 'sizda ') + tkMine(t.due) + (t.sure ? '' : ' · ' + tr3('пояс водителя предположен', 'driver zone assumed', 'haydovchi mintaqasi taxminiy')) + '</span>') + '</div>' : '<div class="xs" style="color:var(--red);font-weight:700">' + tr3('без времени: ответить сейчас', 'no time: answer now', 'vaqtsiz: hozir javob bering') + '</div>') +
+    (t.by === 'a' && t.text ? '<div class="small" style="padding:9px 12px;border-radius:12px;background:#0B1220;color:var(--sub);line-height:1.45">«' + esc(t.text) + '»</div>' : '') +
+    (t.st === 'd' ? '' : '<div class="row" style="gap:8px"><button class="btn primary" style="height:38px;font-size:13px;flex:1" data-tkd="' + t.id + '">' + ic('check', 16, 'currentColor', 2.4) + '&nbsp;Сделано</button><button class="btn" style="height:38px;font-size:13px;flex:1" data-tki="' + t.id + '">★ Важность</button><button class="btn" style="height:38px;width:44px;padding:0;flex:none" data-tkx="' + t.id + '" aria-label="Удалить">' + ic('x', 16) + '</button></div>') +
+  '</div>';
+}
+function tkTile(n, label, col, f) { return '<button class="card col" data-tkf="' + f + '" style="padding:12px 14px;border-radius:16px;gap:2px;text-align:left' + (S.tkF === f ? ';border-color:' + col : '') + '"><b style="font-size:24px;color:' + col + '">' + n + '</b><span class="xs muted">' + label + '</span></button>'; }
+function vUb() {
+  const open = tkOpen(), now = Date.now();
+  const late = open.filter((t) => t.due && t.due < now), soon = open.filter((t) => t.due && t.due >= now && t.due - now <= 3600000), done = S.tk.filter((t) => t.st === 'd' && !S.tkOps.x[t.id]);
+  const f = S.tkF;
+  const list = (f === 'done' ? done : open.filter((t) => f === 'all' || (f === 'imp' && t.prio >= 1) || (f === 'late' && t.due && t.due < now) || (f === 'soon' && (!t.due || t.due - now <= 3600000)))).slice().sort((a, b) => (a.due || 0) - (b.due || 0) || b.prio - a.prio);
+  const lanes = [['now','Сейчас и просрочено','var(--red)'],['soon','В ближайший час','var(--amber)'],['later','Позже','var(--blue)'],['done','Сделано','var(--mint)']];
+  const wide = isWide();
+  const board = list.length ? (wide && f !== 'done'
+    ? '<div style="display:grid;grid-template-columns:repeat(3,minmax(0,1fr));gap:14px;align-items:start">' + lanes.slice(0, 3).map((ln) => { const xs = list.filter((t) => tkBucket(t) === ln[0]); return '<div class="col" style="gap:10px"><div class="row" style="gap:8px"><span class="dot" style="width:8px;height:8px;border-radius:4px;background:' + ln[2] + '"></span><span class="label">' + ln[1] + '</span><span class="xs muted">' + xs.length + '</span></div>' + (xs.length ? xs.map(tkCard).join('') : '<div class="xs muted" style="padding:14px;border:1px dashed var(--line);border-radius:14px">Пусто</div>') + '</div>'; }).join('') + '</div>'
+    : lanes.map((ln) => { const xs = list.filter((t) => tkBucket(t) === ln[0]); return xs.length ? '<div class="col" style="gap:10px"><div class="row" style="gap:8px"><span class="dot" style="width:8px;height:8px;border-radius:4px;background:' + ln[2] + '"></span><span class="label">' + ln[1] + '</span><span class="xs muted">' + xs.length + '</span></div>' + xs.map(tkCard).join('') + '</div>' : ''; }).join(''))
+    : '<div class="card pad col" style="gap:8px;border-radius:18px;align-items:center;text-align:center"><span style="font-size:34px">🎯</span><b>' + (f === 'all' ? 'Открытых дел нет' : 'Здесь пусто') + '</b><div class="xs muted" style="line-height:1.5">Бот сам добавит дело, когда водитель попросит разбудить, позвонить, напишет про перерыв, документы или проблему.</div></div>';
+  const ops = tkOpsCount();
+  const drivers = S.ub.map((u) => {
+    const n = open.filter((t) => t.who === u.who).length;
+    const flag = u.flag === 'r' ? '<span class="chip" style="border-color:var(--red-bd);color:var(--red);background:var(--red-bg)">Тревога</span>' : (u.flag === 'w' ? '<span class="chip c-dev">Ждёт ответа</span>' : '');
+    return '<div class="card col" style="padding:14px;border-radius:16px;gap:8px"><div class="row" style="justify-content:space-between;gap:8px"><b style="font-size:15px">' + ic('truck', 15) + '&nbsp;' + esc(u.who) + '</b>' + flag + '</div>' +
+      '<div class="col" style="gap:3px"><span class="xs muted">' + tr3('Последний апдейт', 'Last update', 'Oxirgi apdeyt') + (u.upd ? ' · ' + tkAgo(u.upd) : '') + '</span><span class="small" style="line-height:1.4">' + (u.updText ? esc(u.updText) : '<span class="muted">—</span>') + '</span></div>' +
+      '<div class="col" style="gap:3px"><span class="xs muted">' + tr3('Водитель', 'Driver', 'Haydovchi') + (u.drv ? ' · ' + tkAgo(u.drv) : '') + '</span><span class="small sub" style="line-height:1.4">' + (u.drvText ? '«' + esc(u.drvText) + '»' : '—') + '</span></div>' +
+      '<div class="row" style="justify-content:space-between"><span class="xs" style="color:' + (n ? 'var(--amber)' : 'var(--muted)') + '">' + tr3('Открытых дел: ', 'Open to-dos: ', 'Ochiq ishlar: ') + n + '</span><button class="btn" style="height:34px;font-size:12px;padding:0 12px" data-tkwho="' + esc(u.who) + '">' + ic('plus', 14) + '&nbsp;Дело</button></div></div>';
+  }).join('');
+  const inp = (id, ph, v) => '<input id="' + id + '" placeholder="' + ph + '" value="' + esc(v) + '" style="width:100%;height:44px;padding:0 14px;border-radius:12px;border:1px solid var(--line);background:#0B1220;color:var(--text);font:inherit;font-size:15px">';
+  return mzHead('Update Board', 'Дела по каждому водителю. Бот находит их в сообщениях и напоминает за 10 минут и в срок.') +
+    '<div class="xs muted" style="line-height:1.5">' + (S.tkReal ? tr3('Данные на ', 'Data as of ', 'Ma\'lumot vaqti: ') + tkHm(S.tkAt, S.tz) + tr3('. Обновятся, когда снова откроете окно из бота.', '. They refresh when you open the window from the bot again.', '. Oynani botdan qayta ochganingizda yangilanadi.') : 'Пример данных. Ваши дела появятся, когда водители начнут писать в группах.') + '</div>' +
+    '<div style="display:grid;grid-template-columns:repeat(' + (wide ? 4 : 2) + ',minmax(0,1fr));gap:10px">' + tkTile(late.length, 'Просрочено', 'var(--red)', 'late') + tkTile(soon.length, 'В ближайший час', 'var(--amber)', 'soon') + tkTile(open.length, 'Всего открыто', 'var(--text)', 'all') + tkTile(done.length, 'Сделано', 'var(--mint)', 'done') + '</div>' +
+    tkRadar() +
+    '<div class="wrap">' + [['all','Все'],['imp','Важные'],['late','Просрочено'],['soon','Скоро'],['done','Сделано']].map((x) => '<button class="pill' + (f === x[0] ? ' on' : '') + '" data-tkf="' + x[0] + '">' + x[1] + '</button>').join('') + '</div>' +
+    board +
+    (ops ? '<div class="card row" style="position:sticky;bottom:' + (wide ? '16px' : '96px') + ';padding:12px 14px;border-radius:16px;gap:10px;border-color:var(--mint-bd);background:#0E2019;z-index:5"><span class="col" style="flex:1;gap:2px"><b style="font-size:14px">' + tr3('Изменений: ', 'Changes: ', 'O\'zgarishlar: ') + ops + '</b><span class="xs muted">Отправьте в бот, чтобы он не напоминал о сделанном</span></span><button class="btn primary" style="height:42px;font-size:14px" data-act="tksave">Сохранить в боте</button></div>' : '') +
+    (S.ub.length ? '<div class="col" style="gap:10px"><div class="label">Водители</div><div style="display:grid;grid-template-columns:repeat(' + (wide ? 3 : 1) + ',minmax(0,1fr));gap:10px">' + drivers + '</div></div>' : '') +
+    '<div class="card col" id="tkform" style="padding:16px;border-radius:18px;gap:10px"><b style="font-size:15px">Новое дело</b>' +
+      inp('tkWho', 'Трак, например 2080', S.tkForm.who) + inp('tkTime', 'Время водителя: 05:00, 5am или +30', S.tkForm.time) + inp('tkNote', 'Что сделать, например: разбудить', S.tkForm.note) +
+      '<div class="wrap">' + [[tr3('разбудить','wake up',"uyg'otish"),'⏰ Разбудить'],[tr3('позвонить','call the driver',"qo'ng'iroq qilish"),'📞 Позвонить'],[tr3('проверить статус','check status','holatni tekshirish'),'✔️ Проверить статус'],[tr3('проверить BOL и фото','check BOL and photos','BOL va rasmlarni tekshirish'),'📄 Документы']].map((x) => '<button class="pill" data-tknote="' + x[0] + '">' + x[1] + '</button>').join('') + '</div>' +
+      '<button class="btn primary" style="height:48px" data-act="tkadd">Добавить в чате с ботом</button>' +
+      '<div class="mono" style="padding:10px 12px;font-size:13px">' + esc(tkCommand()) + '</div>' +
+      '<div class="xs muted" style="line-height:1.5">Команда скопируется, вставьте её в чат с ботом. Бот напомнит за 10 минут и в срок.</div></div>' +
+    '<div class="card pad col" style="gap:8px;border-radius:16px;background:#0F1626"><b class="small">Что бот находит сам</b><div class="xs muted" style="line-height:1.6">⏰ «разбуди в 5», «wake me up at 5am» · 📞 «позвони в 15:00», «call me in 30 min» · 😴 «10 hour break», «отдыхаю до 14:00» · 📍 appointment · 📄 «пришлю BOL позже» · 🚨 поломка, авария, полиция. Понимает русский, английский, узбекский и турецкий. Время водителя считается по его часовому поясу. Дело закрывается само, когда водитель пишет «I\'m up» или присылает фото.</div></div>';
+}
+function tkCommand() { const f = S.tkForm; return '/task ' + (f.who.trim() || '2080') + ' ' + (f.time.trim() || '05:00') + ' ' + (f.note.trim() || tr3('разбудить', 'wake up', "uyg'otish")); }
+function tkHomeCard() {
+  const open = tkOpen(), now = Date.now(), late = open.filter((t) => t.due && t.due < now).length;
+  const next = open.filter((t) => t.due && t.due >= now).sort((a, b) => a.due - b.due)[0];
+  return '<button class="card row" data-go="ub" style="text-align:left;padding:16px;border-radius:18px;gap:14px' + (late ? ';border-color:var(--red-bd)' : '') + '"><span class="icon" style="width:48px;height:48px;border-radius:14px;background:var(--raised);font-size:22px;flex:none">📋</span>' +
+    '<span class="col" style="flex:1;min-width:0;gap:3px"><b style="font-size:16px">Update Board</b><span class="xs muted">' + tr3('Открыто: ', 'Open: ', 'Ochiq: ') + open.length + (late ? ' · ' + tr3('просрочено: ', 'late: ', 'kechikkan: ') + late : '') + '</span>' +
+    (next ? '<span class="xs" style="color:var(--amber)">' + TK_KIND[next.kind][1] + ' ' + esc(next.who) + ' · ' + tkLeft(next.due) + '</span>' : '') + '</span>' + ic('chev', 18, 'var(--muted)') + '</button>';
+}
+setInterval(() => { try { if (S.view === 'ub' || S.view === 'home') document.querySelectorAll('[data-due]').forEach((el) => { if (el.textContent) el.textContent = tkLeft(+el.dataset.due); }); } catch (e) {} }, 30000);
+try { if (!tkParse(new URLSearchParams(location.search))) tkDemo(); } catch (e) { tkDemo(); }
+
+const VIEWS = { ub:vUb, home:vHome, shift:vShift, updates:vUpdates, eta:vEta, groups:vGroups, features:vFeatures, help:vHelp, settings:vSettings, plans:vPlans, agents:vAgents, work:vWork, tz:vTz, board:vBoard, drivers:vDrivers };
 const TABS = [['home','Главная','home'],['updates','Апдейты','send'],['big','Большой экран','monitor'],['features','Функции','grid'],['settings','Настройки','sliders']];
-const NAV = [['home','Главная','home'],['board','Доска грузов','truck'],['drivers','Водители','wheel'],['updates','Апдейты','send'],['eta','Расчёт ETA','pin'],['groups','Группы','users'],['features','Все функции','grid'],['help','Инструкция','help'],['plans','Тарифы','doc'],['settings','Настройки','sliders']];
-const TAB_OF = { shift:'home', eta:'home', board:'home', drivers:'home', groups:'home', help:'settings', plans:'settings', agents:'settings', work:'settings', tz:'settings' };
+const NAV = [['home','Главная','home'],['ub','Update Board','bell'],['board','Доска грузов','truck'],['drivers','Водители','wheel'],['updates','Апдейты','send'],['eta','Расчёт ETA','pin'],['groups','Группы','users'],['features','Все функции','grid'],['help','Инструкция','help'],['plans','Тарифы','doc'],['settings','Настройки','sliders']];
+const TAB_OF = { ub:'home', shift:'home', eta:'home', board:'home', drivers:'home', groups:'home', help:'settings', plans:'settings', agents:'settings', work:'settings', tz:'settings' };
 
 const EN = {
+"Update Board: дела по водителям":"Update Board: to-dos per driver","Бот находит «разбуди», «позвони», перерыв, документы, поломку и напоминает за 10 минут и в срок":"The bot finds \"wake me up\", \"call me\", breaks, documents, breakdowns and reminds you 10 minutes before and on time",
+"Дела по каждому водителю. Бот находит их в сообщениях и напоминает за 10 минут и в срок.":"To-dos for every driver. The bot finds them in messages and reminds you 10 minutes before and on time.","Пример данных. Ваши дела появятся, когда водители начнут писать в группах.":"Sample data. Your to-dos appear when drivers write in the groups.","Просрочено":"Late","В ближайший час":"Within an hour","Всего открыто":"Open","Сделано":"Done","Следующие 12 часов":"Next 12 hours","Важные":"Important","Сейчас и просрочено":"Now and late","Проблема: связаться с водителем":"Problem: contact the driver","срочное":"urgent","нашёл бот":"found by the bot","★ Важность":"★ Importance","Позвонить водителю":"Call the driver","важное":"important","Разбудить водителя":"Wake the driver up","Проверить документы":"Check the documents","обычное":"normal","Позже":"Later","Водитель снова на линии":"Driver back on line","Appointment: успевает ли":"Appointment: will he make it","Напоминание водителя":"Driver's reminder","сделано":"done","позвонить брокеру про detention":"call the broker about detention","добавили вы":"added by you","Дело":"To-do","Ждёт ответа":"Waiting for answer","Тревога":"Alarm","Новое дело":"New to-do","⏰ Разбудить":"⏰ Wake up","📞 Позвонить":"📞 Call","✔️ Проверить статус":"✔️ Check status","📄 Документы":"📄 Documents","Добавить в чате с ботом":"Add in the bot chat","Команда скопируется, вставьте её в чат с ботом. Бот напомнит за 10 минут и в срок.":"The command is copied, paste it into the bot chat. The bot reminds you 10 minutes before and on time.","Что бот находит сам":"What the bot finds by itself","⏰ «разбуди в 5», «wake me up at 5am» · 📞 «позвони в 15:00», «call me in 30 min» · 😴 «10 hour break», «отдыхаю до 14:00» · 📍 appointment · 📄 «пришлю BOL позже» · 🚨 поломка, авария, полиция. Понимает русский, английский, узбекский и турецкий. Время водителя считается по его часовому поясу. Дело закрывается само, когда водитель пишет «I'm up» или присылает фото.":"⏰ \"wake me up at 5am\" · 📞 \"call me in 30 min\", \"call me at 3pm\" · 😴 \"10 hour break\", \"sleeping till 6\" · 📍 appointment · 📄 \"will send BOL later\" · 🚨 breakdown, accident, police. Understands English, Russian, Uzbek and Turkish. Driver time is read in the driver's time zone. A to-do closes by itself when the driver writes \"I'm up\" or sends a photo.","Удалить":"Delete","Трак, например 2080":"Truck, for example 2080","Время водителя: 05:00, 5am или +30":"Driver time: 05:00, 5am or +30","Что сделать, например: разбудить":"What to do, for example: wake up","Отправьте в бот, чтобы он не напоминал о сделанном":"Send to the bot so it stops reminding about done ones","Сохранить в боте":"Save in the bot","Пусто":"Empty","Открытых дел нет":"No open to-dos","Здесь пусто":"Nothing here","Бот сам добавит дело, когда водитель попросит разбудить, позвонить, напишет про перерыв, документы или проблему.":"The bot adds a to-do by itself when a driver asks to wake him up or call, writes about a break, documents or a problem.",
 "Проверяем":"Testing","Все функции есть на любом тарифе.":"Every plan has all features.","— работает и проверено на живых данных.":"— works and was checked on live data.","— код готов и прошёл тесты, ждёт проверки в настоящих группах.":"— the code is ready and passed tests, waiting for a check in real groups.","и":"and","— ещё не работает.":"— not working yet.","Где грузовик сейчас. Пока только у владельца бота":"Where the truck is now. For now only for the bot owner","Samsara, Motive, Geotab: код готов, на настоящих ключах клиентов ещё не проверяли":"Samsara, Motive, Geotab: code ready, not yet tested with real client keys","GPS у каждого клиента из его ELD":"GPS for every client from their own ELD","После запуска сервера: Samsara, Motive, Geotab":"After the server launch: Samsara, Motive, Geotab","Командой или формой в окне. Пока только у владельца бота":"By command or the form in the window. For now only for the bot owner","Окно и бот":"Window and bot","Водитель ждёт ответа, молчит, тревога, автоответ. Стоянка и «нет GPS» пока только у владельца":"Driver waiting, silent, alarm, auto-reply. Long stop and \"no GPS\" for now only for the owner",
 "Окно и бот: русский, английский и узбекский. Водителей бот понимает и на турецком и отвечает им на их языке.":"The window and the bot: Russian, English and Uzbek. The bot also understands drivers in Turkish and answers them in their language.","Да, командой /tr: русский текст превращается в короткое английское сообщение водителю, английский переводится на русский. Например: /tr пришли фото BOL":"Yes, with /tr: Russian text becomes a short English message for the driver, English is translated to Russian. Example: /tr пришли фото BOL","Тарифы отличаются числом водителей и апдейтов в день. Оплата заработает после запуска сервера.":"Plans differ by number of drivers and updates a day. Payment works after the server launch.","Русский, английский, узбекский":"Russian, English, Uzbek","Окно, бот и ответы":"Window, bot and answers","Турецкий для водителей":"Turkish for drivers","Бот понимает водителей на турецком и отвечает им по-турецки":"The bot understands drivers in Turkish and answers them in Turkish","Язык окна и бота":"Window and bot language","Окно переключается сразу.":"The window switches right away.","Язык сообщений бота":"Bot messages language","Сменить и в боте":"Change in the bot too","Водителям бот отвечает на их языке, в том числе на турецком.":"The bot answers drivers in their language, Turkish included.","Русский":"Russian","Английский":"English","Узбекский":"Uzbek",
 "Кнопка «Разобрать фото» в /proof":"The “Read the photos” button in /proof","Перерыв 30 мин после 8 ч, отдых 10 ч. Остаток часов из ELD в плане":"30-min break after 8 h, 10-h rest. Hours left from the ELD planned","Пояс по штату готов. Цепочка стопов после подключения борда":"Zone by state is ready. The stop chain after the board is connected","Команда /eta":"The /eta command","Командой или формой в окне, ответ в чате":"By command or the window form, answer in the chat","Другие темы бот вежливо отклоняет, отвечает по вашей базе знаний":"Other topics are politely declined, answers use your knowledge base","Команда /tr: русский → английский для водителя и обратно":"The /tr command: Russian → English for the driver and back","Агенты 24/7":"Agents 24/7","Водитель ждёт ответа, молчит, тревога, стоянка, нет GPS, автоответ":"Driver waiting, silent, alarm, long stop, no GPS, auto-reply","Какой груз и на сколько. После подключения борда":"Which load and by how much. After the board is connected","Сам в конце смены или командой /report":"By itself at shift end or with /report","Утренняя сводка":"Morning summary","Каждое утро в 09:00 в режиме 24/7":"Every morning at 09:00 in 24/7 mode","Фото, сообщения и письмо брокеру при простое":"Photos, messages and a detention email to the broker","Настройки, расписание, тарифы, агенты, рабочее время":"Settings, schedule, plans, agents, working time","Рабочее время и часовой пояс":"Working time and time zone","Смена или 24/7, дни недели, разовые выходные":"Shift or 24/7, weekdays, one-off days off","Экран готов. Данные грузов после подключения борда":"The screen is ready. Load data after the board is connected","Группы и настройки уже отдельно. Свой ELD и шифрование ключей на сервере":"Groups and settings are already separate. Own ELD and key encryption on the server","Тарифы и смена тарифа готовы. Оферта и пробная неделя в плане":"Plans and plan changes are ready. Offer and trial week planned",
 "Расчёт ETA":"ETA calculation","От GPS трака до стопа: пробки, часы водителя, погода":"From truck GPS to the stop: traffic, driver hours, weather","Посчитать ETA":"Calculate ETA","Номер трака, например 2080":"Truck number, for example 2080","Адрес стопа, например PDX9, Troutdale, OR":"Stop address, for example PDX9, Troutdale, OR","Appointment по времени стопа, например 21.11 16:20":"Appointment in stop time, for example 21.11 16:20","Штат в адресе (OR, TX...) нужен, чтобы знать часовой пояс стопа. Appointment можно не писать.":"The state in the address (OR, TX...) tells the stop time zone. The appointment is optional.","Посчитать в чате с ботом":"Calculate in the bot chat","Ответ придёт в чат с ботом.":"The answer comes to the bot chat.","Ответ придёт в чат с ботом. Пока /eta работает только у владельца бота: GPS берётся из его Samsara. У вас заработает после подключения вашего ELD на сервере (в плане).":"The answer comes to the bot chat. For now /eta works only for the bot owner: GPS comes from the owner's Samsara. It works for you after your ELD is connected on the server (planned).","Пример разбора: Load 1042":"Sample breakdown: Load 1042","Напишите номер трака и адрес стопа":"Write the truck number and the stop address","Команда скопирована: вставьте её в чат и отправьте":"Command copied: paste it in the chat and send","Окно и бот переключаются на этот язык":"The window and the bot switch to this language","Написать в поддержку":"Write to support","Все команды бота":"All bot commands",
-"Modenzo AI · версия окна 2026-11-20 19:55":"Modenzo AI · window version 2026-11-20 19:20",
+"Modenzo AI · версия окна 2026-11-20 21:30":"Modenzo AI · window version 2026-11-20 19:20",
 "Это пример. Настоящие черновики приходят в чат с ботом с теми же кнопками: «Отправить», «Изменить», «Пропустить».":"This is an example. Real drafts come to the bot chat with the same buttons: “Send”, “Edit”, “Skip”.","Сохранить текст":"Save text","Отмена":"Cancel","Текст изменён вами":"Text edited by you","Текст сохранён. Нажмите «Отправить»":"Text saved. Tap “Send”",
 "Активация":"Activation","Опрос":"Survey","7 коротких вопросов в чате с ботом":"7 short questions in the bot chat","Выбрать и оплатить":"Pick and pay","Ключ на проверке":"Key being checked","Бот добавлен хотя бы в одну группу":"The bot is in at least one group","Настройки уже можно менять. Апдейты включатся после всех шагов.":"You can change settings already. Updates turn on after all steps.","Отправить ключ заново":"Send the key again","Ключ ELD на проверке":"ELD key being checked","Ключ получен и проверяется. Как только он заработает, апдейты можно будет включить. Если ключ неверный, отправьте новый.":"The key is received and being checked. Once it works you can turn updates on. If the key is wrong, send a new one.","Почему некоторые кнопки с замком?":"Why do some buttons have a lock?","Пока активация не закончена, часть функций закрыта, чтобы ничего не сломать. Шаги: опрос, тариф, ELD, хотя бы одна группа водителя. Нажмите на кнопку с замком: окно подскажет, какой шаг остался, и даст кнопку, чтобы его сделать. Например, ELD подключается командой /eld":"Until activation is finished some features are closed so nothing breaks. Steps: survey, plan, ELD, at least one driver group. Tap a locked button: the window tells you which step is left and gives a button to do it. For example, the ELD is connected with /eld","Ключ, чтобы бот видел, где траки":"A key so the bot sees where trucks are","Пока активация не закончена, окно работает только для просмотра.":"Until activation is finished the window is view-only.","Сначала пройдите опрос":"Finish the survey first","Это 7 коротких вопросов в чате с ботом: борд, грузы, ELD, коллеги, часовой пояс, смена, число водителей. После него функции включатся. Смотреть окно можно и сейчас.":"It is 7 short questions in the bot chat: board, freight, ELD, teammates, time zone, shift, number of drivers. Then features turn on. You can look around the window already.","Выбрать тариф":"Pick a plan","Выберите и оплатите тариф":"Pick and pay for a plan","Функции включатся после оплаты. Смотреть окно, тарифы и инструкцию можно и сейчас.":"Features turn on after payment. You can look at the window, plans and guide already.","Подключите ELD":"Connect your ELD","Подключить ELD":"Connect ELD","Без ELD бот не видит, где траки, и апдейты будут без местоположения. Бот спросит, какой у вас ELD, и проверит ключ. Это пара минут.":"Without an ELD the bot cannot see where trucks are and updates have no location. The bot asks which ELD you have and checks the key. It takes a couple of minutes.","Добавьте бота в группу водителя":"Add the bot to a driver group","Апдейты идут в группы водителей. Добавьте бота хотя бы в одну группу, и он сам проверит, видит ли сообщения.":"Updates go to driver groups. Add the bot to at least one group and it checks by itself whether it can read messages.","Как добавить":"How to add","Пройти опрос":"Take survey","Группы водителей":"Driver groups","Тариф":"Plan","Понятно":"Got it",
 "Окно переключается на этот язык. Язык ответов бота: /start":"The window switches to this language. The bot's reply language: /start","Окно переключается на этот язык":"The window switches to this language",
@@ -1009,6 +1183,56 @@ const EN = {
 'Telegram не дал включить полный экран на этом устройстве':'Telegram did not allow full screen on this device','Отдых 10 ч, до 04:00':'10 h rest, until 04:00','после отдыха 11 ч':'11 h after rest','У шиппера · 40 мин':'At shipper · 40 min'
 };
 const UZ = {
+"Update Board: дела по водителям":"Update Board: haydovchilar bo'yicha ishlar",
+"Бот находит «разбуди», «позвони», перерыв, документы, поломку и напоминает за 10 минут и в срок":"Bot «uyg'ot», «qo'ng'iroq qil», tanaffus, hujjatlar, buzilishni topadi va 10 daqiqa oldin hamda vaqtida eslatadi",
+"Дела по каждому водителю. Бот находит их в сообщениях и напоминает за 10 минут и в срок.":"Har bir haydovchi bo'yicha ishlar. Bot ularni xabarlardan topadi va 10 daqiqa oldin hamda vaqtida eslatadi.",
+"Пример данных. Ваши дела появятся, когда водители начнут писать в группах.":"Namunaviy ma'lumot. Ishlaringiz haydovchilar guruhlarda yoza boshlaganda paydo bo'ladi.",
+"Просрочено":"Kechikkan",
+"В ближайший час":"Bir soat ichida",
+"Всего открыто":"Jami ochiq",
+"Сделано":"Bajarildi",
+"Следующие 12 часов":"Keyingi 12 soat",
+"Важные":"Muhimlar",
+"Скоро":"Tez orada",
+"Сейчас и просрочено":"Hozir va kechikkan",
+"Проблема: связаться с водителем":"Muammo: haydovchi bilan bog'lanish",
+"срочное":"shoshilinch",
+"нашёл бот":"bot topdi",
+"★ Важность":"★ Muhimlik",
+"Позвонить водителю":"Haydovchiga qo'ng'iroq qilish",
+"важное":"muhim",
+"Разбудить водителя":"Haydovchini uyg'otish",
+"Проверить документы":"Hujjatlarni tekshirish",
+"обычное":"oddiy",
+"Позже":"Keyinroq",
+"Водитель снова на линии":"Haydovchi yana yo'lda",
+"Appointment: успевает ли":"Appointment: ulguradimi",
+"Напоминание водителя":"Haydovchi eslatmasi",
+"сделано":"bajarildi",
+"позвонить брокеру про detention":"brokerga detention bo'yicha qo'ng'iroq qilish",
+"добавили вы":"siz qo'shdingiz",
+"Дело":"Ish",
+"Ждёт ответа":"Javob kutyapti",
+"Тревога":"Xavotir",
+"Новое дело":"Yangi ish",
+"⏰ Разбудить":"⏰ Uyg'otish",
+"📞 Позвонить":"📞 Qo'ng'iroq",
+"✔️ Проверить статус":"✔️ Holatni tekshirish",
+"📄 Документы":"📄 Hujjatlar",
+"Добавить в чате с ботом":"Bot chatida qo'shish",
+"Команда скопируется, вставьте её в чат с ботом. Бот напомнит за 10 минут и в срок.":"Buyruq nusxalanadi, uni bot chatiga qo'ying. Bot 10 daqiqa oldin va vaqtida eslatadi.",
+"Что бот находит сам":"Bot o'zi nimalarni topadi",
+"⏰ «разбуди в 5», «wake me up at 5am» · 📞 «позвони в 15:00», «call me in 30 min» · 😴 «10 hour break», «отдыхаю до 14:00» · 📍 appointment · 📄 «пришлю BOL позже» · 🚨 поломка, авария, полиция. Понимает русский, английский, узбекский и турецкий. Время водителя считается по его часовому поясу. Дело закрывается само, когда водитель пишет «I'm up» или присылает фото.":"⏰ «soat 5 da uyg'ot», «wake me up at 5am» · 📞 «call me in 30 min», «позвони в 15:00» · 😴 «10 hour break», «10 soat dam olaman» · 📍 appointment · 📄 «BOL ni keyin yuboraman» · 🚨 buzilish, avariya, politsiya. O'zbek, rus, ingliz va turk tillarini tushunadi. Haydovchi vaqti uning vaqt mintaqasi bo'yicha hisoblanadi. Haydovchi «I'm up» deb yozsa yoki rasm yuborsa, ish o'zi yopiladi.",
+"Удалить":"O'chirish",
+"Трак, например 2080":"Trak, masalan 2080",
+"Время водителя: 05:00, 5am или +30":"Haydovchi vaqti: 05:00, 5am yoki +30",
+"Что сделать, например: разбудить":"Nima qilish kerak, masalan: uyg'otish",
+"Отправьте в бот, чтобы он не напоминал о сделанном":"Bajarilganlar haqida eslatmasligi uchun botga yuboring",
+"Сохранить в боте":"Botda saqlash",
+"Пусто":"Bo'sh",
+"Открытых дел нет":"Ochiq ishlar yo'q",
+"Здесь пусто":"Bu yerda bo'sh",
+"Бот сам добавит дело, когда водитель попросит разбудить, позвонить, напишет про перерыв, документы или проблему.":"Haydovchi uyg'otish yoki qo'ng'iroq qilishni so'rasa, tanaffus, hujjatlar yoki muammo haqida yozsa, bot ishni o'zi qo'shadi.",
 "Проверяем":"Tekshirilmoqda",
 "Все функции есть на любом тарифе.":"Barcha funksiyalar har qanday tarifda bor.",
 "— работает и проверено на живых данных.":"— ishlaydi va jonli ma'lumotlarda tekshirilgan.",
@@ -1362,7 +1586,7 @@ const UZ = {
 "готовится":"tayyorlanmoqda",
 "Тарифы отличаются только числом водителей. Оплата заработает после запуска сервера.":"Tariflar haydovchilar va kunlik apdeytlar soni bilan farq qiladi. To'lov server ishga tushgandan keyin ishlaydi.",
 "Или командой в чате, например: /plan pro":"Yoki chatda buyruq bilan, masalan: /plan pro",
-"Modenzo AI · версия окна 2026-11-20 19:55":"Modenzo AI · oyna versiyasi 2026-11-20 19:20",
+"Modenzo AI · версия окна 2026-11-20 21:30":"Modenzo AI · oyna versiyasi 2026-11-20 19:20",
 "Все функции и агенты на любом тарифе. Отличаются число водителей, апдейтов в день и режим.":"Barcha funksiyalar va agentlar har qanday tarifda. Haydovchilar, kunlik apdeytlar soni va rejim bilan farq qiladi.",
 "Смена":"Smena",
 "дешевле":"arzonroq",
@@ -1730,6 +1954,7 @@ function renderInner() {
   app.innerHTML = side + '<div class="main"><div class="content">' + (S.view === 'home' || S.view === 'settings' || locked() ? activationCard() : '') + body + '</div>' + tabbar + '</div>' + sheet + lockSheetHtml();
   if (S.lang !== 'ru') translateDom(app);
   [['etaTruck','truck'],['etaAddr','addr'],['etaAppt','appt']].forEach((x) => { const el = document.getElementById(x[0]); if (el) el.addEventListener('input', (e) => { S.etaF[x[1]] = e.target.value; const mono = el.parentNode.querySelector('.mono'); if (mono) mono.textContent = etaCommand(); }); });
+  [['tkWho','who'],['tkTime','time'],['tkNote','note']].forEach((x) => { const el = document.getElementById(x[0]); if (el) el.addEventListener('input', (e) => { S.tkForm[x[1]] = e.target.value; const mono = el.parentNode.querySelector('.mono'); if (mono) mono.textContent = tkCommand(); }); });
   const ta = document.getElementById('updta');
   if (ta) ta.addEventListener('input', (e) => { S.updDraft = e.target.value; });
   const q = document.getElementById('q');
@@ -1769,6 +1994,30 @@ function onClick(e) {
   if (d.act === 'updsave') { const v = (S.updDraft || '').trim(); if (v) { S.updText = v; S.updEdited = true; } S.updEditing = false; render(); toast('Текст сохранён. Нажмите «Отправить»'); return; }
   if (d.act === 'langbot') { S.botLang = S.lang; saveLang(); render(); sendToBot('lang-' + S.lang, '/language'); return; }
   if (d.act === 'updcancel') { S.updEditing = false; render(); return; }
+  if (d.tkf) { S.tkF = d.tkf; render(); return; }
+  if (d.tksel) { S.tkSel = S.tkSel === d.tksel ? '' : d.tksel; if (S.tkF !== 'all') S.tkF = 'all'; render(); const el = document.getElementById('tk-' + d.tksel); if (el && el.scrollIntoView) el.scrollIntoView({ block: 'center', behavior: 'smooth' }); return; }
+  if (d.tkd) { const t = S.tk.filter((x) => x.id === d.tkd)[0]; if (t) { t.st = 'd'; S.tkOps.d[t.id] = true; try { if (tg && tg.HapticFeedback) tg.HapticFeedback.notificationOccurred('success'); } catch (x) {} } render(); return; }
+  if (d.tki) { const t = S.tk.filter((x) => x.id === d.tki)[0]; if (t) { t.prio = (t.prio + 1) % 3; S.tkOps.i[t.id] = (S.tkOps.i[t.id] || 0) + 1; toast(tr3('Важность: ', 'Importance: ', 'Muhimlik: ') + (S.lang === 'ru' ? TK_PRIO[t.prio][0] : trText(TK_PRIO[t.prio][0]))); } render(); return; }
+  if (d.tkx) { S.tkOps.x[d.tkx] = true; delete S.tkOps.d[d.tkx]; delete S.tkOps.i[d.tkx]; render(); return; }
+  if (d.tkwho) { S.tkForm.who = d.tkwho; render(); const el = document.getElementById('tkTime'); if (el) { el.scrollIntoView({ block: 'center' }); el.focus(); } return; }
+  if (d.tknote) { S.tkForm.note = d.tknote; render(); return; }
+  if (d.act === 'tksave') {
+    const r = tkPayload();
+    if (r.p === 'tk') return;
+    S.tkOps = r.rest;
+    render();
+    if (tkOpsCount()) toast(tr3('Остальные изменения сохраните ещё раз', 'Save again for the rest of the changes', "Qolgan o'zgarishlarni yana saqlang"));
+    sendToBot(r.p, '/start ' + r.p);
+    return;
+  }
+  if (d.act === 'tkadd') {
+    if (!S.tkForm.who.trim() || !S.tkForm.time.trim()) { toast(tr3('Напишите трак и время', 'Write the truck and the time', 'Trak va vaqtni yozing')); return; }
+    const cmd = tkCommand();
+    try { navigator.clipboard.writeText(cmd).then(() => {}, () => {}); } catch (x) {}
+    if (tg && S.bot && tg.openTelegramLink) { toast('Команда скопирована: вставьте её в чат и отправьте'); setTimeout(() => tg.openTelegramLink('https://t.me/' + S.bot), 600); }
+    else toast('Отправьте боту команду: ' + cmd);
+    return;
+  }
   if (d.act === 'etarun') {
     if (!S.etaF.truck.trim() || !S.etaF.addr.trim()) { toast('Напишите номер трака и адрес стопа'); return; }
     const cmd = etaCommand();
