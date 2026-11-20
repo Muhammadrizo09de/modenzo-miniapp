@@ -307,13 +307,18 @@ function offMin(t) { return ((parseInt(t, 10) * 60 + (+t.slice(3, 5)) - S.wt.sta
 function hourState(t) { if (S.pm === 'full') return 'in'; const o = offMin(t); if (o > maxLen() * 60) return 'out'; if (o > minLen() * 60) return 'long'; return 'in'; }
 function windowText() { return S.pm === 'full' ? 'круглосуточно' : hh(S.wt.start) + '–' + hh(S.wt.start + maxLen()); }
 function nowParts() {
-  try { const f = new Intl.DateTimeFormat('en-GB', { timeZone: S.tz, weekday: 'short', hour: '2-digit', minute: '2-digit', hour12: false }).formatToParts(new Date());
-    const g = (k) => (f.filter((x) => x.type === k)[0] || {}).value;
-    const dp = new Intl.DateTimeFormat('en-CA', { timeZone: S.tz, year: 'numeric', month: '2-digit', day: '2-digit' }).format(new Date()).split('-');
-    return { wd: ['Mon','Tue','Wed','Thu','Fri','Sat','Sun'].indexOf(g('weekday')), min: (+g('hour') % 24) * 60 + (+g('minute')), y: +dp[0], mo: +dp[1], d: +dp[2] };
-  } catch (e) { const d = new Date(); return { wd: (d.getDay() + 6) % 7, min: d.getHours() * 60 + d.getMinutes(), y: d.getFullYear(), mo: d.getMonth() + 1, d: d.getDate() }; }
+  const d0 = new Date();
+  const local = { wd: (d0.getDay() + 6) % 7, min: d0.getHours() * 60 + d0.getMinutes(), y: d0.getFullYear(), mo: d0.getMonth() + 1, d: d0.getDate() };
+  try {
+    const f = new Intl.DateTimeFormat('en-US', { timeZone: S.tz, weekday: 'short', year: 'numeric', month: 'numeric', day: 'numeric', hour: 'numeric', minute: 'numeric', hourCycle: 'h23' }).formatToParts(d0);
+    const g = (k) => { const x = f.filter((p) => p.type === k)[0]; return x ? x.value : ''; };
+    const r = { wd: ['Mon','Tue','Wed','Thu','Fri','Sat','Sun'].indexOf(g('weekday').slice(0, 3)), min: (parseInt(g('hour'), 10) % 24) * 60 + parseInt(g('minute'), 10), y: parseInt(g('year'), 10), mo: parseInt(g('month'), 10), d: parseInt(g('day'), 10) };
+    if (r.wd < 0 || [r.min, r.y, r.mo, r.d].some((v) => !isFinite(v))) return local;
+    return r;
+  } catch (e) { return local; }
 }
-function dayKey(off) { const n = nowParts(); return new Date(Date.UTC(n.y, n.mo - 1, n.d + off)).toISOString().slice(0, 10); }
+function ymd(y, m, d) { const t = new Date(Date.UTC(y, m - 1, d)); return t.getUTCFullYear() + '-' + String(t.getUTCMonth() + 1).padStart(2, '0') + '-' + String(t.getUTCDate()).padStart(2, '0'); }
+function dayKey(off) { const n = nowParts(); return ymd(n.y, n.mo, n.d + off); }
 function lenOn(off) { const n = nowParts(); const c = S.offMap[dayKey(off)]; const wd = (((n.wd + off) % 7) + 7) % 7; if (c === undefined) return dayLen(wd); return S.pm === 'full' && c !== '0' ? 24 : (DCODE[c] || 0); }
 function nextOffCode(off) {
   const n = nowParts(), wd = (((n.wd + off) % 7) + 7) % 7, cur = S.offMap[dayKey(off)], shift = S.pm === 'shift';
@@ -379,7 +384,7 @@ try {
   if (wt) S.wt = { start: +wt[1] % 24, base: +wt[2], days: wt[3], alarms: wt[4] === '1' };
   if (q.get('tzc')) S.tzc = q.get('tzc');
   const of = (q.get('off') || '').match(/^(\d{2})(\d{2})(\d{2})-([-08ac]{1,60})$/);
-  if (of) { for (let i = 0; i < of[4].length; i++) if (of[4][i] !== '-') S.offMap[new Date(Date.UTC(2000 + +of[1], +of[2] - 1, +of[3] + i)).toISOString().slice(0, 10)] = of[4][i]; }
+  if (of) { for (let i = 0; i < of[4].length; i++) if (of[4][i] !== '-') S.offMap[ymd(2000 + +of[1], +of[2], +of[3] + i)] = of[4][i]; }
   const ag = (q.get('ag') || '').match(/^([01]{6})-(\d+)-(\d+)-(\d+)-([osa])$/);
   if (ag) { ['waiting','silent','risk','stopped','gps','late'].forEach((k, i) => { S.ag.on[k] = ag[1][i] === '1'; }); S.ag.waiting = +ag[2]; S.ag.silent = +ag[3]; S.ag.stopped = +ag[4]; S.ag.ar = ag[5]; }
 } catch (e) {}
@@ -422,6 +427,7 @@ function choosePlan(id, mode) {
   render();
   sendToBot('plan-' + id + '-' + mode[0], '/plan ' + id + ' ' + mode);
 }
+let toastTimer = null;
 function toast(text) {
   let el = document.getElementById('toast');
   if (!el) { el = document.createElement('div'); el.id = 'toast'; el.className = 'toast'; el.setAttribute('role', 'status'); document.body.appendChild(el); }
@@ -1013,6 +1019,14 @@ function translateDom(root) {
   });
 }
 function render() {
+  try { renderInner(); } catch (err) {
+    console.error('render', err);
+    const app = document.getElementById('app');
+    app.innerHTML = '<div class="main"><div class="content"><div class="card pad col" style="gap:10px;border-radius:18px;border-color:var(--amber-bd)"><b>Окно не открылось</b><div class="small sub">Пришлите скриншот разработчику: ' + esc(String(err && err.message || err)) + '</div><button class="btn" data-go="home">На главную</button></div></div></div>';
+    if (S.view !== 'home') S.view = 'home';
+  }
+}
+function renderInner() {
   const app = document.getElementById('app');
   app.className = 'app' + (isWide() ? ' wide' : '') + (locked() ? ' locked' : '');
   document.documentElement.lang = S.lang === 'en' ? 'en' : 'ru';
@@ -1024,7 +1038,12 @@ function render() {
   const sheet = S.sheet ? '<div class="sheet-bg" data-act="closesheet"><div class="sheet" role="dialog" aria-modal="true" aria-label="Большой экран"><div class="row" style="gap:14px"><span class="icon" style="width:56px;height:56px;border-radius:16px;background:var(--blue-bg);color:var(--blue)">' + ic('monitor', 28, 'currentColor', 1.9) + '</span><div class="col" style="gap:4px"><h2 style="font-size:20px">Нужен экран побольше</h2><span class="small muted">Компьютер, ноутбук или планшет</span></div></div>' +
     '<div class="small sub" style="line-height:1.55">Расширенный экран с доской грузов работает на компьютере, ноутбуке или планшете. Откройте этого бота в Telegram на компьютере и нажмите ту же кнопку.</div>' +
     '<div class="grid2"><button class="btn" data-act="copylink">Скопировать ссылку</button><button class="btn primary" data-act="closesheet">Понятно</button></div></div></div>' : '';
-  app.innerHTML = side + '<div class="main"><div class="content">' + lockBanner() + VIEWS[S.view]() + '</div>' + tabbar + '</div>' + sheet;
+  let body;
+  try { body = VIEWS[S.view](); } catch (err) {
+    console.error('view ' + S.view, err);
+    body = '<div class="card pad col" style="gap:10px;border-radius:18px;border-color:var(--amber-bd)"><b>Этот экран не открылся</b><div class="small sub" style="line-height:1.5">Пришлите скриншот разработчику: ' + esc(S.view + ': ' + (err && err.message || err)) + '</div><button class="btn" data-go="home">На главную</button></div>';
+  }
+  app.innerHTML = side + '<div class="main"><div class="content">' + lockBanner() + body + '</div>' + tabbar + '</div>' + sheet;
   if (S.lang === 'en') translateDom(app);
   const q = document.getElementById('q');
   if (q) q.addEventListener('input', (e) => { S.q = e.target.value; const pos = e.target.selectionStart; render(); const n = document.getElementById('q'); if (n) { n.focus(); n.setSelectionRange(pos, pos); } });
@@ -1032,8 +1051,12 @@ function render() {
 }
 
 document.addEventListener('click', (e) => {
+  try { onClick(e); } catch (err) { console.error('click', err); toast('Ошибка: ' + (err && err.message || err)); }
+});
+function onClick(e) {
   if (e.target.classList && e.target.classList.contains('sheet-bg')) { S.sheet = false; render(); return; }
-  const b = e.target.closest('button');
+  const t = e.target && e.target.nodeType === 3 ? e.target.parentElement : e.target;
+  const b = t && t.closest ? t.closest('button') : null;
   if (!b) return;
   const d = b.dataset;
   if (locked() && (d.upd || d.group || d.notif || d.slot || d.smode || d.son || d.lockgo || d.act === 'save' || d.act === 'launch' || d.act === 'stop')) {
@@ -1089,7 +1112,7 @@ document.addEventListener('click', (e) => {
   else if (d.act === 'compact') { S.compact = !S.compact; if (S.compact && (S.view === 'board' || S.view === 'drivers')) S.view = 'home'; }
   else return;
   render();
-});
+}
 if (tg && tg.BackButton) { try { tg.BackButton.onClick(() => go(S.view === 'tz' ? 'work' : (['help','plans','agents','work'].indexOf(S.view) >= 0 ? 'settings' : 'home'))); } catch (e) {} }
 window.addEventListener('resize', () => render());
 if (tg && tg.onEvent) { try { tg.onEvent('fullscreenChanged', render); tg.onEvent('fullscreenFailed', () => { try { tg.showAlert && tg.showAlert('Telegram не дал включить полный экран на этом устройстве'); } catch (x) {} }); } catch (e) {} }
