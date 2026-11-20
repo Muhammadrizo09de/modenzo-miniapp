@@ -83,8 +83,8 @@ h1,h2,h3{margin:0;font-family:'Space Grotesk',Inter,sans-serif;letter-spacing:-0
 .board{display:flex;flex-wrap:wrap;gap:20px;align-items:flex-start}
 .kpis{display:grid;grid-template-columns:repeat(auto-fit,minmax(140px,1fr));gap:12px}
 .desk-only{display:none}
-.app.locked [data-act="launch"],.app.locked [data-act="stop"],.app.locked [data-upd],.app.locked [data-group],.app.locked [data-notif],.app.locked [data-hours],.app.locked [data-interval],.app.locked [data-mode],.app.locked [data-lockgo]{opacity:.45;filter:grayscale(.7)}
-.app.locked [data-act="launch"]::after,.app.locked [data-upd]::after,.app.locked [data-lockgo]::after{content:'';width:14px;height:14px;margin-left:8px;background:currentColor;-webkit-mask:url("data:image/svg+xml;utf8,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 24 24' fill='none' stroke='black' stroke-width='2.4' stroke-linecap='round' stroke-linejoin='round'><rect x='4' y='11' width='16' height='10' rx='2'/><path d='M8 11V7a4 4 0 0 1 8 0v4'/></svg>") center/contain no-repeat;mask:url("data:image/svg+xml;utf8,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 24 24' fill='none' stroke='black' stroke-width='2.4' stroke-linecap='round' stroke-linejoin='round'><rect x='4' y='11' width='16' height='10' rx='2'/><path d='M8 11V7a4 4 0 0 1 8 0v4'/></svg>") center/contain no-repeat;display:inline-block;flex:none}
+.app.locked [data-act="save"],.app.locked [data-slot],.app.locked [data-smode],.app.locked [data-son],.app.locked [data-act="launch"],.app.locked [data-act="stop"],.app.locked [data-upd],.app.locked [data-group],.app.locked [data-notif],.app.locked [data-hours],.app.locked [data-interval],.app.locked [data-mode],.app.locked [data-lockgo]{opacity:.45;filter:grayscale(.7)}
+.app.locked [data-act="save"]::after,.app.locked [data-act="launch"]::after,.app.locked [data-upd]::after,.app.locked [data-lockgo]::after{content:'';width:14px;height:14px;margin-left:8px;background:currentColor;-webkit-mask:url("data:image/svg+xml;utf8,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 24 24' fill='none' stroke='black' stroke-width='2.4' stroke-linecap='round' stroke-linejoin='round'><rect x='4' y='11' width='16' height='10' rx='2'/><path d='M8 11V7a4 4 0 0 1 8 0v4'/></svg>") center/contain no-repeat;mask:url("data:image/svg+xml;utf8,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 24 24' fill='none' stroke='black' stroke-width='2.4' stroke-linecap='round' stroke-linejoin='round'><rect x='4' y='11' width='16' height='10' rx='2'/><path d='M8 11V7a4 4 0 0 1 8 0v4'/></svg>") center/contain no-repeat;display:inline-block;flex:none}
 .toast{position:fixed;left:50%;bottom:calc(92px + env(safe-area-inset-bottom));transform:translateX(-50%);max-width:min(92vw,420px);background:#1B2740;border:1px solid var(--line);color:var(--text);padding:12px 16px;border-radius:14px;font-size:14px;line-height:1.4;z-index:20;box-shadow:0 8px 24px rgba(0,0,0,.4)}
 @media (min-width: 900px){
   .app.wide .side{display:flex;flex-direction:column;gap:18px;width:240px;flex:none;background:var(--side);border-right:1px solid var(--line2);padding:20px 14px;position:sticky;top:0;height:100vh;overflow:auto}
@@ -181,11 +181,11 @@ const FEATURES = [
     ['Часовой пояс стопа и цепочка стопов','Опоздание на 3-м стопе сразу видно на 4-м',W],
     ['Точность за последние 30 прогнозов','Сравнение прогноза с реальным прибытием',P],
     ['Команда /eta за секунду','Расчёт заранее, в фоне',P]]],
-  ['Смена и апдейты', [
-    ['Запуск смены','Длительность, интервал, режим. До запуска бот молчит',P],
+  ['Апдейты', [
+    ['Расписание апдейтов','3–6 раз в сутки: в окне или командой /times',W],
     ['Режим «сначала показать мне»','Отправить, изменить или пропустить',W],
     ['Автоапдейты 3–6 раз в сутки','Не чаще раза в 4 часа, время выбираете вы',W],
-    ['Остановка смены (/stop)','Бот сразу перестаёт писать в группы',P]]],
+    ['Выключение апдейтов','Переключатель в окне или команда /updates off',W]]],
   ['Ответы и языки', [
     ['Ответы на вопросы по логистике','Amazon Relay, Street и другие',D],
     ['Только логистика','Другие темы бот вежливо отклоняет',W],
@@ -216,16 +216,16 @@ const SM = { done:['Есть','c-done'], dev:['В разработке','c-dev']
 
 const FAQ = [
   ['start','Что такое Modenzo AI?','Помощник диспетчера в Telegram. Он читает чаты водителей, смотрит GPS и часы работы, считает честный ETA и заранее предупреждает, какой груз опаздывает и на сколько. Апдейты отправляет только с вашего согласия.'],
-  ['start','Как начать работу?','Нажмите /start и ответьте на 4 вопроса: язык, борд, тип грузов, ключ ELD. Потом добавьте бота в группы водителей. В начале смены нажмите «Запустить смену».'],
+  ['start','Как начать работу?','Нажмите /start и ответьте на 4 вопроса: язык, борд, тип грузов, ключ ELD. Потом добавьте бота в группы водителей и выберите время апдейтов в «Расписании».'],
   ['start','Как добавить бота в группу водителя?','Откройте группу в Telegram и добавьте бота как участника. Бот сам проверит, видит ли он сообщения. Если нет, подскажет: обычно нужно сделать его администратором или добавить заново.'],
   ['start','Как подключить ELD?','В /start или в Настройках, раздел «Подключения». Вставьте API-ключ ELD вашей компании, бот проверит его. Проверка ключа работает для Samsara, Motive и Geotab. GPS пока берётся только из Samsara.'],
   ['start','Нужно ли водителям что-то устанавливать?','Нет. Водители пишут в свои группы как обычно. Бот работает внутри этих групп.'],
-  ['shift','Бот будет сам писать водителям?','Нет. Пока вы не запустили смену, бот только читает и анализирует. В группы он пишет только после запуска смены и только в выбранном вами режиме.'],
-  ['shift','Как запустить смену?','На главной нажмите «Управлять сменой». Выберите длительность (6, 7, 8 или 10 часов), как часто слать апдейты и режим. Потом нажмите «Запустить смену».'],
+  ['shift','Бот будет сам писать водителям?','Только в выбранное вами время и в выбранном режиме. В режиме «Сначала показать мне» каждый апдейт вы отправляете сами кнопкой.'],
+  ['shift','Как выбрать время апдейтов?','Откройте окно → «Расписание», отметьте от 3 до 6 времён (не чаще раза в 4 часа), выберите режим и нажмите «Сохранить». Или командой в чате, например: /times 08:00 14:00 20:00'],
   ['shift','Чем «Сначала показать мне» отличается от «Авто»?','В режиме «Сначала показать мне» бот готовит апдейт, а вы нажимаете «Отправить», «Изменить» или «Пропустить». В режиме «Авто» бот отправляет апдейты сам по расписанию.'],
   ['shift','Как часто приходят автоапдейты?','От 3 до 6 раз в сутки, не чаще одного раза в 4 часа. Время каждого апдейта выбираете вы.'],
-  ['shift','Как остановить бота?','Нажмите «Остановить смену» на экране смены или отправьте команду /stop. Бот сразу перестанет писать в группы.'],
-  ['shift','Работает ли бот вне моей смены?','Да, он читает и анализирует 24/7, но в группы вне смены не пишет. Это подходит для любой смены, не только ночной.'],
+  ['shift','Как выключить апдейты?','В «Расписании» выключите переключатель и нажмите «Сохранить» или отправьте команду /updates off. Включить обратно: /updates on.'],
+  ['shift','Бот работает только ночью?','Нет, 24/7, для любой смены. Апдейты уходят в выбранное время, а читает и анализирует бот круглосуточно.'],
   ['eta','Как бот считает ETA?','Считает код, а не ИИ: где грузовик по GPS, маршрут с пробками, сколько часов осталось у водителя, погода по пути и часовой пояс стопа. ИИ только объясняет результат словами.'],
   ['eta','Что значат On time, Tight и Probably late?','On time: запас больше 30 минут. Tight: запас от 0 до 30 минут. Probably late: опоздание, бот пишет на сколько минут и почему.'],
   ['eta','Почему время указано не по-моему?','Срок доставки сравнивается во времени самого стопа, потому что так его видит склад и брокер.'],
@@ -243,11 +243,11 @@ const FAQ = [
   ['pay','Есть ли пробный период?','Планируется пробная неделя: если не подойдёт, вернём деньги за вычетом использованных дней. Точная формула будет в оферте.'],
   ['pay','Как оплатить?','Оплата через Click, Payme и другие способы появится позже, после запуска сервера.']
 ];
-const FAQ_CATS = [['all','Все'],['start','Начало'],['shift','Смена'],['eta','ETA'],['lang','Языки'],['safe','Безопасность'],['pay','Тариф и оплата']];
+const FAQ_CATS = [['all','Все'],['start','Начало'],['shift','Апдейты'],['eta','ETA'],['lang','Языки'],['safe','Безопасность'],['pay','Тариф и оплата']];
 
 /* ---------- состояние ---------- */
 const S = {
-  view:'home', hours:7, interval:4, mode:'review', launched:false,
+  view:'home', slots:['08:00','14:00','20:00'], smode:'review', son:false, bot:'', tz:'Asia/Tashkent', saving:false,
   upd:'pending', groups:{ a:true, b:true, team:true }, feat:'all', cat:'all', open:'q1',
   lang:'ru', notif:{ late:true, silent:true, group:true },
   tab:'transit', sel:'1042', q:'', showNew:true, queue:{}, compact:false,
@@ -262,6 +262,15 @@ const S = {
   if (['ru','en','tr','uz'].indexOf(lang) >= 0) S.lang = lang;
   try { const a = new URLSearchParams(location.search).get('access'); if (['survey','unpaid','active'].indexOf(a) >= 0) S.access = a; } catch (e) {}
 })();
+try {
+  const q = new URLSearchParams(location.search);
+  const t = q.get('times');
+  if (t) { const list = t.split('-').filter((x) => /^\d{4}$/.test(x)).map((x) => x.slice(0, 2) + ':' + x.slice(2)); if (list.length) S.slots = list; }
+  if (q.get('mode')) S.smode = q.get('mode') === 'a' ? 'auto' : 'review';
+  if (q.get('on')) S.son = q.get('on') === '1';
+  if (q.get('bot')) S.bot = q.get('bot').replace(/[^A-Za-z0-9_]/g, '');
+  if (q.get('tz')) S.tz = q.get('tz');
+} catch (e) {}
 function locked() { return S.access !== 'active'; }
 let toastTimer = null;
 function toast(text) {
@@ -285,6 +294,18 @@ function openSeparate() {
   try { if (tg && tg.openLink) { tg.openLink(url); return; } } catch (x) {}
   window.open(url, '_blank', 'noopener');
 }
+function saveSchedule() {
+  const chk = schedCheck(S.slots);
+  if (!chk.ok) { toast(chk.msg); return; }
+  const payload = 'upd-' + S.slots.slice().sort().map((t) => t.replace(':', '')).join('-') + '-' + (S.smode === 'auto' ? 'a' : 'r') + '-' + (S.son ? '1' : '0');
+  if (tg && S.bot && tg.openTelegramLink) {
+    try { if (tg.HapticFeedback) tg.HapticFeedback.notificationOccurred('success'); } catch (x) {}
+    tg.openTelegramLink('https://t.me/' + S.bot + '?start=' + payload);
+    return;
+  }
+  const cmd = timesCommand();
+  try { navigator.clipboard.writeText(cmd).then(() => toast('Команда скопирована: отправьте её боту'), () => toast('Отправьте боту команду: ' + cmd)); } catch (x) { toast('Отправьте боту команду: ' + cmd); }
+}
 function bigScreenOk() {
   const phone = tg && (tg.platform === 'ios' || tg.platform === 'android');
   const minSide = Math.min(window.screen.width || 0, window.screen.height || 0);
@@ -307,12 +328,25 @@ function windowBar(withSeparate) {
 function go(v) { S.view = v; render(); window.scrollTo(0, 0); }
 
 function hh(h) { const v = ((h % 24) + 24) % 24; return (v < 10 ? '0' : '') + v + ':00'; }
-function schedule() {
-  const out = []; let n = 1;
-  for (let t = 16 + S.interval; t < 16 + S.hours; t += S.interval) { out.push(['Апдейт ' + n, hh(t)]); n++; }
-  out.push(['Итоговый апдейт', hh(16 + S.hours)]);
-  return out;
+function toMin(t) { return +t.slice(0, 2) * 60 + +t.slice(3); }
+function schedCheck(list) {
+  const sl = list.slice().sort();
+  if (sl.length < 3 || sl.length > 6) return { ok: false, msg: 'Выберите от 3 до 6 времён. Сейчас выбрано: ' + sl.length };
+  for (let i = 0; i < sl.length; i++) {
+    const a = toMin(sl[i]), b = toMin(sl[(i + 1) % sl.length]);
+    if (((b - a) % 1440 + 1440) % 1440 < 240) return { ok: false, msg: 'Между апдейтами нужно не меньше 4 часов: ' + sl[i] + '–' + sl[(i + 1) % sl.length] };
+  }
+  return { ok: true, msg: 'Выбрано ' + sl.length + ': ' + sl.join(', ') };
 }
+function tzLabel() { return ({ 'Asia/Tashkent': S.lang === 'en' ? 'Tashkent' : 'Ташкент', 'America/Chicago': 'Chicago', 'America/New_York': 'New York' })[S.tz] || S.tz; }
+function nowInTz() {
+  try { const p = new Date().toLocaleTimeString('en-GB', { timeZone: S.tz, hour12: false }); return p.slice(0, 5); } catch (e) { const d = new Date(); return String(d.getHours()).padStart(2, '0') + ':' + String(d.getMinutes()).padStart(2, '0'); }
+}
+function nextSlot() {
+  const sl = S.slots.slice().sort(); if (!sl.length) return '—';
+  const n = nowInTz(); return sl.find((t) => t > n) || sl[0];
+}
+function timesCommand() { return '/times ' + S.slots.slice().sort().join(' '); }
 
 /* ---------- экраны ---------- */
 function head(title, sub, backTo) {
@@ -321,21 +355,21 @@ function head(title, sub, backTo) {
 }
 
 function vHome() {
-  const sch = schedule();
   const wb = !isWide() ? windowBar() : '';
+  const modeName = S.smode === 'auto' ? 'авто' : 'сначала показать мне';
   return (wb ? '<div class="wrap">' + wb + '</div>' : '') + '<div class="row" style="justify-content:space-between">' +
     '<div class="row" style="gap:10px">' + LOGO + '<div><h2 style="font-size:19px">Modenzo AI</h2><div class="xs muted">Помощник диспетчера 24/7</div></div></div>' +
-    (S.launched ? '<span class="chip c-done" style="height:30px"><span class="dot" style="background:var(--mint);margin-right:6px"></span>Смена идёт</span>' : '<span class="chip c-dev" style="height:30px">Смена не запущена</span>') + '</div>' +
-    '<div class="card" style="padding:20px;display:flex;flex-direction:column;gap:18px">' +
-      '<div class="row" style="gap:18px"><svg width="84" height="84" viewBox="0 0 84 84" role="img" aria-label="Прогресс смены"><circle cx="42" cy="42" r="34" fill="none" stroke="#22304A" stroke-width="8"/><circle cx="42" cy="42" r="34" fill="none" stroke="#3DDC97" stroke-width="8" stroke-linecap="round" stroke-dasharray="' + (S.launched ? '102.5' : '0') + ' 213.6" stroke-opacity="' + (S.launched ? 1 : 0) + '" transform="rotate(-90 42 42)"/><text x="42" y="47" text-anchor="middle" font-family="Space Grotesk, Inter, sans-serif" font-size="18" font-weight="700" fill="#EAF0FA">' + (S.launched ? '48%' : '0%') + '</text></svg>' +
-      '<div class="col" style="gap:4px;flex:1;min-width:0"><div class="small muted">Смена 16:00–' + hh(16 + S.hours) + ' (время США)</div><h2 style="font-size:22px">' + (S.launched ? '3 ч 22 мин из ' + S.hours + ' ч' : 'Бот пока только слушает') + '</h2><div class="small sub">' + (S.launched ? 'Следующий апдейт в ' + sch[0][1] : 'В группы водителей ничего не пишет до запуска') + '</div></div></div>' +
-      '<div class="grid2"><button class="btn primary" data-go="shift">' + (S.launched ? 'Управлять сменой' : 'Запустить смену') + '</button><button class="btn" data-go="updates">Решения · ' + (S.upd === 'pending' ? 1 : 0) + '</button></div></div>' +
+    (S.son ? '<span class="chip c-done" style="height:30px"><span class="dot" style="background:var(--mint);margin-right:6px"></span>Апдейты включены</span>' : '<span class="chip c-dev" style="height:30px">Апдейты выключены</span>') + '</div>' +
+    '<div class="card" style="padding:20px;display:flex;flex-direction:column;gap:16px">' +
+      '<div class="row" style="gap:16px"><span class="icon" style="width:64px;height:64px;border-radius:20px;background:var(--mint-bg);color:var(--mint)">' + ic('clock', 30, 'currentColor', 2) + '</span>' +
+      '<div class="col" style="gap:3px;flex:1;min-width:0"><div class="small muted">Следующий апдейт</div><h2 style="font-size:30px">' + (S.son ? nextSlot() : '—') + '</h2><div class="xs sub">' + (S.son ? 'по времени: ' + tzLabel() + ' · режим: ' + modeName : 'Включите апдейты в «Расписании»') + '</div></div></div>' +
+      '<div class="wrap">' + S.slots.slice().sort().map((t) => '<span class="pill" style="display:inline-flex;align-items:center;height:30px;' + (S.son && t === nextSlot() ? 'border-color:var(--mint);color:var(--mint-t)' : '') + '">' + t + '</span>').join('') + '</div>' +
+      '<div class="grid2"><button class="btn primary" data-go="shift">Расписание</button><button class="btn" data-go="updates">Решения · ' + (S.upd === 'pending' ? 1 : 0) + '</button></div></div>' +
     '<div class="col" style="gap:12px"><div class="row" style="justify-content:space-between"><h3 style="font-size:18px">Требует внимания</h3><span class="xs muted">Пример данных</span></div>' +
       alertRow('eta', 'clock', 'var(--red-bg)', 'var(--red)', 'Load 1042 · стоп 3 из 4', 'Опоздает примерно на 45 мин', 'var(--red)', 'var(--red-bd)') +
       alertRow('eta', 'warn', 'var(--amber-bg)', 'var(--amber)', 'Load 1128 · стоп 2 из 3', 'Впритык: запас 15 мин', 'var(--amber)') +
       alertRow('groups', 'chat', 'var(--blue-bg)', 'var(--blue)', 'Группа Driver C', 'Бот не видит сообщения, нужно поправить', 'var(--sub)') + '</div>' +
     '<div class="col" style="gap:12px"><div class="row" style="justify-content:space-between"><h3 style="font-size:18px">Функции</h3><button data-go="features" style="background:none;border:0;font-weight:600;font-size:13px;color:var(--mint-t)">Все функции</button></div>' +
-      '<button class="card pad row" data-go="board" style="text-align:left;background:#0F1A30;border-color:var(--blue-bd)"><span class="icon" style="background:var(--blue-bg);color:var(--blue)">' + ic('truck') + '</span><span class="col" style="flex:1;gap:3px"><span style="font-weight:600;font-size:15px">Доска грузов</span><span class="xs" style="color:var(--blue)">На компьютере открывается расширенным экраном</span></span>' + ic('chev', 18, 'var(--blue)', 2) + '</button>' +
       '<div class="grid2">' +
         tile('updates', 'send', 'Апдейты', 'По расписанию, после вашего «Отправить»') +
         tile('eta', 'pin', 'Честный ETA', 'Пробки, часы водителя, погода, цепочка стопов') +
@@ -350,25 +384,23 @@ function tile(to, icon, title, sub, plan) {
 }
 
 function vShift() {
-  const sch = schedule();
-  if (S.launched) {
-    return head('Смена', 'Бот пишет в группы только в выбранном режиме', 'home') +
-      '<div class="card" style="padding:20px;background:var(--mint-bg);border-color:var(--mint-bd);display:flex;flex-direction:column;gap:10px"><span class="icon" style="border-radius:50%;width:48px;height:48px;background:var(--mint)">' + ic('check', 24, '#06241A', 3) + '</span><h2 style="font-size:22px">Смена запущена</h2><div class="small" style="color:#C7E9D9">До ' + hh(16 + S.hours) + ' по времени США. Режим: ' + (S.mode === 'review' ? 'сначала показать мне' : 'авто') + '.</div></div>' +
-      '<div class="col" style="gap:10px"><div class="label">Расписание</div><div class="listcard list">' + sch.map((s) => '<div class="row" style="justify-content:space-between"><span>' + s[0] + '</span><span class="small muted">' + s[1] + '</span></div>').join('') + '</div></div>' +
-      '<button class="btn danger" data-act="stop">Остановить смену (/stop)</button>';
-  }
-  return head('Запуск смены', 'Пока смена не запущена, бот в группах молчит', 'home') +
-    '<div class="col" style="gap:10px"><div class="label">Длительность смены</div><div style="display:grid;grid-template-columns:repeat(4,1fr);gap:8px">' + [6,7,8,10].map((h) => '<button class="seg' + (S.hours === h ? ' on' : '') + '" data-hours="' + h + '">' + h + ' ч</button>').join('') + '</div></div>' +
-    '<div class="col" style="gap:10px"><div class="label">Апдейт каждые</div><div style="display:grid;grid-template-columns:repeat(3,1fr);gap:8px">' + [4,6,8].map((h) => '<button class="seg' + (S.interval === h ? ' on' : '') + '" data-interval="' + h + '">' + h + ' ч</button>').join('') + '</div><div class="xs muted">Чаще чем раз в 4 часа нельзя</div></div>' +
+  const chk = schedCheck(S.slots);
+  const hours = [];
+  for (let h = 0; h < 24; h++) hours.push((h < 10 ? '0' : '') + h + ':00');
+  return head('Расписание апдейтов', 'Бот работает 24/7 и пишет в группы только в это время', 'home') +
+    '<div class="col" style="gap:10px"><div class="label">Время апдейтов · ' + tzLabel() + '</div>' +
+      '<div style="display:grid;grid-template-columns:repeat(6,minmax(0,1fr));gap:6px">' + hours.map((t) => '<button class="seg' + (S.slots.indexOf(t) >= 0 ? ' on' : '') + '" style="height:44px;font-size:14px" data-slot="' + t + '">' + t + '</button>').join('') + '</div>' +
+      '<div class="xs" style="color:' + (chk.ok ? 'var(--mint-t)' : 'var(--amber)') + '">' + chk.msg + '</div>' +
+      '<div class="xs muted">От 3 до 6 раз в сутки, не чаще чем раз в 4 часа.</div></div>' +
     '<div class="col" style="gap:10px"><div class="label">Режим</div>' +
-      [['review','Сначала показать мне','Бот готовит апдейт, вы нажимаете «Отправить», «Изменить» или «Пропустить».'],['auto','Авто','Бот отправляет апдейты сам по расписанию. Включайте, когда доверяете расчётам.']].map((m) => {
-        const on = S.mode === m[0];
-        return '<button data-mode="' + m[0] + '" class="card col" style="text-align:left;gap:6px;padding:14px 16px;border-radius:16px;' + (on ? 'border-color:var(--mint);background:#10261F' : '') + '"><span class="row" style="justify-content:space-between"><span style="font-weight:600;font-size:15px">' + m[1] + '</span><span style="width:18px;height:18px;border-radius:50%;border:' + (on ? '6px solid var(--mint)' : '2px solid #4A5B7A') + '"></span></span><span class="small sub" style="line-height:1.45">' + m[2] + '</span></button>';
+      [['review','Сначала показать мне','Бот присылает вам черновик, вы нажимаете «Отправить», «Изменить» или «Пропустить».'],['auto','Авто','Бот отправляет апдейты в группы сам и присылает вам короткую сводку.']].map((m) => {
+        const on = S.smode === m[0];
+        return '<button data-smode="' + m[0] + '" class="card col" style="text-align:left;gap:6px;padding:14px 16px;border-radius:16px;' + (on ? 'border-color:var(--mint);background:#10261F' : '') + '"><span class="row" style="justify-content:space-between"><span style="font-weight:600;font-size:15px">' + m[1] + '</span><span style="width:18px;height:18px;border-radius:50%;border:' + (on ? '6px solid var(--mint)' : '2px solid #4A5B7A') + '"></span></span><span class="small sub" style="line-height:1.45">' + m[2] + '</span></button>';
       }).join('') + '</div>' +
-    '<div class="card pad col" style="gap:8px;border-radius:18px"><div class="row" style="justify-content:space-between;font-size:14px"><span class="muted">Смена</span><b>16:00–' + hh(16 + S.hours) + ' (США)</b></div><div class="row" style="justify-content:space-between;font-size:14px"><span class="muted">Апдейты</span><b>' + sch.map((s) => s[1]).join(', ') + '</b></div></div>' +
-    '<button class="btn primary" style="height:56px;font-size:17px" data-act="launch">Запустить смену</button><div class="xs muted" style="text-align:center">В демо кнопка ничего не отправляет. Запуск командой /shift в группе тоже планируется</div>';
+    '<div class="card row" style="padding:14px 16px;border-radius:16px"><span class="col" style="flex:1"><b style="font-size:15px">Апдейты включены</b><span class="xs muted">Выключите, чтобы бот перестал отправлять</span></span><button class="toggle' + (S.son ? ' on' : '') + '" data-son="1" aria-label="Апдейты включены"><span></span></button></div>' +
+    '<button class="btn primary" style="height:56px;font-size:17px' + (chk.ok ? '' : ';opacity:.5') + '" data-act="save">Сохранить</button>' +
+    '<div class="card pad col" style="gap:8px;border-radius:16px;background:#0F1626"><div class="small sub">Можно и командой в чате с ботом. Например:</div><div class="mono" style="padding:10px 12px">' + esc(timesCommand()) + '</div><div class="xs muted">Включить или выключить: /updates on, /updates off. Сделать черновики сейчас: /update</div></div>';
 }
-
 function vUpdates() {
   const pending = S.upd === 'pending', sent = S.upd === 'sent';
   const badge = pending ? ['Ждёт вашего решения','var(--amber)','var(--amber-bd)'] : (sent ? ['Отправлено (демо)','var(--mint-t)','var(--mint-bd)'] : ['Пропущено','var(--muted)','var(--line)']);
@@ -397,8 +429,8 @@ function stopsHtml(stops) {
 }
 
 function vGroups() {
-  const list = [['a','Driver A','DA','Читает · 24 сообщения сегодня'],['b','Driver B','DB','Читает · 9 сообщений сегодня'],['team','Команда смены','КС','Здесь запускается смена']];
-  return head('Группы', 'Бот читает включённые группы 24/7. Писать в них начнёт только после запуска смены.') +
+  const list = [['a','Driver A','DA','Читает · 24 сообщения сегодня'],['b','Driver B','DB','Читает · 9 сообщений сегодня'],['team','Команда','КМ','Общая группа коллег']];
+  return head('Группы', 'Бот читает включённые группы 24/7. Писать в них будет только в выбранное время апдейтов.') +
     '<div class="col" style="gap:10px">' + list.map((g) => {
       const on = S.groups[g[0]];
       return '<div class="card row" style="padding:14px 16px;border-radius:18px"><span class="icon" style="width:40px;height:40px;background:var(--raised);font-weight:700;font-size:14px">' + g[2] + '</span><div style="flex:1;min-width:0"><div style="font-weight:600">' + g[1] + '</div><div class="small muted">' + (on ? g[3] : 'Чтение выключено') + '</div></div><button class="toggle' + (on ? ' on' : '') + '" data-group="' + g[0] + '" aria-label="Чтение: ' + g[1] + '"><span></span></button></div>';
@@ -424,7 +456,7 @@ function vFeatures() {
 function vHelp() {
   const items = FAQ.map((x, i) => ['q' + (i + 1)].concat(x)).filter((x) => S.cat === 'all' || x[1] === S.cat);
   return head('Инструкция', FAQ.length + ' вопросов и ответов', 'settings') +
-    '<div class="card pad col" style="gap:12px"><b>Быстрый старт за 3 шага</b>' + ['Нажмите /start и ответьте на 4 коротких вопроса.','Добавьте бота в группы водителей и подключите ELD.','В начале смены нажмите «Запустить смену».'].map((t, i) => '<div class="row" style="align-items:flex-start"><span class="icon" style="width:26px;height:26px;border-radius:50%;background:var(--mint);color:var(--on-mint);font-weight:700;font-size:13px">' + (i + 1) + '</span><span style="font-size:14px;line-height:1.45">' + t + '</span></div>').join('') + '</div>' +
+    '<div class="card pad col" style="gap:12px"><b>Быстрый старт за 3 шага</b>' + ['Нажмите /start и ответьте на 4 коротких вопроса.','Добавьте бота в группы водителей и подключите ELD.','Выберите время апдейтов в «Расписании».'].map((t, i) => '<div class="row" style="align-items:flex-start"><span class="icon" style="width:26px;height:26px;border-radius:50%;background:var(--mint);color:var(--on-mint);font-weight:700;font-size:13px">' + (i + 1) + '</span><span style="font-size:14px;line-height:1.45">' + t + '</span></div>').join('') + '</div>' +
     '<div class="wrap">' + FAQ_CATS.map((c) => '<button class="pill' + (S.cat === c[0] ? ' on' : '') + '" data-cat="' + c[0] + '">' + c[1] + '</button>').join('') + '</div>' +
     '<div class="col" style="gap:8px">' + items.map((x) => {
       const open = S.open === x[0];
@@ -439,7 +471,7 @@ function vSettings() {
     '<button class="card row" data-go="help" style="text-align:left;padding:16px;background:var(--mint-bg);border-color:var(--mint-bd)"><span class="icon" style="width:48px;height:48px;border-radius:14px;background:var(--mint)">' + ic('help', 24, '#06241A', 2.2) + '</span><span class="col" style="flex:1"><b style="font-size:16px">Инструкция и вопросы</b><span class="small" style="color:#C7E9D9">Как всё работает: ' + FAQ.length + ' ответов</span></span>' + ic('chev', 18, 'var(--mint-t)', 2) + '</button>' +
     '<div class="col" style="gap:10px"><div class="label">Язык бота</div><div style="display:grid;grid-template-columns:repeat(4,1fr);gap:8px">' + [['ru','RU'],['en','EN'],['tr','TR'],['uz','UZ']].map((l) => '<button class="seg' + (S.lang === l[0] ? ' on' : '') + '" data-lang="' + l[0] + '">' + l[1] + '</button>').join('') + '</div><div class="xs muted">' + (S.lang === 'tr' || S.lang === 'uz' ? 'Этот язык появится позже, пока окно и бот на русском' : 'Окно и бот переключаются на этот язык') + '</div></div>' +
     '<div class="col" style="gap:10px"><div class="label">Доступ (демо)</div><div class="wrap">' + [['active','Оплачено'],['survey','Опрос не пройден'],['unpaid','Не оплачено']].map((x) => '<button class="pill' + (S.access === x[0] ? ' on' : '') + '" data-access="' + x[0] + '">' + x[1] + '</button>').join('') + '</div><div class="xs muted">Переключатель только для показа. В настоящем боте статус придёт с сервера.</div></div>' +
-    '<div class="col" style="gap:10px"><div class="label">Смена по умолчанию</div><div class="listcard list">' + [['Время смены','16:00–23:00 (США)'],['Мой часовой пояс','Ташкент, UTC+5'],['Апдейт каждые','4 часа'],['Режим','Сначала показать мне']].map((r) => '<div class="row" style="justify-content:space-between"><span>' + r[0] + '</span><span class="small muted">' + r[1] + '</span></div>').join('') + '</div><div class="xs muted">В марте время смены сдвигается вместе с переходом США на летнее время.</div></div>' +
+    '<div class="col" style="gap:10px"><div class="label">Расписание апдейтов</div><div class="listcard list">' + [['Время', S.slots.slice().sort().join(', ')],['Часовой пояс', tzLabel()],['Режим', S.smode === 'auto' ? 'Авто' : 'Сначала показать мне'],['Апдейты', S.son ? 'включены' : 'выключены']].map((r) => '<div class="row" style="justify-content:space-between"><span>' + r[0] + '</span><span class="small muted">' + esc(r[1]) + '</span></div>').join('') + '<button data-go="shift" class="row" style="justify-content:space-between;width:100%;background:none;border:0;font-size:15px;text-align:left;color:var(--mint-t);font-weight:600"><span>Изменить расписание</span>' + ic('chev', 16, 'var(--mint-t)', 2) + '</button></div><div class="xs muted">Или командой в чате, например: /times 08:00 14:00 20:00</div></div>' +
     '<div class="col" style="gap:10px"><div class="label">Подключения и команда</div><div class="listcard list"><button data-go="groups" class="row" style="justify-content:space-between;width:100%;background:none;border:0;border-bottom:1px solid var(--line2);font-size:15px;text-align:left"><span>Группы водителей</span><span class="row small muted" style="gap:6px">3 из 4 ' + ic('chev', 16, 'var(--muted)', 2) + '</span></button><div class="row" style="justify-content:space-between"><span>ELD · Samsara</span><span class="small" style="color:var(--mint-t)">Подключено (пример)</span></div><div class="row" style="justify-content:space-between"><span>Борд (Google Sheets)</span><span class="small muted">Update Board</span></div><div class="row" style="justify-content:space-between"><span>Тиммейты</span><span class="small muted">3 человека</span></div><div class="row" style="justify-content:space-between"><span>Amazon Relay</span><span class="chip c-plan">План</span></div></div></div>' +
     '<div class="col" style="gap:10px"><div class="label">Уведомления мне</div><div class="listcard list">' + nl.map((t) => '<div class="row"><span class="col" style="flex:1"><span>' + t[1] + '</span><span class="xs muted">' + t[2] + '</span></span><button class="toggle' + (S.notif[t[0]] ? ' on' : '') + '" data-notif="' + t[0] + '" aria-label="' + t[1] + '"><span></span></button></div>').join('') + '</div></div>' +
     '<div class="col" style="gap:10px"><div class="row" style="justify-content:space-between"><div class="label">Тариф и оплата</div><span class="chip c-plan">Скоро</span></div><div class="listcard list">' + [['Тариф','Старт · до 10 водителей'],['Пробная неделя','появится позже'],['Оплата','Click · Payme · другие'],['Оферта','готовится']].map((r) => '<div class="row" style="justify-content:space-between"><span>' + r[0] + '</span><span class="small muted">' + r[1] + '</span></div>').join('') + '</div><div class="xs muted">Тарифы отличаются только числом водителей. Оплата заработает после запуска сервера.</div></div>' +
@@ -576,10 +608,19 @@ const EN = {
 'Бот пишет в группы только в выбранном режиме':'The bot posts to groups only in the chosen mode','Смена запущена':'Shift started','Расписание':'Schedule','Итоговый апдейт':'Final update','Остановить смену (/stop)':'Stop shift (/stop)',
 'Только просмотр':'View only','Пройдите опрос /start до конца, чтобы включить функции.':'Finish the /start survey to turn features on.','Пройти опрос':'Take survey','Тариф не оплачен. Функции включатся после оплаты.':'The plan is not paid. Features turn on after payment.',
 'Доступно после опроса /start':'Available after the /start survey','Доступно после оплаты тарифа':'Available after the plan is paid','Вернитесь в чат с ботом и нажмите /start':'Go back to the bot chat and tap /start','Оплата появится позже, после запуска сервера':'Payment will come later, after the server launch',
+'Апдейты включены':'Updates on','Апдейты выключены':'Updates off','Следующий апдейт':'Next update','Включите апдейты в «Расписании»':'Turn updates on in “Schedule”','Расписание':'Schedule','Расписание апдейтов':'Update schedule','Бот работает 24/7 и пишет в группы только в это время':'The bot works 24/7 and posts to groups only at these times','От 3 до 6 раз в сутки, не чаще чем раз в 4 часа.':'3 to 6 times a day, not more often than every 4 hours.','Бот присылает вам черновик, вы нажимаете «Отправить», «Изменить» или «Пропустить».':'The bot sends you a draft, you tap “Send”, “Edit” or “Skip”.','Бот отправляет апдейты в группы сам и присылает вам короткую сводку.':'The bot posts updates to groups by itself and sends you a short summary.','Выключите, чтобы бот перестал отправлять':'Turn off to stop the bot sending','Сохранить':'Save','Можно и командой в чате с ботом. Например:':'You can also use a command in the bot chat. Example:','Включить или выключить: /updates on, /updates off. Сделать черновики сейчас: /update':'Turn on or off: /updates on, /updates off. Make drafts now: /update','Команда скопирована: отправьте её боту':'Command copied: send it to the bot','Изменить расписание':'Change schedule','Или командой в чате, например: /times 08:00 14:00 20:00':'Or with a command in the chat, for example: /times 08:00 14:00 20:00','Время':'Times','Часовой пояс':'Time zone','Апдейты':'Updates','включены':'on','выключены':'off','Расписание апдейтов':'Update schedule','3–6 раз в сутки: в окне или командой /times':'3–6 times a day: in the window or with /times','Выключение апдейтов':'Turning updates off','Переключатель в окне или команда /updates off':'The switch in the window or /updates off','Нажмите /start и ответьте на 4 вопроса: язык, борд, тип грузов, ключ ELD. Потом добавьте бота в группы водителей и выберите время апдейтов в «Расписании».':'Tap /start and answer 4 questions: language, board, freight type, ELD key. Then add the bot to driver groups and pick update times in “Schedule”.','Только в выбранное вами время и в выбранном режиме. В режиме «Сначала показать мне» каждый апдейт вы отправляете сами кнопкой.':'Only at the times and in the mode you chose. In “Show me first” you send each update yourself with a button.','Как выбрать время апдейтов?':'How do I pick update times?','Откройте окно → «Расписание», отметьте от 3 до 6 времён (не чаще раза в 4 часа), выберите режим и нажмите «Сохранить». Или командой в чате, например: /times 08:00 14:00 20:00':'Open the window → “Schedule”, mark 3 to 6 times (not more often than every 4 hours), pick the mode and tap “Save”. Or use a command in the chat, for example: /times 08:00 14:00 20:00','Как выключить апдейты?':'How do I turn updates off?','В «Расписании» выключите переключатель и нажмите «Сохранить» или отправьте команду /updates off. Включить обратно: /updates on.':'In “Schedule” switch it off and tap “Save”, or send /updates off. To turn back on: /updates on.','Бот работает только ночью?':'Does the bot work only at night?','Нет, 24/7, для любой смены. Апдейты уходят в выбранное время, а читает и анализирует бот круглосуточно.':'No, 24/7, for any shift. Updates go out at the chosen times, and the bot reads and analyses around the clock.','Выберите время апдейтов в «Расписании».':'Pick update times in “Schedule”.','Бот читает включённые группы 24/7. Писать в них будет только в выбранное время апдейтов.':'The bot reads enabled groups 24/7. It posts to them only at the chosen update times.','Команда':'Team','Чтение: Команда':'Reading: Team','КМ':'TM','Общая группа коллег':'Shared group of colleagues','Ташкент':'Tashkent',
 'Большой экран':'Big screen','Нужен экран побольше':'A bigger screen is needed','Компьютер, ноутбук или планшет':'Computer, laptop or tablet','Расширенный экран с доской грузов работает на компьютере, ноутбуке или планшете. Откройте этого бота в Telegram на компьютере и нажмите ту же кнопку.':'The expanded load board works on a computer, laptop or tablet. Open this bot in Telegram on your computer and tap the same button.','Скопировать ссылку':'Copy link','Понятно':'Got it','Ссылка скопирована: откройте её на компьютере':'Link copied: open it on your computer','Группы водителей':'Driver groups','3 из 4':'3 of 4',
 'Telegram не дал включить полный экран на этом устройстве':'Telegram did not allow full screen on this device','Отдых 10 ч, до 04:00':'10 h rest, until 04:00','после отдыха 11 ч':'11 h after rest','У шиппера · 40 мин':'At shipper · 40 min'
 };
 const EN_RULES = [
+[/^Выберите от 3 до 6 времён\. Сейчас выбрано: (\d+)$/, 'Pick 3 to 6 times. Selected now: $1'],
+[/^Между апдейтами нужно не меньше 4 часов: (.+)$/, 'Updates must be at least 4 hours apart: $1'],
+[/^Выбрано (\d+): (.+)$/, 'Selected $1: $2'],
+[/^по времени: (.+) · режим: сначала показать мне$/, 'time zone: $1 · mode: show me first'],
+[/^по времени: (.+) · режим: авто$/, 'time zone: $1 · mode: auto'],
+[/^Время апдейтов · (.+)$/, 'Update times · $1'],
+[/^Следующий: (.+)$/, 'Next: $1'],
+[/^Отправьте боту команду: (.+)$/, 'Send the bot this command: $1'],
 [/^Смена (\d\d:\d\d)–(\d\d:\d\d) \(время США\)$/, 'Shift $1–$2 (US time)'],
 [/^(\d\d:\d\d)–(\d\d:\d\d) \(время США\)$/, '$1–$2 (US time)'],
 [/^(\d\d:\d\d)–(\d\d:\d\d) \(США\)$/, '$1–$2 (US)'],
@@ -639,7 +680,7 @@ function render() {
   const active = TAB_OF[S.view] || S.view;
   const side = '<aside class="side"><div class="row" style="gap:10px;padding:0 6px">' + LOGO + '<div><h2 style="font-size:18px">Modenzo AI</h2><div class="xs muted">Расширенный экран</div></div></div><nav class="col" style="gap:4px" aria-label="Разделы">' +
     NAV.map((n) => '<button class="navbtn' + (S.view === n[0] ? ' on' : '') + '" data-go="' + n[0] + '">' + ic(n[2], 18) + n[1] + '</button>').join('') + '</nav>' +
-    '<div class="col" style="margin-top:auto;gap:8px">' + windowBar(true) + '<div class="card col" style="padding:12px;border-radius:16px;gap:4px;border-color:' + (S.launched ? 'var(--mint-bd)' : 'var(--amber-bd)') + '"><span class="xs" style="font-weight:600;color:' + (S.launched ? 'var(--mint-t)' : 'var(--amber)') + '">' + (S.launched ? 'Смена идёт' : 'Смена не запущена') + '</span><span class="small sub">16:00–' + hh(16 + S.hours) + ' (время США)</span></div><div class="xs" style="color:var(--faint);padding:0 6px">Демо · данные примерные</div></div></aside>';
+    '<div class="col" style="margin-top:auto;gap:8px">' + windowBar(true) + '<div class="card col" style="padding:12px;border-radius:16px;gap:4px;border-color:' + (S.son ? 'var(--mint-bd)' : 'var(--amber-bd)') + '"><span class="xs" style="font-weight:600;color:' + (S.son ? 'var(--mint-t)' : 'var(--amber)') + '">' + (S.son ? 'Апдейты включены' : 'Апдейты выключены') + '</span><span class="small sub">' + (S.son ? 'Следующий: ' + nextSlot() + ' (' + tzLabel() + ')' : S.slots.slice().sort().join(', ')) + '</span></div><div class="xs" style="color:var(--faint);padding:0 6px">Демо · данные примерные</div></div></aside>';
   const tabbar = '<nav class="tabbar" aria-label="Разделы">' + TABS.map((t) => t[0] === 'big' ? '<button class="tab center" data-act="big" aria-label="Большой экран"><span class="fab">' + ic('monitor', 26, 'currentColor', 2) + '</span>' + t[1] + '</button>' : '<button class="tab' + (active === t[0] ? ' on' : '') + '" data-go="' + t[0] + '">' + ic(t[2], 22, 'currentColor', 1.8) + t[1] + '</button>').join('') + '</nav>';
   const sheet = S.sheet ? '<div class="sheet-bg" data-act="closesheet"><div class="sheet" role="dialog" aria-modal="true" aria-label="Большой экран"><div class="row" style="gap:14px"><span class="icon" style="width:56px;height:56px;border-radius:16px;background:var(--blue-bg);color:var(--blue)">' + ic('monitor', 28, 'currentColor', 1.9) + '</span><div class="col" style="gap:4px"><h2 style="font-size:20px">Нужен экран побольше</h2><span class="small muted">Компьютер, ноутбук или планшет</span></div></div>' +
     '<div class="small sub" style="line-height:1.55">Расширенный экран с доской грузов работает на компьютере, ноутбуке или планшете. Откройте этого бота в Telegram на компьютере и нажмите ту же кнопку.</div>' +
@@ -656,15 +697,16 @@ document.addEventListener('click', (e) => {
   const b = e.target.closest('button');
   if (!b) return;
   const d = b.dataset;
-  if (locked() && (d.upd || d.group || d.notif || d.hours || d.interval || d.mode || d.lockgo || d.act === 'launch' || d.act === 'stop')) {
+  if (locked() && (d.upd || d.group || d.notif || d.slot || d.smode || d.son || d.lockgo || d.act === 'save' || d.act === 'launch' || d.act === 'stop')) {
     toast(S.access === 'survey' ? 'Доступно после опроса /start' : 'Доступно после оплаты тарифа');
     return;
   }
   if (d.lockgo) return go(d.lockgo);
   if (d.go) return go(d.go);
-  if (d.hours) S.hours = +d.hours;
-  else if (d.interval) S.interval = +d.interval;
-  else if (d.mode) S.mode = d.mode;
+  if (d.slot) { const i = S.slots.indexOf(d.slot); if (i >= 0) S.slots.splice(i, 1); else S.slots.push(d.slot); S.slots.sort(); }
+  else if (d.smode) S.smode = d.smode;
+  else if (d.son) S.son = !S.son;
+  else if (d.act === 'save') { saveSchedule(); return; }
   else if (d.upd) S.upd = d.upd;
   else if (d.group) S.groups[d.group] = !S.groups[d.group];
   else if (d.feat) S.feat = d.feat;
@@ -674,9 +716,7 @@ document.addEventListener('click', (e) => {
   else if (d.notif) S.notif[d.notif] = !S.notif[d.notif];
   else if (d.tab) S.tab = d.tab;
   else if (d.sel) S.sel = d.sel;
-  else if (d.act === 'launch') { S.launched = true; if (tg && tg.HapticFeedback) try { tg.HapticFeedback.notificationOccurred('success'); } catch (x) {} }
-  else if (d.act === 'stop') S.launched = false;
-  else if (d.act === 'opennew') { S.tab = 'upcoming'; S.sel = '1231'; S.showNew = false; }
+    else if (d.act === 'opennew') { S.tab = 'upcoming'; S.sel = '1231'; S.showNew = false; }
   else if (d.act === 'hidenew') S.showNew = false;
   else if (d.act === 'separate') { openSeparate(); return; }
   else if (d.act === 'big') { bigScreen(); return; }
