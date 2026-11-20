@@ -190,8 +190,8 @@ const FEATURES = [
   ['Ответы и языки', [
     ['Ответы на вопросы по логистике','Amazon Relay, Street и другие',D],
     ['Только логистика','Другие темы бот вежливо отклоняет, отвечает по вашей базе знаний',D],
-    ['Русский и английский','Интерфейс и ответы',D],
-    ['Турецкий и узбекский','Интерфейс и ответы',P],
+    ['Русский, английский, узбекский','Окно, бот и ответы',D],
+    ['Турецкий для водителей','Бот понимает водителей на турецком и отвечает им по-турецки',D],
     ['Перевод для водителя','Команда /tr: русский → английский для водителя и обратно',D]]],
   ['Предупреждения', [
     ['Груз опаздывает: раньше, чем позвонит брокер','Какой груз и на сколько. После подключения борда',W],
@@ -241,9 +241,9 @@ const FAQ = [
   ['eta','Насколько точен ETA?','Идеально точного прогноза не бывает: пробки и водители меняются. Бот будет сравнивать прогноз с реальным прибытием и показывать свою точность за последние 30 прогнозов (в плане).'],
   ['eta','Учитываются ли ограничения для грузовиков?','Пока нет. Сервис маршрутов не знает низких мостов и запретных для грузовиков дорог. Это стоит помнить на сложных маршрутах.'],
   ['eta','Что если грузовик стоит?','Бот не гадает, сколько он простоит. Он считает, как будто водитель выедет сейчас, и пишет это в пояснении.'],
-  ['lang','Какие языки поддерживаются?','Русский и английский уже работают. Турецкий и узбекский появятся позже.'],
+  ['lang','Какие языки поддерживаются?','Окно и бот: русский, английский и узбекский. Водителей бот понимает и на турецком и отвечает им на их языке.'],
   ['lang','О чём можно спрашивать бота?','Только о логистике: грузы, стопы, часы водителя, Amazon Relay, Street и похожее. Другие темы бот вежливо отклонит.'],
-  ['lang','Может ли бот переводить для водителя?','Это в разработке: вы пишете на русском, узбекском или турецком, водитель получает текст на английском.'],
+  ['lang','Может ли бот переводить для водителя?','Да, командой /tr: русский текст превращается в короткое английское сообщение водителю, английский переводится на русский. Например: /tr пришли фото BOL'],
   ['safe','Кто видит мои ключи и данные?','Ключи хранятся только на сервере и нигде не показываются. Раздельное хранение данных каждого клиента и шифрование ключей появятся до того, как бот начнут использовать другие компании.'],
   ['safe','Может ли кто-то управлять ботом через сообщение в чате?','Нет. Сообщения, фото и текст в них для бота только данные. Команды вроде «забудь правила» или «пришли ключ» он не выполняет.'],
   ['safe','Бот читает Amazon Relay?','Это последний этап. Чтение будет через расширение Chrome и только на чтение: бот ничего не нажимает и не меняет в Relay.'],
@@ -352,15 +352,21 @@ const S = {
   tab:'transit', sel:'1042', q:'', showNew:true, queue:{}, compact:false,
   etaF:{ truck:'', addr:'', appt:'' },
   updText:'Update Load# 1042\nRolling near Barstow, CA, 62 mph\nNext stop (3 of 4): PDX9 Troutdale, OR\nAppt Fri 16:20 PST\nMiles left 612 · drive 9h 40m (+30m break)\nTraffic +25 min in next 40 mi\nETA 17:05 PST · probably late 45 min', updEditing:false, updDraft:'', updEdited:false,
-  access:'active', fromBot:false, act:{ s:1, p:1, e:1, g:1 }, lockSheet:''
+  botLang:'ru', access:'active', fromBot:false, act:{ s:1, p:1, e:1, g:1 }, lockSheet:''
 };
 /* язык: ссылка ?lang=, потом сохранённый выбор, потом язык Telegram */
 (function initPrefs() {
   let lang = null;
   try { lang = new URLSearchParams(location.search).get('lang'); } catch (e) {}
-  if (!lang) { try { lang = localStorage.getItem('mz_lang'); } catch (e) {} }
-  if (!lang && tg && tg.initDataUnsafe && tg.initDataUnsafe.user) lang = (tg.initDataUnsafe.user.language_code || '').slice(0, 2);
-  if (['ru','en','tr','uz'].indexOf(lang) >= 0) S.lang = lang;
+  let saved = null;
+  try { saved = JSON.parse(localStorage.getItem('mz_lang2') || 'null'); } catch (e) {}
+  const ok = (x) => ['ru','en','uz'].indexOf(x) >= 0;
+  if (ok(lang)) { S.botLang = lang; S.lang = (saved && saved.bot === lang && ok(saved.lang)) ? saved.lang : lang; }
+  else {
+    if (saved && ok(saved.lang)) lang = saved.lang;
+    if (!lang && tg && tg.initDataUnsafe && tg.initDataUnsafe.user) lang = (tg.initDataUnsafe.user.language_code || '').slice(0, 2);
+    if (ok(lang)) { S.lang = lang; S.botLang = lang; }
+  }
   try { const a = new URLSearchParams(location.search).get('access'); if (['survey','unpaid','active'].indexOf(a) >= 0) { S.access = a; S.fromBot = true; } } catch (e) {}
 })();
 try {
@@ -486,7 +492,7 @@ function toast(text) {
   let el = document.getElementById('toast');
   if (!el) { el = document.createElement('div'); el.id = 'toast'; el.className = 'toast'; el.setAttribute('role', 'status'); document.body.appendChild(el); }
   el.textContent = text; el.style.display = 'block';
-  if (S.lang === 'en') translateDom(el);
+  if (S.lang !== 'ru') translateDom(el);
   clearTimeout(toastTimer); toastTimer = setTimeout(() => { el.style.display = 'none'; }, 3200);
 }
 function lockBanner() {
@@ -558,7 +564,9 @@ function schedCheck(list) {
   }
   return { ok: true, msg: 'Выбрано ' + sl.length + ': ' + sl.join(', ') };
 }
-function tzLabel() { const r = tzRow(S.tzc); return S.lang === 'en' ? r[4] : r[3]; }
+const TZ_UZ = {"us-e": "AQSh · Sharq (EST/EDT) · Nyu-York", "us-c": "AQSh · Markaz (CST/CDT) · Chikago", "us-m": "AQSh · Tog'li (MST/MDT) · Denver", "us-az": "AQSh · Arizona (MST, yozgi vaqtsiz)", "us-p": "AQSh · G'arb (PST/PDT) · Los-Anjeles", "us-ak": "AQSh · Alyaska (AKST/AKDT)", "us-hi": "AQSh · Gavayi (HST)", "ru-kgd": "Rossiya · Kaliningrad (UTC+2)", "ru-msk": "Rossiya · Moskva (UTC+3)", "ru-sam": "Rossiya · Samara (UTC+4)", "ru-ekb": "Rossiya · Yekaterinburg (UTC+5)", "ru-oms": "Rossiya · Omsk (UTC+6)", "ru-nsk": "Rossiya · Novosibirsk (UTC+7)", "ru-krs": "Rossiya · Krasnoyarsk (UTC+7)", "ru-irk": "Rossiya · Irkutsk (UTC+8)", "ru-yak": "Rossiya · Yakutsk (UTC+9)", "ru-vla": "Rossiya · Vladivostok (UTC+10)", "ru-mag": "Rossiya · Magadan (UTC+11)", "ru-kam": "Rossiya · Kamchatka (UTC+12)", "uz": "O'zbekiston · Toshkent (UTC+5)", "kz": "Qozog'iston · Olmaota, Astana (UTC+5)", "kg": "Qirg'iziston · Bishkek (UTC+6)", "tj": "Tojikiston · Dushanbe (UTC+5)", "tm": "Turkmaniston · Ashxobod (UTC+5)", "az": "Ozarbayjon · Boku (UTC+4)", "ge": "Gruziya · Tbilisi (UTC+4)", "am": "Armaniston · Yerevan (UTC+4)", "tr": "Turkiya · Istanbul (UTC+3)", "by": "Belarus · Minsk (UTC+3)", "ua": "Ukraina · Kiyev (UTC+2/+3)", "eu": "Yevropa · Berlin, Varshava (UTC+1/+2)", "uk": "Buyuk Britaniya · London (UTC+0/+1)"};
+function tzName(t) { return S.lang === 'en' ? t[4] : (S.lang === 'uz' ? (TZ_UZ[t[0]] || t[3]) : t[3]); }
+function tzLabel() { return tzName(tzRow(S.tzc)); }
 function nowInTz() {
   try { const p = new Date().toLocaleTimeString('en-GB', { timeZone: S.tz, hour12: false }); return p.slice(0, 5); } catch (e) { const d = new Date(); return String(d.getHours()).padStart(2, '0') + ':' + String(d.getMinutes()).padStart(2, '0'); }
 }
@@ -568,7 +576,7 @@ function nextSlot() {
   for (let d = 0; d < 8 && !best; d++) for (const t of sl) {
     const m = parseInt(t, 10) * 60 + (+t.slice(3, 5));
     if (d === 0 && m <= n.min) continue;
-    if (workingAt(d, m)) { best = (d === 0 ? '' : (S.lang === 'en' ? ['Mon','Tue','Wed','Thu','Fri','Sat','Sun'] : DAYN)[(n.wd + d) % 7] + ' ') + t; break; }
+    if (workingAt(d, m)) { best = (d === 0 ? '' : (S.lang === 'en' ? ['Mon','Tue','Wed','Thu','Fri','Sat','Sun'] : (S.lang === 'uz' ? ['Du','Se','Ch','Pa','Ju','Sh','Ya'] : DAYN))[(n.wd + d) % 7] + ' ') + t; break; }
   }
   return best || '—';
 }
@@ -769,7 +777,7 @@ function vTz() {
   const sel = S.tzSel || tzRow(S.tzc)[0];
   return mzHead('Часовой пояс', 'По нему бот считает апдейты, смену и даты', 'work') +
     [['us','США'],['ru','Россия'],['other','Другие страны']].map((g) => '<div class="col" style="gap:8px"><div class="label">' + g[1] + '</div><div class="listcard list">' +
-      TZS.filter((t) => t[2] === g[0]).map((t) => '<button class="row" data-tzc="' + t[0] + '" style="justify-content:space-between;width:100%;background:none;border:0;font-size:14px;text-align:left;gap:10px"><span>' + (S.lang === 'en' ? t[4] : t[3]) + '</span><span style="flex:none;width:18px;height:18px;border-radius:50%;border:' + (sel === t[0] ? '6px solid var(--mint)' : '2px solid #4A5B7A') + '"></span></button>').join('') + '</div></div>').join('') +
+      TZS.filter((t) => t[2] === g[0]).map((t) => '<button class="row" data-tzc="' + t[0] + '" style="justify-content:space-between;width:100%;background:none;border:0;font-size:14px;text-align:left;gap:10px"><span>' + tzName(t) + '</span><span style="flex:none;width:18px;height:18px;border-radius:50%;border:' + (sel === t[0] ? '6px solid var(--mint)' : '2px solid #4A5B7A') + '"></span></button>').join('') + '</div></div>').join('') +
     '<button class="btn primary" style="height:56px;font-size:17px;position:sticky;bottom:96px" data-act="savetz">Сохранить</button>';
 }
 function saveWt() {
@@ -836,15 +844,18 @@ function vSettings() {
   return '<h1 class="title">Настройки</h1>' +
     '<button class="card row" data-go="help" style="text-align:left;padding:16px;background:var(--mint-bg);border-color:var(--mint-bd)"><span class="icon" style="width:48px;height:48px;border-radius:14px;background:var(--mint)">' + ic('help', 24, '#06241A', 2.2) + '</span><span class="col" style="flex:1"><b style="font-size:16px">Инструкция и вопросы</b><span class="small" style="color:#C7E9D9">Как всё работает: ' + FAQ.length + ' ответов</span></span>' + ic('chev', 18, 'var(--mint-t)', 2) + '</button>' +
     '<div class="grid2"><button class="btn" style="height:48px" data-setup="support">Написать в поддержку</button><button class="btn" style="height:48px" data-setup="help">Все команды бота</button></div>' +
-    '<div class="col" style="gap:10px"><div class="label">Язык бота</div><div style="display:grid;grid-template-columns:repeat(4,1fr);gap:8px">' + [['ru','RU'],['en','EN'],['tr','TR'],['uz','UZ']].map((l) => '<button class="seg' + (S.lang === l[0] ? ' on' : '') + '" data-lang="' + l[0] + '">' + l[1] + '</button>').join('') + '</div><div class="xs muted">' + (S.lang === 'tr' || S.lang === 'uz' ? 'Этот язык появится позже, пока окно и бот на русском' : (S.fromBot ? 'Окно и бот переключаются на этот язык' : 'Окно переключается на этот язык')) + '</div></div>' +
+    '<div class="col" style="gap:10px"><div class="label">Язык окна и бота</div><div style="display:grid;grid-template-columns:repeat(3,1fr);gap:8px">' + [['ru','RU'],['en','EN'],['uz','UZ']].map((l) => '<button class="seg' + (S.lang === l[0] ? ' on' : '') + '" data-lang="' + l[0] + '">' + l[1] + '</button>').join('') + '</div>' +
+      '<div class="xs muted">Окно переключается сразу.</div>' +
+      (S.fromBot && S.bot && S.botLang !== S.lang ? '<div class="card row" style="padding:12px 14px;border-radius:14px;gap:10px"><span class="col" style="flex:1;gap:2px"><span class="xs muted">Язык сообщений бота</span><b style="font-size:14px">' + ({ ru:'Русский', en:'Английский', uz:'Узбекский' })[S.botLang] + '</b></span><button class="btn" style="height:40px;font-size:13px;flex:none" data-act="langbot">Сменить и в боте</button></div>' : '') +
+      '<div class="xs muted">Водителям бот отвечает на их языке, в том числе на турецком.</div></div>' +
     (S.fromBot ? '' : '<div class="col" style="gap:10px"><div class="label">Доступ (демо)</div><div class="wrap">' + [['active','Оплачено'],['survey','Опрос не пройден'],['unpaid','Не оплачено']].map((x) => '<button class="pill' + (S.access === x[0] ? ' on' : '') + '" data-access="' + x[0] + '">' + x[1] + '</button>').join('') + '</div><div class="xs muted">Переключатель только для показа. В настоящем боте статус придёт с сервера.</div></div>') +
     '<div class="col" style="gap:10px"><div class="label">Рабочее время</div><div class="listcard list">' + [['Часовой пояс', tzLabel()],['Режим', modeName(S.pm)],[S.pm === 'shift' ? 'Смена' : 'Время', S.pm === 'shift' ? windowText() : 'круглосуточно'],['Выходные', DAYN.filter((d, i) => !dayLen(i)).join(', ') || 'нет'],['Разовые даты', Object.keys(S.offMap).filter((k) => k >= dayKey(0)).length ? Object.keys(S.offMap).filter((k) => k >= dayKey(0)).length + ' дн.' : 'нет']].map((r) => '<div class="row" style="justify-content:space-between;gap:12px"><span style="flex:none">' + r[0] + '</span><span class="small muted" style="text-align:right">' + esc(r[1]) + '</span></div>').join('') + '<button data-go="work" class="row" style="justify-content:space-between;width:100%;background:none;border:0;font-size:15px;text-align:left;color:var(--mint-t);font-weight:600"><span>Изменить рабочее время</span>' + ic('chev', 16, 'var(--mint-t)', 2) + '</button></div></div>' +
     '<div class="col" style="gap:10px"><div class="label">Расписание апдейтов</div><div class="listcard list">' + [['Время', S.slots.slice().sort().join(', ')],['Часовой пояс', tzLabel()],['Режим', S.smode === 'auto' ? 'Авто' : 'Сначала показать мне'],['Апдейты', S.son ? 'включены' : 'выключены']].map((r) => '<div class="row" style="justify-content:space-between"><span>' + r[0] + '</span><span class="small muted">' + esc(r[1]) + '</span></div>').join('') + '<button data-go="shift" class="row" style="justify-content:space-between;width:100%;background:none;border:0;font-size:15px;text-align:left;color:var(--mint-t);font-weight:600"><span>Изменить расписание</span>' + ic('chev', 16, 'var(--mint-t)', 2) + '</button></div><div class="xs muted">Или командой в чате, например: /times 08:00 14:00 20:00</div></div>' +
     '<div class="col" style="gap:10px"><div class="label">Агенты и автоответ</div><div class="listcard list">' + [['Включено', AGENTS.filter((a) => S.ag.on[a[0]]).length + ' из ' + AGENTS.length],['Водитель ждёт ответа', S.ag.on.waiting ? S.ag.waiting + ' мин' : 'выключен'],['Автоответ', ({ o:'выключен', s:'предлагать', a:'авто' })[S.ag.ar]]].map((r) => '<div class="row" style="justify-content:space-between"><span>' + r[0] + '</span><span class="small muted">' + r[1] + '</span></div>').join('') + '<button data-go="agents" class="row" style="justify-content:space-between;width:100%;background:none;border:0;font-size:15px;text-align:left;color:var(--mint-t);font-weight:600"><span>Изменить агентов</span>' + ic('chev', 16, 'var(--mint-t)', 2) + '</button></div><div class="xs muted">Агенты проверяют группы 24/7 и пишут только вам: водитель ждёт ответа, молчит, тревога, стоянка, нет GPS.</div></div>' +
     '<div class="col" style="gap:10px"><div class="label">Подключения и команда</div><div class="listcard list"><button data-go="groups" class="row" style="justify-content:space-between;width:100%;background:none;border:0;border-bottom:1px solid var(--line2);font-size:15px;text-align:left"><span>Группы водителей</span><span class="row small muted" style="gap:6px">' + (S.plan === 'owner' ? S.used : S.used + ' из ' + S.lim) + ' ' + ic('chev', 16, 'var(--muted)', 2) + '</span></button><div class="row" style="justify-content:space-between"><span>ELD · Samsara</span><span class="small" style="color:var(--mint-t)">Подключено (пример)</span></div><div class="row" style="justify-content:space-between"><span>Борд (Google Sheets)</span><span class="small muted">Update Board</span></div><div class="row" style="justify-content:space-between"><span>Тиммейты</span><span class="small muted">3 человека</span></div><div class="row" style="justify-content:space-between"><span>Amazon Relay</span><span class="chip c-plan">План</span></div></div></div>' +
     '<div class="col" style="gap:10px"><div class="label">Уведомления мне</div><div class="listcard list">' + nl.map((t) => '<div class="row"><span class="col" style="flex:1"><span>' + t[1] + '</span><span class="xs muted">' + t[2] + '</span></span><button class="toggle' + (S.notif[t[0]] ? ' on' : '') + '" data-notif="' + t[0] + '" aria-label="' + t[1] + '"><span></span></button></div>').join('') + '</div></div>' +
-    '<div class="col" style="gap:10px"><div class="label">Тариф и оплата</div>' + planCard(true) + '<div class="listcard list">' + [['Пробная неделя','появится позже'],['Оплата','Click · Payme · другие'],['Оферта','готовится']].map((r) => '<div class="row" style="justify-content:space-between"><span>' + r[0] + '</span><span class="small muted">' + r[1] + '</span></div>').join('') + '</div><div class="xs muted">Тарифы отличаются только числом водителей. Оплата заработает после запуска сервера.</div><div class="xs muted">Или командой в чате, например: /plan pro</div></div>' +
-    '<div class="xs" style="text-align:center;color:var(--faint)">Modenzo AI · версия окна 2026-11-20 19:20</div>';
+    '<div class="col" style="gap:10px"><div class="label">Тариф и оплата</div>' + planCard(true) + '<div class="listcard list">' + [['Пробная неделя','появится позже'],['Оплата','Click · Payme · другие'],['Оферта','готовится']].map((r) => '<div class="row" style="justify-content:space-between"><span>' + r[0] + '</span><span class="small muted">' + r[1] + '</span></div>').join('') + '</div><div class="xs muted">Тарифы отличаются числом водителей и апдейтов в день. Оплата заработает после запуска сервера.</div><div class="xs muted">Или командой в чате, например: /plan pro</div></div>' +
+    '<div class="xs" style="text-align:center;color:var(--faint)">Modenzo AI · версия окна 2026-11-20 23:40</div>';
 }
 
 function inTab(l, t) { return t === 'all' || (t === 'risk' ? (l.v === 'late' || l.v === 'tight') && l.st !== 'delivered' : l.st === t); }
@@ -884,9 +895,10 @@ const NAV = [['home','Главная','home'],['board','Доска грузов'
 const TAB_OF = { shift:'home', eta:'home', board:'home', drivers:'home', groups:'home', help:'settings', plans:'settings', agents:'settings', work:'settings', tz:'settings' };
 
 const EN = {
+"Окно и бот: русский, английский и узбекский. Водителей бот понимает и на турецком и отвечает им на их языке.":"The window and the bot: Russian, English and Uzbek. The bot also understands drivers in Turkish and answers them in their language.","Да, командой /tr: русский текст превращается в короткое английское сообщение водителю, английский переводится на русский. Например: /tr пришли фото BOL":"Yes, with /tr: Russian text becomes a short English message for the driver, English is translated to Russian. Example: /tr пришли фото BOL","Тарифы отличаются числом водителей и апдейтов в день. Оплата заработает после запуска сервера.":"Plans differ by number of drivers and updates a day. Payment works after the server launch.","Русский, английский, узбекский":"Russian, English, Uzbek","Окно, бот и ответы":"Window, bot and answers","Турецкий для водителей":"Turkish for drivers","Бот понимает водителей на турецком и отвечает им по-турецки":"The bot understands drivers in Turkish and answers them in Turkish","Язык окна и бота":"Window and bot language","Окно переключается сразу.":"The window switches right away.","Язык сообщений бота":"Bot messages language","Сменить и в боте":"Change in the bot too","Водителям бот отвечает на их языке, в том числе на турецком.":"The bot answers drivers in their language, Turkish included.","Русский":"Russian","Английский":"English","Узбекский":"Uzbek",
 "Кнопка «Разобрать фото» в /proof":"The “Read the photos” button in /proof","Перерыв 30 мин после 8 ч, отдых 10 ч. Остаток часов из ELD в плане":"30-min break after 8 h, 10-h rest. Hours left from the ELD planned","Пояс по штату готов. Цепочка стопов после подключения борда":"Zone by state is ready. The stop chain after the board is connected","Команда /eta":"The /eta command","Командой или формой в окне, ответ в чате":"By command or the window form, answer in the chat","Другие темы бот вежливо отклоняет, отвечает по вашей базе знаний":"Other topics are politely declined, answers use your knowledge base","Команда /tr: русский → английский для водителя и обратно":"The /tr command: Russian → English for the driver and back","Агенты 24/7":"Agents 24/7","Водитель ждёт ответа, молчит, тревога, стоянка, нет GPS, автоответ":"Driver waiting, silent, alarm, long stop, no GPS, auto-reply","Какой груз и на сколько. После подключения борда":"Which load and by how much. After the board is connected","Сам в конце смены или командой /report":"By itself at shift end or with /report","Утренняя сводка":"Morning summary","Каждое утро в 09:00 в режиме 24/7":"Every morning at 09:00 in 24/7 mode","Фото, сообщения и письмо брокеру при простое":"Photos, messages and a detention email to the broker","Настройки, расписание, тарифы, агенты, рабочее время":"Settings, schedule, plans, agents, working time","Рабочее время и часовой пояс":"Working time and time zone","Смена или 24/7, дни недели, разовые выходные":"Shift or 24/7, weekdays, one-off days off","Экран готов. Данные грузов после подключения борда":"The screen is ready. Load data after the board is connected","Группы и настройки уже отдельно. Свой ELD и шифрование ключей на сервере":"Groups and settings are already separate. Own ELD and key encryption on the server","Тарифы и смена тарифа готовы. Оферта и пробная неделя в плане":"Plans and plan changes are ready. Offer and trial week planned",
 "Расчёт ETA":"ETA calculation","От GPS трака до стопа: пробки, часы водителя, погода":"From truck GPS to the stop: traffic, driver hours, weather","Посчитать ETA":"Calculate ETA","Номер трака, например 2080":"Truck number, for example 2080","Адрес стопа, например PDX9, Troutdale, OR":"Stop address, for example PDX9, Troutdale, OR","Appointment по времени стопа, например 21.11 16:20":"Appointment in stop time, for example 21.11 16:20","Штат в адресе (OR, TX...) нужен, чтобы знать часовой пояс стопа. Appointment можно не писать.":"The state in the address (OR, TX...) tells the stop time zone. The appointment is optional.","Посчитать в чате с ботом":"Calculate in the bot chat","Ответ придёт в чат с ботом.":"The answer comes to the bot chat.","Ответ придёт в чат с ботом. Пока /eta работает только у владельца бота: GPS берётся из его Samsara. У вас заработает после подключения вашего ELD на сервере (в плане).":"The answer comes to the bot chat. For now /eta works only for the bot owner: GPS comes from the owner's Samsara. It works for you after your ELD is connected on the server (planned).","Пример разбора: Load 1042":"Sample breakdown: Load 1042","Напишите номер трака и адрес стопа":"Write the truck number and the stop address","Команда скопирована: вставьте её в чат и отправьте":"Command copied: paste it in the chat and send","Окно и бот переключаются на этот язык":"The window and the bot switch to this language","Написать в поддержку":"Write to support","Все команды бота":"All bot commands",
-"Modenzo AI · версия окна 2026-11-20 19:20":"Modenzo AI · window version 2026-11-20 19:20",
+"Modenzo AI · версия окна 2026-11-20 23:40":"Modenzo AI · window version 2026-11-20 19:20",
 "Это пример. Настоящие черновики приходят в чат с ботом с теми же кнопками: «Отправить», «Изменить», «Пропустить».":"This is an example. Real drafts come to the bot chat with the same buttons: “Send”, “Edit”, “Skip”.","Сохранить текст":"Save text","Отмена":"Cancel","Текст изменён вами":"Text edited by you","Текст сохранён. Нажмите «Отправить»":"Text saved. Tap “Send”",
 "Активация":"Activation","Опрос":"Survey","7 коротких вопросов в чате с ботом":"7 short questions in the bot chat","Выбрать и оплатить":"Pick and pay","Ключ на проверке":"Key being checked","Бот добавлен хотя бы в одну группу":"The bot is in at least one group","Настройки уже можно менять. Апдейты включатся после всех шагов.":"You can change settings already. Updates turn on after all steps.","Отправить ключ заново":"Send the key again","Ключ ELD на проверке":"ELD key being checked","Ключ получен и проверяется. Как только он заработает, апдейты можно будет включить. Если ключ неверный, отправьте новый.":"The key is received and being checked. Once it works you can turn updates on. If the key is wrong, send a new one.","Почему некоторые кнопки с замком?":"Why do some buttons have a lock?","Пока активация не закончена, часть функций закрыта, чтобы ничего не сломать. Шаги: опрос, тариф, ELD, хотя бы одна группа водителя. Нажмите на кнопку с замком: окно подскажет, какой шаг остался, и даст кнопку, чтобы его сделать. Например, ELD подключается командой /eld":"Until activation is finished some features are closed so nothing breaks. Steps: survey, plan, ELD, at least one driver group. Tap a locked button: the window tells you which step is left and gives a button to do it. For example, the ELD is connected with /eld","Ключ, чтобы бот видел, где траки":"A key so the bot sees where trucks are","Пока активация не закончена, окно работает только для просмотра.":"Until activation is finished the window is view-only.","Сначала пройдите опрос":"Finish the survey first","Это 7 коротких вопросов в чате с ботом: борд, грузы, ELD, коллеги, часовой пояс, смена, число водителей. После него функции включатся. Смотреть окно можно и сейчас.":"It is 7 short questions in the bot chat: board, freight, ELD, teammates, time zone, shift, number of drivers. Then features turn on. You can look around the window already.","Выбрать тариф":"Pick a plan","Выберите и оплатите тариф":"Pick and pay for a plan","Функции включатся после оплаты. Смотреть окно, тарифы и инструкцию можно и сейчас.":"Features turn on after payment. You can look at the window, plans and guide already.","Подключите ELD":"Connect your ELD","Подключить ELD":"Connect ELD","Без ELD бот не видит, где траки, и апдейты будут без местоположения. Бот спросит, какой у вас ELD, и проверит ключ. Это пара минут.":"Without an ELD the bot cannot see where trucks are and updates have no location. The bot asks which ELD you have and checks the key. It takes a couple of minutes.","Добавьте бота в группу водителя":"Add the bot to a driver group","Апдейты идут в группы водителей. Добавьте бота хотя бы в одну группу, и он сам проверит, видит ли сообщения.":"Updates go to driver groups. Add the bot to at least one group and it checks by itself whether it can read messages.","Как добавить":"How to add","Пройти опрос":"Take survey","Группы водителей":"Driver groups","Тариф":"Plan","Понятно":"Got it",
 "Окно переключается на этот язык. Язык ответов бота: /start":"The window switches to this language. The bot's reply language: /start","Окно переключается на этот язык":"The window switches to this language",
@@ -962,9 +974,9 @@ const EN = {
 'Насколько точен ETA?':'How accurate is the ETA?','Идеально точного прогноза не бывает: пробки и водители меняются. Бот будет сравнивать прогноз с реальным прибытием и показывать свою точность за последние 30 прогнозов (в плане).':'No forecast is perfect: traffic and drivers change. The bot will compare its forecast with the real arrival and show its accuracy over the last 30 forecasts (planned).',
 'Учитываются ли ограничения для грузовиков?':'Are truck restrictions taken into account?','Пока нет. Сервис маршрутов не знает низких мостов и запретных для грузовиков дорог. Это стоит помнить на сложных маршрутах.':'Not yet. The routing service does not know low bridges or roads closed to trucks. Keep that in mind on tricky routes.',
 'Что если грузовик стоит?':'What if the truck is stopped?','Бот не гадает, сколько он простоит. Он считает, как будто водитель выедет сейчас, и пишет это в пояснении.':'The bot does not guess how long it will stay. It calculates as if the driver leaves now and says so in the explanation.',
-'Какие языки поддерживаются?':'Which languages are supported?','Русский и английский уже работают. Турецкий и узбекский появятся позже.':'Russian and English work now. Turkish and Uzbek are coming later.',
+'Какие языки поддерживаются?':'Which languages are supported?','Окно и бот: русский, английский и узбекский. Водителей бот понимает и на турецком и отвечает им на их языке.':'Russian and English work now. Turkish and Uzbek are coming later.',
 'О чём можно спрашивать бота?':'What can I ask the bot?','Только о логистике: грузы, стопы, часы водителя, Amazon Relay, Street и похожее. Другие темы бот вежливо отклонит.':'Only logistics: loads, stops, driver hours, Amazon Relay, Street and similar. The bot politely declines other topics.',
-'Может ли бот переводить для водителя?':'Can the bot translate for the driver?','Это в разработке: вы пишете на русском, узбекском или турецком, водитель получает текст на английском.':'In development: you write in Russian, Uzbek or Turkish and the driver gets English.',
+'Может ли бот переводить для водителя?':'Can the bot translate for the driver?','Да, командой /tr: русский текст превращается в короткое английское сообщение водителю, английский переводится на русский. Например: /tr пришли фото BOL':'In development: you write in Russian, Uzbek or Turkish and the driver gets English.',
 'Кто видит мои ключи и данные?':'Who can see my keys and data?','Ключи хранятся только на сервере и нигде не показываются. Раздельное хранение данных каждого клиента и шифрование ключей появятся до того, как бот начнут использовать другие компании.':'Keys are stored only on the server and are never shown. Separate storage for each client and key encryption will be in place before other companies use the bot.',
 'Может ли кто-то управлять ботом через сообщение в чате?':'Can someone control the bot with a chat message?','Нет. Сообщения, фото и текст в них для бота только данные. Команды вроде «забудь правила» или «пришли ключ» он не выполняет.':'No. Messages, photos and the text in them are only data to the bot. It does not follow commands like “forget your rules” or “send me the key”.',
 'Бот читает Amazon Relay?':'Does the bot read Amazon Relay?','Это последний этап. Чтение будет через расширение Chrome и только на чтение: бот ничего не нажимает и не меняет в Relay.':'That is the last stage. Reading will go through a Chrome extension, read-only: the bot clicks and changes nothing in Relay.',
@@ -978,7 +990,7 @@ const EN = {
 'Подключения и команда':'Connections and team','Подключено (пример)':'Connected (sample)','Борд (Google Sheets)':'Board (Google Sheets)','Тиммейты':'Teammates','3 человека':'3 people','Уведомления мне':'My notifications','Груз опаздывает':'Load running late',
 'Сразу, как только расчёт показал опоздание':'As soon as the calculation shows lateness','Водитель молчит':'Driver silent','Если долго нет ответа в группе':'If there is no reply in the group for a long time','Проблема с группой или ELD':'Group or ELD problem','Бот не видит чат или ключ перестал работать':'The bot cannot see a chat or the key stopped working',
 'Скоро':'Soon','Тариф':'Plan','Старт · до 10 водителей':'Start · up to 10 drivers','Пробная неделя':'Trial week','появится позже':'coming later','Оплата':'Payment','Click · Payme · другие':'Click · Payme · others','Оферта':'Terms','готовится':'in preparation',
-'Тарифы отличаются только числом водителей. Оплата заработает после запуска сервера.':'Plans differ only by number of drivers. Payment starts working after the server launch.','Modenzo AI · демо-версия окна':'Modenzo AI · demo window',
+'Тарифы отличаются числом водителей и апдейтов в день. Оплата заработает после запуска сервера.':'Plans differ only by number of drivers. Payment starts working after the server launch.','Modenzo AI · демо-версия окна':'Modenzo AI · demo window',
 'Пример данных. Нажмите на груз, чтобы открыть детали.':'Sample data. Click a load to open its details.','Новый груз 1231':'New load 1231','появился в борде. Бот поставил статус Upcoming и ждёт назначения водителя.':'appeared on the board. The bot set it to Upcoming and is waiting for a driver to be assigned.',
 'Показать':'Show','В пути':'In transit','Опаздывают':'Running late','Груз и водитель':'Load and driver','Статус':'Status','Грузовик':'Truck','Следующий стоп':'Next stop','Вовремя':'On time','Водитель не назначен':'No driver assigned','Нет трака':'No truck','Ждёт назначения':'Waiting for assignment',
 'Пока не считается':'Not calculated yet','Выходной':'Day off','Разгружен':'Unloaded','Доставлен вовремя':'Delivered on time','Вердикт ETA':'ETA verdict','Осталось вождения':'Drive time left','Стопы':'Stops','Последнее из группы':'Latest from the group',
@@ -994,6 +1006,581 @@ const EN = {
 'Большой экран':'Big screen','Нужен экран побольше':'A bigger screen is needed','Компьютер, ноутбук или планшет':'Computer, laptop or tablet','Расширенный экран с доской грузов работает на компьютере, ноутбуке или планшете. Откройте этого бота в Telegram на компьютере и нажмите ту же кнопку.':'The expanded load board works on a computer, laptop or tablet. Open this bot in Telegram on your computer and tap the same button.','Скопировать ссылку':'Copy link','Понятно':'Got it','Ссылка скопирована: откройте её на компьютере':'Link copied: open it on your computer','Группы водителей':'Driver groups','3 из 4':'3 of 4',
 'Telegram не дал включить полный экран на этом устройстве':'Telegram did not allow full screen on this device','Отдых 10 ч, до 04:00':'10 h rest, until 04:00','после отдыха 11 ч':'11 h after rest','У шиппера · 40 мин':'At shipper · 40 min'
 };
+const UZ = {
+"нет":"yo'q",
+"Ответ придёт в чат с ботом. Пока /eta работает только у владельца бота: GPS берётся из его Samsara. У вас заработает после подключения вашего ELD на сервере (в плане).":"Javob bot bilan chatga keladi. Hozircha /eta faqat bot egasida ishlaydi: GPS uning Samsara'sidan olinadi. Sizda ELD serverga ulangandan keyin ishlaydi (rejada).",
+"Лайт":"Lite",
+"Старт":"Start",
+"Про":"Pro",
+"Макс":"Max",
+"Владелец":"Egasi",
+"Пробка перед Redding, еду медленно":"Redding oldida tirbandlik, sekin ketyapman",
+"Расширенный экран":"Kengaytirilgan ekran",
+"Главная":"Bosh sahifa",
+"Доска грузов":"Yuklar doskasi",
+"Водители":"Haydovchilar",
+"Апдейты":"Apdeytlar",
+"Расчёт ETA":"ETA hisobi",
+"Группы":"Guruhlar",
+"Все функции":"Barcha funksiyalar",
+"Инструкция":"Qo'llanma",
+"Тарифы":"Tariflar",
+"Настройки":"Sozlamalar",
+"Открыть отдельным окном":"Alohida oynada ochish",
+"На весь экран":"To'liq ekran",
+"Компактный вид":"Ixcham ko'rinish",
+"Апдейты выключены":"Apdeytlar o'chirilgan",
+"Демо · данные примерные":"Demo · ma'lumotlar namunaviy",
+"Активация":"Faollashtirish",
+"Опрос":"So'rovnoma",
+"7 коротких вопросов в чате с ботом":"Bot bilan chatda 7 ta qisqa savol",
+"Тариф":"Tarif",
+"Выбрать и оплатить":"Tanlash va to'lash",
+"Ключ на проверке":"Kalit tekshirilmoqda",
+"Группы водителей":"Haydovchilar guruhlari",
+"Бот добавлен хотя бы в одну группу":"Bot kamida bitta guruhga qo'shilgan",
+"Настройки уже можно менять. Апдейты включатся после всех шагов.":"Sozlamalarni hozirdan o'zgartirish mumkin. Apdeytlar barcha qadamlardan keyin yoqiladi.",
+"Отправить ключ заново":"Kalitni qayta yuborish",
+"Помощник диспетчера 24/7":"24/7 dispetcher yordamchisi",
+"Следующий апдейт":"Keyingi apdeyt",
+"Включите апдейты в «Расписании»":"«Jadval»da apdeytlarni yoqing",
+"Расписание":"Jadval",
+"Требует внимания":"E'tibor talab qiladi",
+"Пример данных":"Namunaviy ma'lumot",
+"Опоздает примерно на 45 мин":"Taxminan 45 daqiqa kechikadi",
+"Впритык: запас 15 мин":"Zo'rg'a ulguradi: zaxira 15 daqiqa",
+"Группа Driver C":"Driver C guruhi",
+"Бот не видит сообщения, нужно поправить":"Bot xabarlarni ko'rmayapti, tuzatish kerak",
+"Функции":"Funksiyalar",
+"По расписанию, после вашего «Отправить»":"Jadval bo'yicha, siz «Yuborish»ni bosganingizdan keyin",
+"Честный ETA":"Halol ETA",
+"Пробки, часы водителя, погода, цепочка стопов":"Tirbandlik, haydovchi soatlari, ob-havo, stoplar zanjiri",
+"Читает чаты водителей на 4 языках":"Haydovchilar chatlarini 4 tilda o'qiydi",
+"Отчёты и /proof":"Hisobotlar va /proof",
+"Скоро: отчёт смены и папка по грузу":"Tez orada: smena hisoboti va yuk bo'yicha papka",
+"Большой экран":"Katta ekran",
+"Ключ ELD на проверке":"ELD kaliti tekshirilmoqda",
+"Ключ получен и проверяется. Как только он заработает, апдейты можно будет включить. Если ключ неверный, отправьте новый.":"Kalit olindi va tekshirilmoqda. U ishlashi bilan apdeytlarni yoqish mumkin bo'ladi. Kalit noto'g'ri bo'lsa, yangisini yuboring.",
+"Понятно":"Tushunarli",
+"Разделы":"Bo'limlar",
+"Расписание апдейтов":"Apdeytlar jadvali",
+"Бот работает 24/7 и пишет в группы только в это время":"Bot 24/7 ishlaydi va guruhlarga faqat shu vaqtda yozadi",
+"Рабочее время и часовой пояс":"Ish vaqti va vaqt mintaqasi",
+"Режим":"Rejim",
+"Сначала показать мне":"Avval menga ko'rsatish",
+"Бот присылает вам черновик, вы нажимаете «Отправить», «Изменить» или «Пропустить».":"Bot sizga qoralama yuboradi, siz «Yuborish», «O'zgartirish» yoki «O'tkazib yuborish»ni bosasiz.",
+"Авто":"Avto",
+"Бот отправляет апдейты в группы сам и присылает вам короткую сводку.":"Bot apdeytlarni guruhlarga o'zi yuboradi va sizga qisqa xulosa jo'natadi.",
+"Апдейты включены":"Apdeytlar yoqilgan",
+"Выключите, чтобы бот перестал отправлять":"Bot yuborishni to'xtatishi uchun o'chiring",
+"Сохранить":"Saqlash",
+"Можно и командой в чате с ботом. Например:":"Bot bilan chatda buyruq orqali ham bo'ladi. Masalan:",
+"Включить или выключить: /updates on, /updates off. Сделать черновики сейчас: /update":"Yoqish yoki o'chirish: /updates on, /updates off. Hozir qoralama qilish: /update",
+"Назад":"Orqaga",
+"Больше 12 апдейтов в день нельзя. Уберите лишнее время.":"Kuniga 12 tadan ortiq apdeyt mumkin emas. Ortiqcha vaqtni olib tashlang.",
+"Ничего не уходит водителям без вас":"Sizsiz haydovchilarga hech narsa ketmaydi",
+"Это пример. Настоящие черновики приходят в чат с ботом с теми же кнопками: «Отправить», «Изменить», «Пропустить».":"Bu namuna. Haqiqiy qoralamalar bot chatiga xuddi shu tugmalar bilan keladi: «Yuborish», «O'zgartirish», «O'tkazib yuborish».",
+"Ждёт вашего решения":"Qaroringizni kutmoqda",
+"Отправить":"Yuborish",
+"Изменить":"O'zgartirish",
+"Пропустить":"O'tkazib yuborish",
+"Как посчитан этот ETA":"Bu ETA qanday hisoblandi",
+"Точность ETA":"ETA aniqligi",
+"Бот сравнит прогноз с реальным прибытием по GPS и покажет точность за последние 30 прогнозов. Скоро.":"Bot prognozni GPS bo'yicha haqiqiy yetib kelish bilan solishtiradi va oxirgi 30 ta prognoz aniqligini ko'rsatadi. Tez orada.",
+"Отправлено (демо)":"Yuborildi (demo)",
+"Вернуть (демо)":"Qaytarish (demo)",
+"Пропущено":"O'tkazib yuborildi",
+"От GPS трака до стопа: пробки, часы водителя, погода":"Trak GPS'idan stopgacha: tirbandlik, haydovchi soatlari, ob-havo",
+"Посчитать ETA":"ETA hisoblash",
+"Штат в адресе (OR, TX...) нужен, чтобы знать часовой пояс стопа. Appointment можно не писать.":"Stopning vaqt mintaqasini bilish uchun manzilda shtat (OR, TX...) kerak. Appointment yozmasa ham bo'ladi.",
+"Посчитать в чате с ботом":"Bot chatida hisoblash",
+"Ответ придёт в чат с ботом.":"Javob bot chatiga keladi.",
+"Пример разбора: Load 1042":"Tahlil namunasi: Load 1042",
+"мин опоздания":"daqiqa kechikish",
+"Приедет":"Yetib keladi",
+"Окно на складе":"Ombordagi vaqt oynasi",
+"Цепочка стопов":"Stoplar zanjiri",
+"пройден":"o'tildi",
+"Стоп 4 по цепочке: впритык, запас 10 мин":"Zanjir bo'yicha 4-stop: zo'rg'a, zaxira 10 daqiqa",
+"Из чего сложилось время":"Vaqt nimalardan tashkil topdi",
+"Осталось миль":"Qolgan masofa (mil)",
+"В пути с пробками":"Tirbandlik bilan yo'lda",
+"Перерыв по часам водителя":"Haydovchi soatlari bo'yicha tanaffus",
+"Пробка на ближайших 40 милях":"Yaqin 40 milda tirbandlik",
+"Погода по маршруту":"Yo'nalishdagi ob-havo",
+"предупреждений нет":"ogohlantirish yo'q",
+"Время считает код, а не ИИ: GPS, маршрут с пробками, часы водителя, погода, часовой пояс стопа. ИИ только объясняет результат словами.":"Vaqtni sun'iy intellekt emas, kod hisoblaydi: GPS, tirbandlikli yo'nalish, haydovchi soatlari, ob-havo, stop vaqt mintaqasi. Sun'iy intellekt faqat natijani so'z bilan tushuntiradi.",
+"Номер трака, например 2080":"Trak raqami, masalan 2080",
+"Адрес стопа, например PDX9, Troutdale, OR":"Stop manzili, masalan PDX9, Troutdale, OR",
+"Appointment по времени стопа, например 21.11 16:20":"Stop vaqti bo'yicha appointment, masalan 21.11 16:20",
+"Бот работает с группами в тарифе 24/7. Писать в них будет только в выбранное время апдейтов.":"Bot tarifdagi guruhlar bilan 24/7 ishlaydi. Ularga faqat tanlangan apdeyt vaqtida yozadi.",
+"Пример данных. Ваши группы появятся здесь, когда вы добавите бота в группы водителей.":"Namunaviy ma'lumot. Botni haydovchilar guruhlariga qo'shganingizda guruhlaringiz shu yerda chiqadi.",
+"В работе: апдейты и агенты":"Ishda: apdeytlar va agentlar",
+"На паузе: только сохраняет сообщения":"Pauzada: faqat xabarlarni saqlaydi",
+"Не хватает мест: «Сменить тариф» или /plan start":"Joy yetmayapti: «Tarifni o'zgartirish» yoki /plan start",
+"Как добавить группу":"Guruhni qanday qo'shish kerak",
+"Откройте группу водителя в Telegram и добавьте туда бота.":"Telegramda haydovchi guruhini oching va botni u yerga qo'shing.",
+"Бот сам проверит, видит ли он сообщения, и напишет вам.":"Bot xabarlarni ko'ra olishini o'zi tekshiradi va sizga yozadi.",
+"Если в тарифе есть место, группа сразу в работе. Если нет, она встанет на паузу, и бот предложит, что сделать.":"Tarifda joy bo'lsa, guruh darhol ishga tushadi. Bo'lmasa, pauzaga qo'yiladi va bot nima qilishni taklif qiladi.",
+"Что уже работает, что в разработке и что в плане. Все функции есть на любом тарифе.":"Nima ishlayapti, nima ishlab chiqilmoqda va nima rejada. Barcha funksiyalar har qanday tarifda bor.",
+"Чтение чатов и память":"Chatlarni o'qish va xotira",
+"Запись сообщений из групп водителей":"Haydovchilar guruhlaridagi xabarlarni yozib borish",
+"Всё, что пишут водители, сохраняется в базе":"Haydovchilar yozgan hamma narsa bazada saqlanadi",
+"Есть":"Bor",
+"Проверка, видит ли бот группу":"Bot guruhni ko'rayotganini tekshirish",
+"Если не видит, подскажет, что сделать":"Ko'rmasa, nima qilishni aytadi",
+"«Как решали раньше»":"«Avval qanday hal qilishgan»",
+"Подсказки по прошлым ответам сотрудников":"Xodimlarning oldingi javoblari bo'yicha maslahatlar",
+"Разбор фото: BOL, пломба, номер трейлера":"Rasm tahlili: BOL, plomba, treyler raqami",
+"Кнопка «Разобрать фото» в /proof":"/proof ichidagi «Rasmlarni tahlil qilish» tugmasi",
+"Водитель и груз":"Haydovchi va yuk",
+"GPS из Samsara":"Samsara'dan GPS",
+"Где грузовик сейчас":"Yuk mashinasi hozir qayerda",
+"Проверка ключа ELD":"ELD kalitini tekshirish",
+"GPS из Motive и Geotab":"Motive va Geotab'dan GPS",
+"Сейчас GPS берётся только из Samsara":"Hozircha GPS faqat Samsara'dan olinadi",
+"План":"Reja",
+"Часы водителя (HOS)":"Haydovchi soatlari (HOS)",
+"Перерыв 30 мин после 8 ч, отдых 10 ч. Остаток часов из ELD в плане":"8 soatdan keyin 30 daqiqa tanaffus, 10 soat dam olish. ELD'dan qolgan soatlar rejada",
+"В разработке":"Ishlab chiqilmoqda",
+"Грузовик: Rolling, Stopped, Off duty":"Yuk mashinasi: Rolling, Stopped, Off duty",
+"По данным ELD, со скоростью и временем стоянки":"ELD ma'lumotlari bo'yicha, tezlik va turish vaqti bilan",
+"Маршрут с пробками и погода":"Tirbandlik va ob-havo bilan yo'nalish",
+"Mapbox и служба погоды США (NWS)":"Mapbox va AQSh ob-havo xizmati (NWS)",
+"Вердикт: вовремя, впритык, опоздает на N мин":"Xulosa: o'z vaqtida, zo'rg'a, N daqiqa kechikadi",
+"Запас 30+ мин, 0–30 мин или опоздание":"Zaxira 30+ daqiqa, 0–30 daqiqa yoki kechikish",
+"Часовой пояс стопа и цепочка стопов":"Stop vaqt mintaqasi va stoplar zanjiri",
+"Пояс по штату готов. Цепочка стопов после подключения борда":"Shtat bo'yicha mintaqa tayyor. Stoplar zanjiri doska ulangandan keyin",
+"Точность за последние 30 прогнозов":"Oxirgi 30 ta prognoz aniqligi",
+"Сравнение прогноза с реальным прибытием":"Prognozni haqiqiy yetib kelish bilan solishtirish",
+"Команда /eta":"/eta buyrug'i",
+"Командой или формой в окне, ответ в чате":"Buyruq yoki oynadagi forma orqali, javob chatda",
+"От 3 раз в сутки, максимум по тарифу: в окне или командой /times":"Kuniga 3 martadan, maksimum tarif bo'yicha: oynada yoki /times buyrug'i bilan",
+"Режим «сначала показать мне»":"«Avval menga ko'rsatish» rejimi",
+"Отправить, изменить или пропустить":"Yuborish, o'zgartirish yoki o'tkazib yuborish",
+"Автоапдейты по расписанию":"Jadval bo'yicha avtoapdeytlar",
+"Не чаще раза в 2 часа, время выбираете вы":"2 soatda bir martadan ko'p emas, vaqtni o'zingiz tanlaysiz",
+"Выключение апдейтов":"Apdeytlarni o'chirish",
+"Переключатель в окне или команда /updates off":"Oynadagi o'tkazgich yoki /updates off buyrug'i",
+"Ответы и языки":"Javoblar va tillar",
+"Ответы на вопросы по логистике":"Logistika bo'yicha savollarga javoblar",
+"Amazon Relay, Street и другие":"Amazon Relay, Street va boshqalar",
+"Только логистика":"Faqat logistika",
+"Другие темы бот вежливо отклоняет, отвечает по вашей базе знаний":"Boshqa mavzularni bot xushmuomalalik bilan rad etadi, sizning bilimlar bazangiz bo'yicha javob beradi",
+"Русский и английский":"Rus va ingliz tillari",
+"Интерфейс и ответы":"Interfeys va javoblar",
+"Турецкий и узбекский":"Turk va o'zbek tillari",
+"Перевод для водителя":"Haydovchi uchun tarjima",
+"Команда /tr: русский → английский для водителя и обратно":"/tr buyrug'i: haydovchi uchun ruschadan inglizchaga va aksincha",
+"Предупреждения":"Ogohlantirishlar",
+"Груз опаздывает: раньше, чем позвонит брокер":"Yuk kechikmoqda: broker qo'ng'iroq qilishidan oldin",
+"Какой груз и на сколько. После подключения борда":"Qaysi yuk va qancha. Doska ulangandan keyin",
+"Агенты 24/7":"24/7 agentlar",
+"Водитель ждёт ответа, молчит, тревога, стоянка, нет GPS, автоответ":"Haydovchi javob kutmoqda, jim, xavotir, uzoq turish, GPS yo'q, avtojavob",
+"Тревога «водитель молчит»":"«Haydovchi jim» xavotiri",
+"Если водитель долго не отвечает":"Haydovchi uzoq javob bermasa",
+"Проблемы с группой или ключом ELD":"Guruh yoki ELD kaliti bilan muammolar",
+"Сообщение владельцу":"Egasiga xabar",
+"Отчёты и доказательства":"Hisobotlar va dalillar",
+"Отчёт после смены и передача смены":"Smenadan keyingi hisobot va smenani topshirish",
+"Сам в конце смены или командой /report":"Smena oxirida o'zi yoki /report buyrug'i bilan",
+"Утренняя сводка":"Ertalabki xulosa",
+"Каждое утро в 09:00 в режиме 24/7":"24/7 rejimida har kuni ertalab soat 09:00 da",
+"Папка /proof по грузу":"Yuk bo'yicha /proof papkasi",
+"Фото, сообщения и письмо брокеру при простое":"Rasmlar, xabarlar va kutib qolishda brokerga xat",
+"Приложение и интеграции":"Ilova va integratsiyalar",
+"Это окно (Mini App)":"Bu oyna (Mini App)",
+"Настройки, расписание, тарифы, агенты, рабочее время":"Sozlamalar, jadval, tariflar, agentlar, ish vaqti",
+"Смена или 24/7, дни недели, разовые выходные":"Smena yoki 24/7, hafta kunlari, bir martalik dam olish kunlari",
+"Экран готов. Данные грузов после подключения борда":"Ekran tayyor. Yuk ma'lumotlari doska ulangandan keyin",
+"Статусы грузов":"Yuk holatlari",
+"Новый груз":"Yangi yuk",
+"Бот замечает новый груз в борде и ставит статус":"Bot doskadagi yangi yukni sezadi va holat qo'yadi",
+"Чтение Amazon Relay":"Amazon Relay'ni o'qish",
+"Расширение Chrome, только чтение. Прототип 0.1":"Chrome kengaytmasi, faqat o'qish. Prototip 0.1",
+"Сервер и оплата (в самом конце)":"Server va to'lov (eng oxirida)",
+"Работа 24/7 на сервере":"Serverda 24/7 ishlash",
+"Сейчас бот работает на компьютере владельца":"Hozir bot egasining kompyuterida ishlayapti",
+"Данные каждого клиента отдельно":"Har bir mijozning ma'lumotlari alohida",
+"Группы и настройки уже отдельно. Свой ELD и шифрование ключей на сервере":"Guruhlar va sozlamalar allaqachon alohida. O'z ELD va kalitlarni shifrlash serverda",
+"Тарифы, оферта, пробная неделя":"Tariflar, oferta, sinov haftasi",
+"Тарифы и смена тарифа готовы. Оферта и пробная неделя в плане":"Tariflar va tarifni o'zgartirish tayyor. Oferta va sinov haftasi rejada",
+"Оплата: Click, Payme и другие":"To'lov: Click, Payme va boshqalar",
+"Появится после запуска сервера":"Server ishga tushgandan keyin paydo bo'ladi",
+"Быстрый старт за 3 шага":"3 qadamda tez boshlash",
+"Нажмите /start и ответьте на 7 коротких вопросов.":"/start ni bosing va 7 ta qisqa savolga javob bering.",
+"Добавьте бота в группы водителей и подключите ELD.":"Botni haydovchilar guruhlariga qo'shing va ELD'ni ulang.",
+"Выберите время апдейтов в «Расписании».":"«Jadval»da apdeyt vaqtini tanlang.",
+"Все":"Hammasi",
+"Начало":"Boshlash",
+"Языки":"Tillar",
+"Безопасность":"Xavfsizlik",
+"Тариф и оплата":"Tarif va to'lov",
+"Что такое Modenzo AI?":"Modenzo AI nima?",
+"Помощник диспетчера в Telegram. Он читает чаты водителей, смотрит GPS и часы работы, считает честный ETA и заранее предупреждает, какой груз опаздывает и на сколько. Апдейты отправляет только с вашего согласия.":"Telegramdagi dispetcher yordamchisi. U haydovchilar chatlarini o'qiydi, GPS va ish soatlarini ko'radi, halol ETA hisoblaydi va qaysi yuk qancha kechikishini oldindan ogohlantiradi. Apdeytlarni faqat sizning roziligingiz bilan yuboradi.",
+"Как начать работу?":"Ishni qanday boshlash kerak?",
+"Как добавить бота в группу водителя?":"Botni haydovchi guruhiga qanday qo'shish kerak?",
+"Как подключить ELD?":"ELD'ni qanday ulash kerak?",
+"Нужно ли водителям что-то устанавливать?":"Haydovchilar biror narsa o'rnatishi kerakmi?",
+"Бот будет сам писать водителям?":"Bot haydovchilarga o'zi yozadimi?",
+"Как выбрать время апдейтов?":"Apdeyt vaqtini qanday tanlash kerak?",
+"Чем «Сначала показать мне» отличается от «Авто»?":"«Avval menga ko'rsatish» «Avto»dan nimasi bilan farq qiladi?",
+"Как часто приходят автоапдейты?":"Avtoapdeytlar qanchalik tez-tez keladi?",
+"Что такое режим «Смена»?":"«Smena» rejimi nima?",
+"Как настроить смену и выходные?":"Smena va dam olish kunlarini qanday sozlash kerak?",
+"Можно взять выходной на несколько дней?":"Bir necha kunga dam olish mumkinmi?",
+"Как выбрать часовой пояс?":"Vaqt mintaqasini qanday tanlash kerak?",
+"Почему нельзя ставить апдейты чаще?":"Nega apdeytlarni tez-tez qo'yib bo'lmaydi?",
+"Как выключить апдейты?":"Apdeytlarni qanday o'chirish kerak?",
+"Бот работает только ночью?":"Bot faqat tunda ishlaydimi?",
+"Как бот считает ETA?":"Bot ETA'ni qanday hisoblaydi?",
+"Что значат On time, Tight и Probably late?":"On time, Tight va Probably late nimani anglatadi?",
+"Почему время указано не по-моему?":"Nega vaqt menikidek ko'rsatilmagan?",
+"Что если в грузе несколько стопов?":"Yukda bir nechta stop bo'lsa-chi?",
+"Насколько точен ETA?":"ETA qanchalik aniq?",
+"Учитываются ли ограничения для грузовиков?":"Yuk mashinalari uchun cheklovlar hisobga olinadimi?",
+"Что если грузовик стоит?":"Yuk mashinasi turgan bo'lsa-chi?",
+"Какие языки поддерживаются?":"Qaysi tillar qo'llab-quvvatlanadi?",
+"О чём можно спрашивать бота?":"Botdan nima haqida so'rash mumkin?",
+"Может ли бот переводить для водителя?":"Bot haydovchi uchun tarjima qila oladimi?",
+"Кто видит мои ключи и данные?":"Kalitlarim va ma'lumotlarimni kim ko'radi?",
+"Может ли кто-то управлять ботом через сообщение в чате?":"Kimdir chatdagi xabar orqali botni boshqara oladimi?",
+"Бот читает Amazon Relay?":"Bot Amazon Relay'ni o'qiydimi?",
+"Сколько стоит?":"Narxi qancha?",
+"Как сменить тариф?":"Tarifni qanday o'zgartirish kerak?",
+"Что если групп больше, чем в тарифе?":"Guruhlar tarifdagidan ko'p bo'lsa-chi?",
+"На борде водителей больше, чем в тарифе?":"Doskada haydovchilar tarifdagidan ko'pmi?",
+"Что будет, если не оплатить?":"To'lamasam nima bo'ladi?",
+"Почему некоторые кнопки с замком?":"Nega ba'zi tugmalarda qulf bor?",
+"Что такое агенты?":"Agentlar nima?",
+"Бот будет сам отвечать водителям?":"Bot haydovchilarga o'zi javob beradimi?",
+"Есть ли пробный период?":"Sinov muddati bormi?",
+"Как оплатить?":"Qanday to'lash kerak?",
+"Не нашли ответ?":"Javob topmadingizmi?",
+"Напишите владельцу командой /support":"Egasiga /support buyrug'i bilan yozing",
+"Написать":"Yozish",
+"Нажмите /start и ответьте на 7 коротких вопросов: борд, грузы, ELD, коллеги, часовой пояс, смена, число водителей. Потом добавьте бота в группы водителей и выберите время апдейтов в «Расписании».":"/start ni bosing va 7 ta qisqa savolga javob bering: doska, yuklar, ELD, hamkasblar, vaqt mintaqasi, smena, haydovchilar soni. Keyin botni haydovchilar guruhlariga qo'shing va «Jadval»da apdeyt vaqtini tanlang.",
+"Откройте группу в Telegram и добавьте бота как участника. Бот сам проверит, видит ли он сообщения. Если нет, подскажет: обычно нужно сделать его администратором или добавить заново.":"Telegramda guruhni oching va botni a'zo sifatida qo'shing. Bot xabarlarni ko'ra olishini o'zi tekshiradi. Ko'ra olmasa, maslahat beradi: odatda uni administrator qilish yoki qaytadan qo'shish kerak.",
+"В /start или в Настройках, раздел «Подключения». Вставьте API-ключ ELD вашей компании, бот проверит его. Проверка ключа работает для Samsara, Motive и Geotab. GPS пока берётся только из Samsara.":"/start'da yoki /eld buyrug'i bilan. Kompaniyangiz ELD API kalitini yuboring, bot uni tekshiradi. Kalit tekshiruvi Samsara, Motive va Geotab uchun ishlaydi. GPS hozircha faqat Samsara'dan olinadi.",
+"Нет. Водители пишут в свои группы как обычно. Бот работает внутри этих групп.":"Yo'q. Haydovchilar o'z guruhlariga odatdagidek yozadi. Bot shu guruhlar ichida ishlaydi.",
+"Только в выбранное вами время и в выбранном режиме. В режиме «Сначала показать мне» каждый апдейт вы отправляете сами кнопкой.":"Faqat siz tanlagan vaqtda va tanlagan rejimda. «Avval menga ko'rsatish» rejimida har bir apdeytni o'zingiz tugma bilan yuborasiz.",
+"Откройте окно → «Расписание», отметьте время (от 3 раз в сутки, максимум по тарифу, не чаще раза в 2 часа), выберите режим и нажмите «Сохранить». Или командой в чате, например: /times 08:00 14:00 20:00":"Oynani oching → «Jadval», vaqtni belgilang (kuniga 3 martadan, maksimum tarif bo'yicha, 2 soatda bir martadan ko'p emas), rejimni tanlang va «Saqlash»ni bosing. Yoki chatda buyruq bilan, masalan: /times 08:00 14:00 20:00",
+"В режиме «Сначала показать мне» бот готовит апдейт, а вы нажимаете «Отправить», «Изменить» или «Пропустить». В режиме «Авто» бот отправляет апдейты сам по расписанию.":"«Avval menga ko'rsatish» rejimida bot apdeyt tayyorlaydi, siz esa «Yuborish», «O'zgartirish» yoki «O'tkazib yuborish»ni bosasiz. «Avto» rejimida bot apdeytlarni jadval bo'yicha o'zi yuboradi.",
+"От 3 раз в сутки, не чаще одного раза в 2 часа. Максимум зависит от тарифа: Лайт 4, Старт 6, Про 8, Макс 12. Время каждого апдейта выбираете вы.":"Kuniga 3 martadan, 2 soatda bir martadan ko'p emas. Maksimum tarifga bog'liq: Lite 4, Start 6, Pro 8, Max 12. Har bir apdeyt vaqtini o'zingiz tanlaysiz.",
+"Тариф дешевле: бот пишет в группы и присылает сигналы только в ваше рабочее время (смена 8, 10 или 12 ч, дни выбираете вы). Вне смены он только анализирует, а в начале смены присылает сводку. Тревоги можно получать всегда. Например: /plan lite shift":"Arzonroq tarif: bot guruhlarga yozadi va signallarni faqat ish vaqtingizda yuboradi (smena 8, 10 yoki 12 soat, kunlarni o'zingiz tanlaysiz). Smenadan tashqarida faqat tahlil qiladi, smena boshida esa xulosa yuboradi. Xavotirlarni har doim olish mumkin. Masalan: /plan lite shift",
+"«Настройки» → «Рабочее время»: начало смены, обычная длина и каждый день недели (выходной, 8, 10 или 12 ч). Или командой, например: /worktime 16:00 8, /worktime sat 12, /worktime sun off":"«Sozlamalar» → «Ish vaqti»: smena boshlanishi, odatiy davomiyligi va har bir hafta kuni (dam olish, 8, 10 yoki 12 soat). Yoki buyruq bilan, masalan: /worktime 16:00 8, /worktime sat 12, /worktime sun off",
+"Да, в любой момент: «Настройки» → «Рабочее время» → календарь «Разовые выходные». Нажмите на нужные даты и «Сохранить даты». Или командой, например: /off 25.11-27.11 или /off 3. В эти дни бот не пишет в группы и не шлёт сигналы, а когда вы вернётесь, пришлёт сводку.":"Ha, istalgan vaqtda: «Sozlamalar» → «Ish vaqti» → «Bir martalik dam olish kunlari» kalendari. Kerakli sanalarni bosing va «Sanalarni saqlash»ni bosing. Yoki buyruq bilan, masalan: /off 25.11-27.11 yoki /off 3. Bu kunlarda bot guruhlarga yozmaydi va signal yubormaydi, qaytganingizda esa xulosa yuboradi.",
+"«Настройки» → «Рабочее время» → «Часовой пояс»: США (EST, CST, MST, PST и другие), все зоны России, Узбекистан и соседние страны, Турция, Европа. Или командой, например: /tz us-e":"«Sozlamalar» → «Ish vaqti» → «Vaqt mintaqasi»: AQSh (EST, CST, MST, PST va boshqalar), Rossiyaning barcha mintaqalari, O'zbekiston va qo'shni davlatlar, Turkiya, Yevropa. Yoki buyruq bilan, masalan: /tz us-e",
+"Перерыв считает сам бот: рабочее окно делится на число апдейтов в тарифе, от 2 до 4 часов. Для 24/7 это обычно 4 часа, для смены 8 ч на 4 апдейта — 2 часа.":"Tanaffusni bot o'zi hisoblaydi: ish oynasi tarifdagi apdeytlar soniga bo'linadi, 2 dan 4 soatgacha. 24/7 uchun odatda 4 soat, 8 soatlik smenada 4 ta apdeyt uchun 2 soat.",
+"В «Расписании» выключите переключатель и нажмите «Сохранить» или отправьте команду /updates off. Включить обратно: /updates on.":"«Jadval»da o'tkazgichni o'chiring va «Saqlash»ni bosing yoki /updates off buyrug'ini yuboring. Qayta yoqish: /updates on.",
+"Нет, 24/7, для любой смены. Апдейты уходят в выбранное время, а читает и анализирует бот круглосуточно.":"Yo'q, 24/7, har qanday smena uchun. Apdeytlar tanlangan vaqtda ketadi, bot esa kecha-kunduz o'qiydi va tahlil qiladi.",
+"Считает код, а не ИИ: где грузовик по GPS, маршрут с пробками, сколько часов осталось у водителя, погода по пути и часовой пояс стопа. ИИ только объясняет результат словами.":"Sun'iy intellekt emas, kod hisoblaydi: GPS bo'yicha yuk mashinasi qayerda, tirbandlikli yo'nalish, haydovchida necha soat qolgan, yo'ldagi ob-havo va stop vaqt mintaqasi. Sun'iy intellekt faqat natijani so'z bilan tushuntiradi.",
+"On time: запас больше 30 минут. Tight: запас от 0 до 30 минут. Probably late: опоздание, бот пишет на сколько минут и почему.":"On time: zaxira 30 daqiqadan ko'p. Tight: zaxira 0 dan 30 daqiqagacha. Probably late: kechikish, bot necha daqiqa va nima uchun ekanini yozadi.",
+"Срок доставки сравнивается во времени самого стопа, потому что так его видит склад и брокер.":"Yetkazish muddati stopning o'z vaqti bo'yicha solishtiriladi, chunki ombor va broker uni shunday ko'radi.",
+"Бот считает до стопа, к которому водитель едет сейчас, и дальше по цепочке. Если опоздание на 3-м стопе, сразу видно, что будет на 4-м.":"Bot haydovchi hozir ketayotgan stopgacha va keyin zanjir bo'yicha hisoblaydi. 3-stopda kechikish bo'lsa, 4-stopda nima bo'lishi darhol ko'rinadi.",
+"Идеально точного прогноза не бывает: пробки и водители меняются. Бот будет сравнивать прогноз с реальным прибытием и показывать свою точность за последние 30 прогнозов (в плане).":"Mutlaqo aniq prognoz bo'lmaydi: tirbandlik va haydovchilar o'zgaradi. Bot prognozni haqiqiy yetib kelish bilan solishtiradi va oxirgi 30 ta prognoz aniqligini ko'rsatadi (rejada).",
+"Пока нет. Сервис маршрутов не знает низких мостов и запретных для грузовиков дорог. Это стоит помнить на сложных маршрутах.":"Hozircha yo'q. Yo'nalish xizmati past ko'priklar va yuk mashinalari uchun taqiqlangan yo'llarni bilmaydi. Murakkab yo'nalishlarda buni yodda tuting.",
+"Бот не гадает, сколько он простоит. Он считает, как будто водитель выедет сейчас, и пишет это в пояснении.":"Bot qancha turishini taxmin qilmaydi. U haydovchi hozir yo'lga chiqadi deb hisoblaydi va buni izohda yozadi.",
+"Русский и английский уже работают. Турецкий и узбекский появятся позже.":"Oyna va bot: rus, ingliz va o'zbek tillarida. Haydovchilarni bot turk tilida ham tushunadi va ularga o'z tilida javob beradi.",
+"Только о логистике: грузы, стопы, часы водителя, Amazon Relay, Street и похожее. Другие темы бот вежливо отклонит.":"Faqat logistika haqida: yuklar, stoplar, haydovchi soatlari, Amazon Relay, Street va shunga o'xshashlar. Boshqa mavzularni bot xushmuomalalik bilan rad etadi.",
+"Это в разработке: вы пишете на русском, узбекском или турецком, водитель получает текст на английском.":"Ha, /tr buyrug'i bilan: ruscha matn haydovchi uchun qisqa inglizcha xabarga aylanadi, inglizcha esa ruschaga tarjima qilinadi. Masalan: /tr пришли фото BOL",
+"Ключи хранятся только на сервере и нигде не показываются. Раздельное хранение данных каждого клиента и шифрование ключей появятся до того, как бот начнут использовать другие компании.":"Kalitlar faqat serverda saqlanadi va hech qayerda ko'rsatilmaydi. Har bir mijoz ma'lumotlarini alohida saqlash va kalitlarni shifrlash bot boshqa kompaniyalar tomonidan ishlatila boshlanishidan oldin paydo bo'ladi.",
+"Нет. Сообщения, фото и текст в них для бота только данные. Команды вроде «забудь правила» или «пришли ключ» он не выполняет.":"Yo'q. Xabarlar, rasmlar va ulardagi matn bot uchun faqat ma'lumot. «Qoidalarni unut» yoki «kalitni yubor» kabi buyruqlarni u bajarmaydi.",
+"Это последний этап. Чтение будет через расширение Chrome и только на чтение: бот ничего не нажимает и не меняет в Relay.":"Bu oxirgi bosqich. O'qish Chrome kengaytmasi orqali va faqat o'qish uchun bo'ladi: bot Relay'da hech narsani bosmaydi va o'zgartirmaydi.",
+"Тарифы отличаются числом водителей и апдейтов в день, все функции есть на любом тарифе: Лайт до 10, Старт до 20, Про до 40, Макс до 80 водителей. Апдейтов в день: Лайт 4, Старт 6, Про 8, Макс 12. Цены ещё не утверждены.":"Tariflar haydovchilar va kunlik apdeytlar soni bilan farq qiladi, barcha funksiyalar har qanday tarifda bor: Lite 10 tagacha, Start 20 tagacha, Pro 40 tagacha, Max 80 tagacha haydovchi. Kunlik apdeytlar: Lite 4, Start 6, Pro 8, Max 12. Narxlar hali tasdiqlanmagan.",
+"«Настройки» → «Сменить тариф» или командой в чате, например: /plan start. Тариф больше включается сразу, тариф меньше со следующего периода (30 дней), до этого его можно отменить. Функции не меняются, меняется только лимит водителей.":"«Sozlamalar» → «Tarifni o'zgartirish» yoki chatda buyruq bilan, masalan: /plan start. Kattaroq tarif darhol yoqiladi, kichikroq tarif keyingi davrdan (30 kun), ungacha bekor qilish mumkin. Funksiyalar o'zgarmaydi, faqat haydovchilar limiti o'zgaradi.",
+"Лишняя группа встаёт на паузу: бот сохраняет её сообщения, но апдейтов и проверок по ней нет. Бот сразу предложит три варианта: заменить другую группу, перейти на тариф больше или выйти из группы. Какие группы в работе, можно поменять командой /drivers.":"Ortiqcha guruh pauzaga qo'yiladi: bot uning xabarlarini saqlaydi, lekin u bo'yicha apdeyt va tekshiruv yo'q. Bot darhol uch variant taklif qiladi: boshqa guruhni almashtirish, kattaroq tarifga o'tish yoki guruhdan chiqish. Qaysi guruhlar ishda ekanini /drivers buyrug'i bilan o'zgartirish mumkin.",
+"Бот следит только за водителями, чьи группы в работе, и раз в день пишет, кого не видит и какой тариф нужен для всех. Чтение борда в разработке.":"Bot faqat guruhlari ishda bo'lgan haydovchilarni kuzatadi va kuniga bir marta kimni ko'rmayotganini va hammasi uchun qaysi tarif kerakligini yozadi. Doskani o'qish ishlab chiqilmoqda.",
+"Бот напомнит за 3 дня и за 1 день до конца периода. После конца ещё 3 дня всё работает, потом апдейты и агенты останавливаются, окно только для просмотра. Данные не удаляются. Оплата появится позже.":"Bot davr tugashidan 3 kun va 1 kun oldin eslatadi. Tugagandan keyin yana 3 kun hammasi ishlaydi, keyin apdeytlar va agentlar to'xtaydi, oyna faqat ko'rish uchun qoladi. Ma'lumotlar o'chirilmaydi. To'lov keyinroq paydo bo'ladi.",
+"Пока активация не закончена, часть функций закрыта, чтобы ничего не сломать. Шаги: опрос, тариф, ELD, хотя бы одна группа водителя. Нажмите на кнопку с замком: окно подскажет, какой шаг остался, и даст кнопку, чтобы его сделать. Например, ELD подключается командой /eld":"Faollashtirish tugamaguncha, hech narsa buzilmasligi uchun funksiyalarning bir qismi yopiq. Qadamlar: so'rovnoma, tarif, ELD, kamida bitta haydovchi guruhi. Qulfli tugmani bosing: oyna qaysi qadam qolganini aytadi va uni bajarish uchun tugma beradi. Masalan, ELD /eld buyrug'i bilan ulanadi",
+"Это проверки, которые работают 24/7 и пишут только вам: водитель ждёт ответа, водитель молчит, тревожные слова, долгая стоянка, нет GPS, опоздание. Изменить: «Настройки» → «Агенты и автоответ» или команда /settings.":"Bu 24/7 ishlaydigan va faqat sizga yozadigan tekshiruvlar: haydovchi javob kutmoqda, haydovchi jim, xavotirli so'zlar, uzoq turish, GPS yo'q, kechikish. O'zgartirish: «Sozlamalar» → «Agentlar va avtojavob» yoki /settings buyrug'i.",
+"Только если вы включите автоответ «Авто». По умолчанию бот предлагает ответ, а отправляете вы. Тревожные сообщения (авария, поломка, полиция) бот сам не отвечает никогда. Например: /agents autoreply suggest":"Faqat «Avto» avtojavobini yoqsangiz. Odatda bot javob taklif qiladi, siz esa yuborasiz. Xavotirli xabarlarga (avariya, buzilish, politsiya) bot hech qachon o'zi javob bermaydi. Masalan: /agents autoreply suggest",
+"Планируется пробная неделя: если не подойдёт, вернём деньги за вычетом использованных дней. Точная формула будет в оферте.":"Sinov haftasi rejalashtirilgan: to'g'ri kelmasa, foydalanilgan kunlarni ayirib pulni qaytaramiz. Aniq formula ofertada bo'ladi.",
+"Оплата через Click, Payme и другие способы появится позже, после запуска сервера.":"Click, Payme va boshqa usullar orqali to'lov keyinroq, server ishga tushgandan keyin paydo bo'ladi.",
+"Инструкция и вопросы":"Qo'llanma va savollar",
+"Написать в поддержку":"Qo'llab-quvvatlashga yozish",
+"Все команды бота":"Botning barcha buyruqlari",
+"Язык бота":"Bot tili",
+"Окно переключается на этот язык":"Oyna shu tilga o'tadi",
+"Доступ (демо)":"Kirish (demo)",
+"Оплачено":"To'langan",
+"Опрос не пройден":"So'rovnoma o'tilmagan",
+"Не оплачено":"To'lanmagan",
+"Переключатель только для показа. В настоящем боте статус придёт с сервера.":"O'tkazgich faqat ko'rsatish uchun. Haqiqiy botda holat serverdan keladi.",
+"Рабочее время":"Ish vaqti",
+"Часовой пояс":"Vaqt mintaqasi",
+"Время":"Vaqt",
+"круглосуточно":"kecha-kunduz",
+"Выходные":"Dam olish kunlari",
+"Вс":"Ya",
+"Разовые даты":"Bir martalik sanalar",
+"Изменить рабочее время":"Ish vaqtini o'zgartirish",
+"выключены":"o'chirilgan",
+"Изменить расписание":"Jadvalni o'zgartirish",
+"Или командой в чате, например: /times 08:00 14:00 20:00":"Yoki chatda buyruq bilan, masalan: /times 08:00 14:00 20:00",
+"Агенты и автоответ":"Agentlar va avtojavob",
+"Включено":"Yoqilgan",
+"Водитель ждёт ответа":"Haydovchi javob kutmoqda",
+"Автоответ":"Avtojavob",
+"предлагать":"taklif qilish",
+"Изменить агентов":"Agentlarni o'zgartirish",
+"Агенты проверяют группы 24/7 и пишут только вам: водитель ждёт ответа, молчит, тревога, стоянка, нет GPS.":"Agentlar guruhlarni 24/7 tekshiradi va faqat sizga yozadi: haydovchi javob kutmoqda, jim, xavotir, uzoq turish, GPS yo'q.",
+"Подключения и команда":"Ulanishlar va jamoa",
+"Подключено (пример)":"Ulangan (namuna)",
+"Борд (Google Sheets)":"Doska (Google Sheets)",
+"Тиммейты":"Hamkasblar",
+"3 человека":"3 kishi",
+"Уведомления мне":"Menga bildirishnomalar",
+"Груз опаздывает":"Yuk kechikmoqda",
+"Сразу, как только расчёт показал опоздание":"Hisob kechikishni ko'rsatishi bilan darhol",
+"Водитель молчит":"Haydovchi jim",
+"Если долго нет ответа в группе":"Guruhda uzoq javob bo'lmasa",
+"Проблема с группой или ELD":"Guruh yoki ELD bilan muammo",
+"Бот не видит чат или ключ перестал работать":"Bot chatni ko'rmayapti yoki kalit ishlamay qoldi",
+"Сменить тариф":"Tarifni o'zgartirish",
+"Группы в тарифе":"Tarifdagi guruhlar",
+"Пробная неделя":"Sinov haftasi",
+"появится позже":"keyinroq paydo bo'ladi",
+"Оплата":"To'lov",
+"Click · Payme · другие":"Click · Payme · boshqalar",
+"Оферта":"Oferta",
+"готовится":"tayyorlanmoqda",
+"Тарифы отличаются только числом водителей. Оплата заработает после запуска сервера.":"Tariflar haydovchilar va kunlik apdeytlar soni bilan farq qiladi. To'lov server ishga tushgandan keyin ishlaydi.",
+"Или командой в чате, например: /plan pro":"Yoki chatda buyruq bilan, masalan: /plan pro",
+"Modenzo AI · версия окна 2026-11-20 23:40":"Modenzo AI · oyna versiyasi 2026-11-20 19:20",
+"Все функции и агенты на любом тарифе. Отличаются число водителей, апдейтов в день и режим.":"Barcha funksiyalar va agentlar har qanday tarifda. Haydovchilar, kunlik apdeytlar soni va rejim bilan farq qiladi.",
+"Смена":"Smena",
+"дешевле":"arzonroq",
+"в любое время":"istalgan vaqtda",
+"Бот пишет в группы в любое время рабочих дней. Выходные дни можно отметить.":"Bot guruhlarga ish kunlarida istalgan vaqtda yozadi. Dam olish kunlarini belgilash mumkin.",
+"Цена уточняется":"Narx aniqlanmoqda",
+"Ваш тариф":"Sizning tarifingiz",
+"Перейти сейчас":"Hozir o'tish",
+"Как меняется тариф":"Tarif qanday o'zgaradi",
+"Тариф больше":"Kattaroq tarif",
+"Включается сразу. Пока оплата не подключена, без доплаты.":"Darhol yoqiladi. To'lov ulanmaguncha qo'shimcha to'lovsiz.",
+"Тариф меньше":"Kichikroq tarif",
+"Со следующего периода. До этого можно отменить.":"Keyingi davrdan. Ungacha bekor qilish mumkin.",
+"Смена → 24/7":"Smena → 24/7",
+"Считается тарифом больше: включается сразу.":"Kattaroq tarif hisoblanadi: darhol yoqiladi.",
+"24/7 → Смена":"24/7 → Smena",
+"Со следующего периода.":"Keyingi davrdan.",
+"Период":"Davr",
+"30 дней. Напоминание за 3 дня и за 1 день до конца.":"30 kun. Tugashidan 3 kun va 1 kun oldin eslatma.",
+"Не хватает мест":"Joy yetmayapti",
+"Новая группа встаёт на паузу. Бот предложит заменить другую группу, перейти на тариф больше или выйти из группы.":"Yangi guruh pauzaga qo'yiladi. Bot boshqa guruhni almashtirish, kattaroq tarifga o'tish yoki guruhdan chiqishni taklif qiladi.",
+"Борд больше тарифа":"Doska tarifdan katta",
+"Бот следит только за водителями, чьи группы в работе, и раз в день пишет, кто не вошёл.":"Bot faqat guruhlari ishda bo'lgan haydovchilarni kuzatadi va kuniga bir marta kim kirmaganini yozadi.",
+"Одинаково на любом тарифе":"Har qanday tarifda bir xil",
+"Все функции бота":"Botning barcha funksiyalari",
+"Все агенты и автоответ":"Barcha agentlar va avtojavob",
+"Окно и расширенный экран":"Oyna va kengaytirilgan ekran",
+"Ваш часовой пояс":"Sizning vaqt mintaqangiz",
+"24/7: /plan start full. Свой тариф: /plan. Какие группы в работе: /drivers":"24/7: /plan start full. O'z tarifingiz: /plan. Qaysi guruhlar ishda: /drivers",
+"Проверяют группы 24/7 и пишут только вам":"Guruhlarni 24/7 tekshiradi va faqat sizga yozadi",
+"Сигнал, если команда не ответила водителю":"Jamoa haydovchiga javob bermasa, signal",
+"Через сколько минут":"Necha daqiqadan keyin",
+"Команда задала вопрос, а водитель не отвечает":"Jamoa savol berdi, haydovchi esa javob bermayapti",
+"Тревожные слова":"Xavotirli so'zlar",
+"Авария, поломка, полиция, отказ, пломба и другие, на 4 языках":"Avariya, buzilish, politsiya, rad etish, plomba va boshqalar, 4 tilda",
+"Долгая стоянка":"Uzoq turish",
+"Трак стоит, а водитель не писал о перерыве или отдыхе":"Trak turibdi, haydovchi esa tanaffus yoki dam olish haqida yozmagan",
+"Для вас: после подключения вашего ELD к серверу (в плане)":"Siz uchun: ELD'ingiz serverga ulangandan keyin (rejada)",
+"Нет GPS":"GPS yo'q",
+"Последние данные GPS старше 60 минут":"Oxirgi GPS ma'lumoti 60 daqiqadan eski",
+"Опоздание":"Kechikish",
+"По борду и честному расчёту ETA":"Doska va halol ETA hisobi bo'yicha",
+"Ждёт подключения борда":"Doska ulanishini kutmoqda",
+"Автоответ водителю":"Haydovchiga avtojavob",
+"Выключен":"O'chirilgan",
+"Только сигнал вам":"Faqat sizga signal",
+"Предлагать ответ":"Javob taklif qilish",
+"Бот пишет черновик ответа, вы нажимаете «Отправить», «Изменить» или «Пропустить»":"Bot javob qoralamasini yozadi, siz «Yuborish», «O'zgartirish» yoki «O'tkazib yuborish»ni bosasiz",
+"В группы водителей бот пишет только после вашего «Отправить» или в режиме «Авто». Сообщения водителей для бота только данные, команды из них он не выполняет.":"Haydovchilar guruhlariga bot faqat siz «Yuborish»ni bosganingizdan keyin yoki «Avto» rejimida yozadi. Haydovchilar xabarlari bot uchun faqat ma'lumot, ulardagi buyruqlarni u bajarmaydi.",
+"Автоответ: /agents autoreply suggest. Выключить агента: /agents risk off":"Avtojavob: /agents autoreply suggest. Agentni o'chirish: /agents risk off",
+"Когда бот пишет в группы и присылает сигналы":"Bot guruhlarga qachon yozadi va signal yuboradi",
+"Сменить":"O'zgartirish",
+"Бот пишет в любое время рабочих дней. В выходные он только анализирует.":"Bot ish kunlarida istalgan vaqtda yozadi. Dam olish kunlari faqat tahlil qiladi.",
+"Дни недели":"Hafta kunlari",
+"Пн":"Du",
+"Выходной":"Dam olish",
+"Работаем":"Ishlaymiz",
+"Вт":"Se",
+"Ср":"Ch",
+"Чт":"Pa",
+"Пт":"Ju",
+"Сб":"Sh",
+"Разовые выходные и длинные дни":"Bir martalik dam olish va uzun kunlar",
+"Нажмите на дату: рабочий день станет выходным, а выходной по неделе станет разово рабочим. Например, отпуск на 3 дня.":"Sanani bosing: ish kuni dam olish kuniga aylanadi, haftalik dam olish kuni esa bir martalik ish kuniga. Masalan, 3 kunlik ta'til.",
+"раб":"ish",
+"вых":"dam",
+"Цветом отмечены разовые изменения. Остальные дни идут по дням недели.":"Rang bilan bir martalik o'zgarishlar belgilangan. Qolgan kunlar hafta kunlari bo'yicha.",
+"Сохранить даты":"Sanalarni saqlash",
+"Командой: /off 25.11-27.11 или /off 3 (три дня с сегодня)":"Buyruq bilan: /off 25.11-27.11 yoki /off 3 (bugundan uch kun)",
+"Сейчас рабочее время":"Hozir ish vaqti",
+"Круглосуточно в рабочие дни":"Ish kunlarida kecha-kunduz",
+"Длинный день: /worktime sat 12. Выходной: /worktime sun off. Часовой пояс: /tz us-c":"Uzun kun: /worktime sat 12. Dam olish: /worktime sun off. Vaqt mintaqasi: /tz us-c",
+"По нему бот считает апдейты, смену и даты":"Bot apdeytlar, smena va sanalarni shu bo'yicha hisoblaydi",
+"США":"AQSh",
+"Россия":"Rossiya",
+"Другие страны":"Boshqa davlatlar",
+"Пример данных. Нажмите на груз, чтобы открыть детали.":"Namunaviy ma'lumot. Tafsilotlarni ochish uchun yukni bosing.",
+"Новый груз 1231":"Yangi yuk 1231",
+"появился в борде. Бот поставил статус Upcoming и ждёт назначения водителя.":"doskada paydo bo'ldi. Bot Upcoming holatini qo'ydi va haydovchi tayinlanishini kutmoqda.",
+"Показать":"Ko'rsatish",
+"В пути":"Yo'lda",
+"Опаздывают":"Kechikmoqda",
+"Груз и водитель":"Yuk va haydovchi",
+"Статус":"Holat",
+"Грузовик":"Yuk mashinasi",
+"Следующий стоп":"Keyingi stop",
+"Вовремя":"O'z vaqtida",
+"У шиппера · 40 мин":"Shipperda · 40 daqiqa",
+"Отдых 10 ч, до 04:00":"10 soat dam olish, 04:00 gacha",
+"Водитель не назначен":"Haydovchi tayinlanmagan",
+"Нет трака":"Trak yo'q",
+"Ждёт назначения":"Tayinlanishni kutmoqda",
+"Пока не считается":"Hozircha hisoblanmaydi",
+"Разгружен":"Tushirildi",
+"Доставлен вовремя":"O'z vaqtida yetkazildi",
+"Вердикт ETA":"ETA xulosasi",
+"Осталось вождения":"Qolgan haydash vaqti",
+"Стопы":"Stoplar",
+"Последнее из группы":"Guruhdagi oxirgi xabar",
+"Для брокера: Heavy traffic before Redding":"Broker uchun: Heavy traffic before Redding",
+"Бот":"Bot",
+"Расчёт обновлён: +25 мин из-за пробки":"Hisob yangilandi: tirbandlik sababli +25 daqiqa",
+"Подготовить апдейт":"Apdeyt tayyorlash",
+"Разбор ETA":"ETA tahlili",
+"Статусы грузов будут браться из борда, позже из Amazon Relay; Rolling и Stopped из ELD.":"Yuk holatlari doskadan, keyinroq Amazon Relay'dan olinadi; Rolling va Stopped ELD'dan.",
+"Поиск по грузам":"Yuklar bo'yicha qidiruv",
+"Load, водитель, склад":"Load, haydovchi, ombor",
+"Скрыть":"Yashirish",
+"Перевод: забрал груз, в пути":"Tarjima: yukni oldim, yo'ldaman",
+"Заправляюсь, через 20 минут выезжаю":"Yoqilg'i quyyapman, 20 daqiqadan keyin yo'lga chiqaman",
+"погрузка":"yuklash",
+"Перевод: стою в очереди, третий":"Tarjima: navbatda turibman, uchinchiman",
+"после отдыха 11 ч":"11 soat dam olishdan keyin",
+"Ложусь на отдых, утром на погрузку":"Dam olishga yotyapman, ertalab yuklashga",
+"Сообщений по этому грузу пока нет":"Bu yuk bo'yicha hozircha xabar yo'q",
+"Разгрузился, POD отправил":"Tushirdim, POD yubordim",
+"Нет грузов с таким статусом":"Bunday holatdagi yuklar yo'q",
+"Кто едет, кто стоит и сколько часов вождения осталось. Пример данных.":"Kim yo'lda, kim turibdi va qancha haydash soati qolgan. Namunaviy ma'lumot.",
+"Сейчас не рабочее время":"Hozir ish vaqti emas",
+"Бот только анализирует. Сводка придёт в начале смены.":"Bot faqat tahlil qiladi. Xulosa smena boshida keladi.",
+"Пунктир: время только в длинные дни":"Punktir: faqat uzun kunlardagi vaqt",
+"авто":"avto",
+"Бот пишет в группы только в ваше рабочее время: смена 8, 10 или 12 ч, дни выбираете вы. Вне смены бот только анализирует, а в начале смены присылает сводку.":"Bot guruhlarga faqat ish vaqtingizda yozadi: smena 8, 10 yoki 12 soat, kunlarni o'zingiz tanlaysiz. Smenadan tashqarida bot faqat tahlil qiladi, smena boshida esa xulosa yuboradi.",
+"Дешевле · цена уточняется":"Arzonroq · narx aniqlanmoqda",
+"Бот пишет в группы и присылает сигналы только в смену. Вне смены он только анализирует, а в начале смены присылает сводку: что было, пока вас не было.":"Bot guruhlarga yozadi va signallarni faqat smenada yuboradi. Smenadan tashqarida faqat tahlil qiladi, smena boshida esa xulosa yuboradi: siz yo'qligingizda nima bo'lgan.",
+"Начало смены":"Smena boshlanishi",
+"Обычная длина смены":"Odatiy smena davomiyligi",
+"Вых":"Dam",
+"Например, обычно 8 ч, а в дни, когда напарник отдыхает, 12 ч.":"Masalan, odatda 8 soat, sherigingiz dam olayotgan kunlarda esa 12 soat.",
+"Нажмите на дату: рабочий день станет выходным (ещё нажатие: 12 ч), а выходной по неделе станет разово рабочим. Например, отпуск на 3 дня.":"Sanani bosing: ish kuni dam olish kuniga aylanadi (yana bosilsa: 12 soat), haftalik dam olish kuni esa bir martalik ish kuniga. Masalan, 3 kunlik ta'til.",
+"Тревоги вне смены":"Smenadan tashqari xavotirlar",
+"Авария, поломка, полиция: присылать сразу":"Avariya, buzilish, politsiya: darhol yuborish",
+"По группам на паузе нет апдейтов и проверок. Бот сохраняет их сообщения.":"Pauzadagi guruhlar bo'yicha apdeyt va tekshiruv yo'q. Bot ularning xabarlarini saqlaydi.",
+"Ждёт оплаты":"To'lovni kutmoqda",
+"Включается сразу. Доплата только за оставшиеся дни периода.":"Darhol yoqiladi. Faqat davrning qolgan kunlari uchun qo'shimcha to'lov.",
+"Владелец бота":"Bot egasi",
+"Без лимита водителей":"Haydovchilar limitisiz",
+"Вы владелец: бот работает со всеми группами UNIT, лимита нет.":"Siz egasiz: bot barcha UNIT guruhlari bilan ishlaydi, limit yo'q.",
+"включены":"yoqilgan",
+"Ключ, чтобы бот видел, где траки":"Bot traklar qayerdaligini ko'rishi uchun kalit",
+"Пока активация не закончена, окно работает только для просмотра.":"Faollashtirish tugamaguncha oyna faqat ko'rish uchun ishlaydi.",
+"Пройти опрос":"So'rovnomadan o'tish",
+"Сначала пройдите опрос":"Avval so'rovnomadan o'ting",
+"Это 7 коротких вопросов в чате с ботом: борд, грузы, ELD, коллеги, часовой пояс, смена, число водителей. После него функции включатся. Смотреть окно можно и сейчас.":"Bu bot bilan chatda 7 ta qisqa savol: doska, yuklar, ELD, hamkasblar, vaqt mintaqasi, smena, haydovchilar soni. Undan keyin funksiyalar yoqiladi. Oynani hozirdan ko'rish mumkin.",
+"Выбрать тариф":"Tarifni tanlash",
+"Выберите и оплатите тариф":"Tarifni tanlang va to'lang",
+"Функции включатся после оплаты. Смотреть окно, тарифы и инструкцию можно и сейчас.":"Funksiyalar to'lovdan keyin yoqiladi. Oyna, tariflar va qo'llanmani hozirdan ko'rish mumkin.",
+"Команда скопирована: отправьте её боту":"Buyruq nusxalandi: uni botga yuboring",
+"Доступно после опроса /start":"/start so'rovnomasidan keyin mavjud",
+"Доступно после оплаты тарифа":"Tarif to'langandan keyin mavjud",
+"Вернитесь в чат с ботом и нажмите /start":"Bot chatiga qayting va /start ni bosing",
+"Оплата появится позже, после запуска сервера":"To'lov keyinroq, server ishga tushgandan keyin paydo bo'ladi",
+"Telegram не дал включить полный экран на этом устройстве":"Telegram bu qurilmada to'liq ekranni yoqishga ruxsat bermadi",
+"Этот язык появится позже, пока окно и бот на русском":"Bu til keyinroq paydo bo'ladi, hozircha oyna va bot rus tilida",
+"Окно и бот: русский, английский и узбекский. Водителей бот понимает и на турецком и отвечает им на их языке.":"Oyna va bot: rus, ingliz va o'zbek tillarida. Haydovchilarni bot turk tilida ham tushunadi va ularga o'z tilida javob beradi.",
+"Да, командой /tr: русский текст превращается в короткое английское сообщение водителю, английский переводится на русский. Например: /tr пришли фото BOL":"Ha, /tr buyrug'i bilan: ruscha matn haydovchi uchun qisqa inglizcha xabarga aylanadi, inglizcha esa ruschaga tarjima qilinadi. Masalan: /tr пришли фото BOL",
+"Тарифы отличаются числом водителей и апдейтов в день. Оплата заработает после запуска сервера.":"Tariflar haydovchilar va kunlik apdeytlar soni bilan farq qiladi. To'lov server ishga tushgandan keyin ishlaydi.",
+"Русский, английский, узбекский":"Rus, ingliz, o'zbek",
+"Окно, бот и ответы":"Oyna, bot va javoblar",
+"Турецкий для водителей":"Haydovchilar uchun turk tili",
+"Бот понимает водителей на турецком и отвечает им по-турецки":"Bot haydovchilarni turk tilida tushunadi va ularga turkcha javob beradi",
+"Язык окна и бота":"Oyna va bot tili",
+"Окно переключается сразу.":"Oyna darhol o'zgaradi.",
+"Язык сообщений бота":"Bot xabarlari tili",
+"Сменить и в боте":"Botda ham o'zgartirish",
+"Водителям бот отвечает на их языке, в том числе на турецком.":"Haydovchilarga bot o'z tilida javob beradi, jumladan turk tilida.",
+"Русский":"Ruscha",
+"Английский":"Inglizcha",
+"Узбекский":"O'zbekcha"
+};
+const UZ_RULES = [
+[/^(\d+) дн\.$/, '$1 kun'],
+[/^(\d+) ч$/, '$1 soat'],
+[/^([А-Яа-яЁё]+) · (24\/7|Смена)$/, (m, a, b) => trName(a + ' · ' + b)],
+[/^Сейчас у вас (\d\d:\d\d)$/, 'Hozir sizda $1'],
+[/^Входит в тариф (\S+)$/, (m, a) => (LD()[a] || a) + ' tarifiga kiradi'],
+[/^(\d\d:\d\d) вне смены$/, '$1 smenadan tashqarida'],
+[/^Время (\d\d:\d\d) вне смены \((.+)\)$/, (m, a, b) => a + ' smenadan tashqarida (' + (LD()[b] || b) + ')'],
+[/^Смена (\S+): от 3 до (\d+) апдейтов, перерыв не меньше (\d+) ч\. Вне смены бот не пишет\.$/, 'Smena $1: 3 tadan $2 tagacha apdeyt, tanaffus kamida $3 soat. Smenadan tashqarida bot yozmaydi.'],
+[/^24\/7: от 3 до (\d+) апдейтов в сутки, перерыв не меньше (\d+) ч\.$/, '24/7: kuniga 3 tadan $1 tagacha apdeyt, tanaffus kamida $2 soat.'],
+[/^Перерыв между апдейтами: не меньше (\d+) ч$/, 'Apdeytlar orasidagi tanaffus: kamida $1 soat'],
+[/^Между апдейтами нужно не меньше (\d+) ч: (.+)$/, 'Apdeytlar orasida kamida $1 soat bo\'lishi kerak: $2'],
+[/^Смена: (.+)$/, 'Smena: $1'],
+[/^до (\d+) апдейтов в день$/, 'kuniga $1 tagacha apdeyt'],
+[/^Апдейтов в день: до (\d+)$/, 'Kunlik apdeytlar: $1 tagacha'],
+[/^В тарифе (\S+) до (\d+) апдейтов в день, а выбрано (\d+)\.$/, (m, a, b, c) => (LD()[a] || a) + ' tarifida kuniga ' + b + ' tagacha apdeyt, tanlangan: ' + c + '.'],
+[/^Для (\d+) апдейтов нужен тариф (\S+)\. Или уберите лишнее время\.$/, (m, a, b) => a + ' ta apdeyt uchun ' + (LD()[b] || b) + ' tarifi kerak. Yoki ortiqcha vaqtni olib tashlang.'],
+[/^Перейти на (\S+)$/, (m, a) => (LD()[a] || a) + ' tarifiga o\'tish'],
+[/^В работе (\d+) из (\d+)$/, 'Ishda $1 / $2'],
+[/^(\d+) мин$/, '$1 daq'],
+[/^В работе: (\d+) из (\d+)$/, 'Ishda: $1 / $2'],
+[/^На паузе: (\d+)$/, 'Pauzada: $1'],
+[/^Период до (\S+)$/, '$1 gacha davr'],
+[/^С (\d\d\.\d\d\.\d{4}) тариф (.+)$/, (m, d, a) => d + ' dan tarif: ' + trName(a)],
+[/^С (\d\d\.\d\d\.\d{4})$/, '$1 dan'],
+[/^У вас (\d+) групп: (\d+) будут на паузе$/, 'Sizda $1 ta guruh: $2 tasi pauzada bo\'ladi'],
+[/^Оставить тариф (.+)$/, (m, a) => trName(a) + ' tarifini qoldirish'],
+[/^Бот отвечает сам, если команда молчит (\d+) мин\. Тревожные сообщения не трогает, о каждом ответе сообщает вам$/, 'Jamoa $1 daqiqa jim bo\'lsa, bot o\'zi javob beradi. Xavotirli xabarlarga tegmaydi, har bir javob haqida sizga xabar beradi'],
+[/^(\d+) из (\d+)$/, '$1 / $2'],
+[/^Свободно мест: (\d+)$/, 'Bo\'sh joy: $1'],
+[/^Заявка на тариф (.+) ждёт оплаты$/, (m, a) => trName(a) + ' tarifi bo\'yicha so\'rov to\'lovni kutmoqda'],
+[/^до (\d+) водителей$/, '$1 tagacha haydovchi'],
+[/^Отправьте боту команду: (.+)$/, 'Botga shu buyruqni yuboring: $1'],
+[/^Выберите от 3 до (\d+) времён\. Сейчас выбрано: (\d+)$/, '3 tadan $1 tagacha vaqt tanlang. Hozir tanlangan: $2'],
+[/^Выбрано (\d+): (.+)$/, 'Tanlangan $1: $2'],
+[/^по времени: (.+) · режим: сначала показать мне$/, (m, a) => 'vaqt: ' + (LD()[a] || a) + ' · rejim: avval menga ko\'rsatish'],
+[/^Время апдейтов · (.+)$/, (m, a) => 'Apdeyt vaqti · ' + (LD()[a] || a)],
+[/^Следующий: (.+)$/, 'Keyingi: $1'],
+[/^(\d+) ч (\d+) мин$/, '$1 soat $2 daq'],
+[/^Решения · (\d+)$/, 'Qarorlar · $1'],
+[/^Все · (\d+)$/, 'Hammasi · $1'],
+[/^Есть · (\d+)$/, 'Bor · $1'],
+[/^В разработке · (\d+)$/, 'Ishlab chiqilmoqda · $1'],
+[/^План · (\d+)$/, 'Reja · $1'],
+[/^Под риском · (\d+)$/, 'Xavf ostida · $1'],
+[/^(\d+) вопросов и ответов$/, '$1 ta savol va javob'],
+[/^Как всё работает: (\d+) ответов$/, 'Hammasi qanday ishlaydi: $1 ta javob'],
+[/^Группа (.+) · (\d\d:\d\d)$/, '$1 guruhi · $2'],
+[/^Водитель не назначен · трак —$/, 'Haydovchi tayinlanmagan · trak —'],
+[/^(.+) · трак (\S+)$/, '$1 · trak $2'],
+[/^Трак (\S+) · Load (\S+)$/, 'Trak $1 · Load $2'],
+[/^Load (\S+) · стоп (\d+) из (\d+)$/, 'Load $1 · stop $2 / $3'],
+[/^(.+) · (\d+) из (\d+)$/, '$1 · $2 / $3'],
+[/^(.+) · погрузка$/, '$1 · yuklash'],
+[/^(.+) · доставлен$/, '$1 · yetkazildi'],
+[/^Окно (\d\d:\d\d) (\w+)$/, 'Vaqt oynasi $1 $2'],
+[/^Опоздает ~(\d+) мин$/, '~$1 daqiqa kechikadi'],
+[/^Впритык, запас (\d+) мин$/, 'Zo\'rg\'a, zaxira $1 daqiqa'],
+[/^Пт (.+)$/, 'Ju $1'],
+[/^Сб (.+)$/, 'Sh $1'],
+[/^(\d+) мин · (.+)$/, '$1 daq · $2'],
+[/^\+(\d+) мин$/, '+$1 daq'],
+];
 const EN_RULES = [
 [/^(\d+) дн\.$/, '$1 days'],
 [/^(\d+) ч$/, '$1 h'],
@@ -1078,12 +1665,16 @@ const EN_RULES = [
 [/^До (\d\d:\d\d) по времени США\. Режим: сначала показать мне\.$/, 'Until $1 US time. Mode: show me first.'],
 [/^До (\d\d:\d\d) по времени США\. Режим: авто\.$/, 'Until $1 US time. Mode: auto.']
 ];
-function trName(a) { return a.split(' · ').map((x) => EN[x] || x).join(' · '); }
+function saveLang() { try { localStorage.setItem('mz_lang2', JSON.stringify({ lang: S.lang, bot: S.botLang })); } catch (x) {} }
+function LD() { return S.lang === 'uz' ? UZ : EN; }
+function RL() { return S.lang === 'uz' ? UZ_RULES : EN_RULES; }
+function trName(a) { return a.split(' · ').map((x) => LD()[x] || x).join(' · '); }
 function trText(t) {
   const k = t.trim();
   if (!k || !/[А-Яа-яЁё]/.test(k)) return t;
-  if (EN[k] !== undefined) return t.replace(k, EN[k]);
-  for (const r of EN_RULES) { if (r[0].test(k)) return t.replace(k, k.replace(r[0], r[1])); }
+  const dict = LD();
+  if (dict[k] !== undefined) return t.replace(k, dict[k]);
+  for (const r of RL()) { if (r[0].test(k)) return t.replace(k, k.replace(r[0], r[1])); }
   return t;
 }
 function translateDom(root) {
@@ -1105,7 +1696,7 @@ function render() {
 function renderInner() {
   const app = document.getElementById('app');
   app.className = 'app' + (isWide() ? ' wide' : '') + (locked() ? ' locked' : '') + (updLocked() ? ' lockupd' : '');
-  document.documentElement.lang = S.lang === 'en' ? 'en' : 'ru';
+  document.documentElement.lang = S.lang;
   const active = TAB_OF[S.view] || S.view;
   const side = '<aside class="side"><div class="row" style="gap:10px;padding:0 6px">' + LOGO + '<div><h2 style="font-size:18px">Modenzo AI</h2><div class="xs muted">Расширенный экран</div></div></div><nav class="col" style="gap:4px" aria-label="Разделы">' +
     NAV.map((n) => '<button class="navbtn' + (S.view === n[0] ? ' on' : '') + '" data-go="' + n[0] + '">' + ic(n[2], 18) + n[1] + '</button>').join('') + '</nav>' +
@@ -1120,7 +1711,7 @@ function renderInner() {
     body = '<div class="card pad col" style="gap:10px;border-radius:18px;border-color:var(--amber-bd)"><b>Этот экран не открылся</b><div class="small sub" style="line-height:1.5">Пришлите скриншот разработчику: ' + esc(S.view + ': ' + (err && err.message || err)) + '</div><button class="btn" data-go="home">На главную</button></div>';
   }
   app.innerHTML = side + '<div class="main"><div class="content">' + (S.view === 'home' || S.view === 'settings' || locked() ? activationCard() : '') + body + '</div>' + tabbar + '</div>' + sheet + lockSheetHtml();
-  if (S.lang === 'en') translateDom(app);
+  if (S.lang !== 'ru') translateDom(app);
   [['etaTruck','truck'],['etaAddr','addr'],['etaAppt','appt']].forEach((x) => { const el = document.getElementById(x[0]); if (el) el.addEventListener('input', (e) => { S.etaF[x[1]] = e.target.value; const mono = el.parentNode.querySelector('.mono'); if (mono) mono.textContent = etaCommand(); }); });
   const ta = document.getElementById('updta');
   if (ta) ta.addEventListener('input', (e) => { S.updDraft = e.target.value; });
@@ -1159,6 +1750,7 @@ function onClick(e) {
   if (d.act === 'saveoff') { saveOff(); return; }
   if (d.act === 'updedit') { S.updEditing = true; S.updDraft = S.updText; render(); const ta = document.getElementById('updta'); if (ta) { ta.focus(); } return; }
   if (d.act === 'updsave') { const v = (S.updDraft || '').trim(); if (v) { S.updText = v; S.updEdited = true; } S.updEditing = false; render(); toast('Текст сохранён. Нажмите «Отправить»'); return; }
+  if (d.act === 'langbot') { S.botLang = S.lang; saveLang(); render(); sendToBot('lang-' + S.lang, '/language'); return; }
   if (d.act === 'updcancel') { S.updEditing = false; render(); return; }
   if (d.act === 'etarun') {
     if (!S.etaF.truck.trim() || !S.etaF.addr.trim()) { toast('Напишите номер трака и адрес стопа'); return; }
@@ -1191,7 +1783,7 @@ function onClick(e) {
   else if (d.feat) S.feat = d.feat;
   else if (d.cat) S.cat = d.cat;
   else if (d.faq) S.open = S.open === d.faq ? '' : d.faq;
-  else if (d.lang) { S.lang = d.lang; try { localStorage.setItem('mz_lang', d.lang); } catch (x) {} if (S.fromBot && S.bot && (d.lang === 'ru' || d.lang === 'en')) { render(); sendToBot('lang-' + d.lang, '/language'); return; } }
+  else if (d.lang) { if (['ru','en','uz'].indexOf(d.lang) >= 0) { S.lang = d.lang; saveLang(); } }
   else if (d.notif) S.notif[d.notif] = !S.notif[d.notif];
   else if (d.tab) S.tab = d.tab;
   else if (d.sel) S.sel = d.sel;
