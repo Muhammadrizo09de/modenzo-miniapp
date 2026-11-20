@@ -83,7 +83,7 @@ h1,h2,h3{margin:0;font-family:'Space Grotesk',Inter,sans-serif;letter-spacing:-0
 .board{display:flex;flex-wrap:wrap;gap:20px;align-items:flex-start}
 .kpis{display:grid;grid-template-columns:repeat(auto-fit,minmax(140px,1fr));gap:12px}
 .desk-only{display:none}
-.app.locked [data-act="save"],.app.locked [data-slot],.app.locked [data-smode],.app.locked [data-son],.app.locked [data-act="launch"],.app.locked [data-act="stop"],.app.locked [data-upd],.app.locked [data-group],.app.locked [data-notif],.app.locked [data-hours],.app.locked [data-interval],.app.locked [data-mode],.app.locked [data-lockgo],.app.locked [data-agt],.app.locked [data-gtog],.app.locked [data-act="savegroups"],.app.locked [data-agn],.app.locked [data-agar],.app.locked [data-act="saveag"]{opacity:.45;filter:grayscale(.7)}
+.app.locked [data-act="save"],.app.locked [data-slot],.app.locked [data-smode],.app.locked [data-son],.app.locked [data-act="launch"],.app.locked [data-act="stop"],.app.locked [data-upd],.app.locked [data-group],.app.locked [data-notif],.app.locked [data-hours],.app.locked [data-interval],.app.locked [data-mode],.app.locked [data-lockgo],.app.locked [data-agt],.app.locked [data-wtstart],.app.locked [data-wtbase],.app.locked [data-wtday],.app.locked [data-wtal],.app.locked [data-tzc],.app.locked [data-act="savewt"],.app.locked [data-act="savetz"],.app.locked [data-gtog],.app.locked [data-act="savegroups"],.app.locked [data-agn],.app.locked [data-agar],.app.locked [data-act="saveag"]{opacity:.45;filter:grayscale(.7)}
 .app.locked [data-act="save"]::after,.app.locked [data-act="launch"]::after,.app.locked [data-upd]::after,.app.locked [data-lockgo]::after{content:'';width:14px;height:14px;margin-left:8px;background:currentColor;-webkit-mask:url("data:image/svg+xml;utf8,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 24 24' fill='none' stroke='black' stroke-width='2.4' stroke-linecap='round' stroke-linejoin='round'><rect x='4' y='11' width='16' height='10' rx='2'/><path d='M8 11V7a4 4 0 0 1 8 0v4'/></svg>") center/contain no-repeat;mask:url("data:image/svg+xml;utf8,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 24 24' fill='none' stroke='black' stroke-width='2.4' stroke-linecap='round' stroke-linejoin='round'><rect x='4' y='11' width='16' height='10' rx='2'/><path d='M8 11V7a4 4 0 0 1 8 0v4'/></svg>") center/contain no-repeat;display:inline-block;flex:none}
 .toast{position:fixed;left:50%;bottom:calc(92px + env(safe-area-inset-bottom));transform:translateX(-50%);max-width:min(92vw,420px);background:#1B2740;border:1px solid var(--line);color:var(--text);padding:12px 16px;border-radius:14px;font-size:14px;line-height:1.4;z-index:20;box-shadow:0 8px 24px rgba(0,0,0,.4)}
 @media (min-width: 900px){
@@ -224,6 +224,10 @@ const FAQ = [
   ['shift','Как выбрать время апдейтов?','Откройте окно → «Расписание», отметьте время (от 3 раз в сутки, максимум по тарифу, не чаще раза в 2 часа), выберите режим и нажмите «Сохранить». Или командой в чате, например: /times 08:00 14:00 20:00'],
   ['shift','Чем «Сначала показать мне» отличается от «Авто»?','В режиме «Сначала показать мне» бот готовит апдейт, а вы нажимаете «Отправить», «Изменить» или «Пропустить». В режиме «Авто» бот отправляет апдейты сам по расписанию.'],
   ['shift','Как часто приходят автоапдейты?','От 3 раз в сутки, не чаще одного раза в 2 часа. Максимум зависит от тарифа: Лайт 4, Старт 6, Про 8, Макс 12. Время каждого апдейта выбираете вы.'],
+  ['shift','Что такое режим «Смена»?','Тариф дешевле: бот пишет в группы и присылает сигналы только в ваше рабочее время (смена 8, 10 или 12 ч, дни выбираете вы). Вне смены он только анализирует, а в начале смены присылает сводку. Тревоги можно получать всегда. Например: /plan lite shift'],
+  ['shift','Как настроить смену и выходные?','«Настройки» → «Рабочее время»: начало смены, обычная длина и каждый день недели (выходной, 8, 10 или 12 ч). Или командой, например: /worktime 16:00 8, /worktime sat 12, /worktime sun off'],
+  ['shift','Как выбрать часовой пояс?','«Настройки» → «Рабочее время» → «Часовой пояс»: США (EST, CST, MST, PST и другие), все зоны России, Узбекистан и соседние страны, Турция, Европа. Или командой, например: /tz us-e'],
+  ['shift','Почему нельзя ставить апдейты чаще?','Перерыв считает сам бот: рабочее окно делится на число апдейтов в тарифе, от 1 до 4 часов. Для 24/7 это обычно 4 часа, для смены 8 ч на 4 апдейта — 2 часа.'],
   ['shift','Как выключить апдейты?','В «Расписании» выключите переключатель и нажмите «Сохранить» или отправьте команду /updates off. Включить обратно: /updates on.'],
   ['shift','Бот работает только ночью?','Нет, 24/7, для любой смены. Апдейты уходят в выбранное время, а читает и анализирует бот круглосуточно.'],
   ['eta','Как бот считает ETA?','Считает код, а не ИИ: где грузовик по GPS, маршрут с пробками, сколько часов осталось у водителя, погода по пути и часовой пояс стопа. ИИ только объясняет результат словами.'],
@@ -254,12 +258,73 @@ const FAQ_CATS = [['all','Все'],['start','Начало'],['shift','Апдей
 /* ---------- тарифы: отличаются только числом водителей (1 группа = 1 водитель) ---------- */
 const PLANS = [['lite','Лайт',10,4],['start','Старт',20,6],['pro','Про',40,8],['max','Макс',80,12]];
 function umax() { const p = planOf(S.plan); return p ? p[3] : 12; }
+const MODES = ['shift','full'];
+function modeName(m) { return m === 'shift' ? 'Смена' : '24/7'; }
+const TZS = [
+  ['us-e','America/New_York','us','США · Восток (EST/EDT) · Нью-Йорк','US · Eastern (EST/EDT) · New York'],
+  ['us-c','America/Chicago','us','США · Центр (CST/CDT) · Чикаго','US · Central (CST/CDT) · Chicago'],
+  ['us-m','America/Denver','us','США · Горы (MST/MDT) · Денвер','US · Mountain (MST/MDT) · Denver'],
+  ['us-az','America/Phoenix','us','США · Аризона (MST, без перехода на летнее)','US · Arizona (MST, no DST)'],
+  ['us-p','America/Los_Angeles','us','США · Запад (PST/PDT) · Лос-Анджелес','US · Pacific (PST/PDT) · Los Angeles'],
+  ['us-ak','America/Anchorage','us','США · Аляска (AKST/AKDT)','US · Alaska (AKST/AKDT)'],
+  ['us-hi','Pacific/Honolulu','us','США · Гавайи (HST)','US · Hawaii (HST)'],
+  ['ru-kgd','Europe/Kaliningrad','ru','Россия · Калининград (UTC+2)','Russia · Kaliningrad (UTC+2)'],
+  ['ru-msk','Europe/Moscow','ru','Россия · Москва (UTC+3)','Russia · Moscow (UTC+3)'],
+  ['ru-sam','Europe/Samara','ru','Россия · Самара (UTC+4)','Russia · Samara (UTC+4)'],
+  ['ru-ekb','Asia/Yekaterinburg','ru','Россия · Екатеринбург (UTC+5)','Russia · Yekaterinburg (UTC+5)'],
+  ['ru-oms','Asia/Omsk','ru','Россия · Омск (UTC+6)','Russia · Omsk (UTC+6)'],
+  ['ru-nsk','Asia/Novosibirsk','ru','Россия · Новосибирск (UTC+7)','Russia · Novosibirsk (UTC+7)'],
+  ['ru-krs','Asia/Krasnoyarsk','ru','Россия · Красноярск (UTC+7)','Russia · Krasnoyarsk (UTC+7)'],
+  ['ru-irk','Asia/Irkutsk','ru','Россия · Иркутск (UTC+8)','Russia · Irkutsk (UTC+8)'],
+  ['ru-yak','Asia/Yakutsk','ru','Россия · Якутск (UTC+9)','Russia · Yakutsk (UTC+9)'],
+  ['ru-vla','Asia/Vladivostok','ru','Россия · Владивосток (UTC+10)','Russia · Vladivostok (UTC+10)'],
+  ['ru-mag','Asia/Magadan','ru','Россия · Магадан (UTC+11)','Russia · Magadan (UTC+11)'],
+  ['ru-kam','Asia/Kamchatka','ru','Россия · Камчатка (UTC+12)','Russia · Kamchatka (UTC+12)'],
+  ['uz','Asia/Tashkent','other','Узбекистан · Ташкент (UTC+5)','Uzbekistan · Tashkent (UTC+5)'],
+  ['kz','Asia/Almaty','other','Казахстан · Алматы, Астана (UTC+5)','Kazakhstan · Almaty, Astana (UTC+5)'],
+  ['kg','Asia/Bishkek','other','Кыргызстан · Бишкек (UTC+6)','Kyrgyzstan · Bishkek (UTC+6)'],
+  ['tj','Asia/Dushanbe','other','Таджикистан · Душанбе (UTC+5)','Tajikistan · Dushanbe (UTC+5)'],
+  ['tm','Asia/Ashgabat','other','Туркменистан · Ашхабад (UTC+5)','Turkmenistan · Ashgabat (UTC+5)'],
+  ['az','Asia/Baku','other','Азербайджан · Баку (UTC+4)','Azerbaijan · Baku (UTC+4)'],
+  ['ge','Asia/Tbilisi','other','Грузия · Тбилиси (UTC+4)','Georgia · Tbilisi (UTC+4)'],
+  ['am','Asia/Yerevan','other','Армения · Ереван (UTC+4)','Armenia · Yerevan (UTC+4)'],
+  ['tr','Europe/Istanbul','other','Турция · Стамбул (UTC+3)','Türkiye · Istanbul (UTC+3)'],
+  ['by','Europe/Minsk','other','Беларусь · Минск (UTC+3)','Belarus · Minsk (UTC+3)'],
+  ['ua','Europe/Kyiv','other','Украина · Киев (UTC+2/+3)','Ukraine · Kyiv (UTC+2/+3)'],
+  ['eu','Europe/Berlin','other','Европа · Берлин, Варшава (UTC+1/+2)','Europe · Berlin, Warsaw (UTC+1/+2)'],
+  ['uk','Europe/London','other','Великобритания · Лондон (UTC+0/+1)','UK · London (UTC+0/+1)']
+];
+function tzRow(code) { return TZS.filter((t) => t[0] === code)[0] || TZS.filter((t) => t[1] === S.tz)[0] || TZS.filter((t) => t[0] === 'uz')[0]; }
+const DAYN = ['Пн','Вт','Ср','Чт','Пт','Сб','Вс'];
+const DCODE = { '0':0, '8':8, 'a':10, 'c':12 };
+function dayLen(i) { return DCODE[S.wt.days[i]] || 0; }
+function lens() { return [0,1,2,3,4,5,6].map(dayLen).filter(Boolean); }
+function maxLen() { if (S.pm === 'full') return 24; const l = lens(); return l.length ? Math.max.apply(null, l) : S.wt.base; }
+function minLen() { const l = lens(); return l.length ? Math.min.apply(null, l) : S.wt.base; }
+function gapH() { const n = umax(); return S.pm === 'full' ? Math.max(2, Math.min(4, Math.floor(24 / n))) : Math.max(1, Math.min(4, Math.floor(S.wt.base / n))); }
+function offMin(t) { return ((parseInt(t, 10) * 60 + (+t.slice(3, 5)) - S.wt.start * 60) % 1440 + 1440) % 1440; }
+function hourState(t) { if (S.pm === 'full') return 'in'; const o = offMin(t); if (o > maxLen() * 60) return 'out'; if (o > minLen() * 60) return 'long'; return 'in'; }
+function windowText() { return S.pm === 'full' ? 'круглосуточно' : hh(S.wt.start) + '–' + hh(S.wt.start + maxLen()); }
+function nowParts() {
+  try { const f = new Intl.DateTimeFormat('en-GB', { timeZone: S.tz, weekday: 'short', hour: '2-digit', minute: '2-digit', hour12: false }).formatToParts(new Date());
+    const g = (k) => (f.filter((x) => x.type === k)[0] || {}).value; return { wd: ['Mon','Tue','Wed','Thu','Fri','Sat','Sun'].indexOf(g('weekday')), min: (+g('hour') % 24) * 60 + (+g('minute')) };
+  } catch (e) { const d = new Date(); return { wd: (d.getDay() + 6) % 7, min: d.getHours() * 60 + d.getMinutes() }; }
+}
+function workingAt(wd, min) {
+  const L = (i) => dayLen(((i % 7) + 7) % 7);
+  if (S.pm === 'full') return L(wd) > 0;
+  const st = S.wt.start * 60;
+  if (L(wd) && min >= st && min <= st + L(wd) * 60) return true;
+  return !!(L(wd - 1) && min + 1440 <= st + L(wd - 1) * 60);
+}
+function workingNow() { const n = nowParts(); return workingAt(n.wd, n.min); }
 function planOf(id) { return PLANS.filter((p) => p[0] === id)[0]; }
 function planName(id) { if (id === 'owner') return 'Владелец'; const p = planOf(id); return p ? p[1] : '—'; }
 
 /* ---------- состояние ---------- */
 const S = {
   glist:[{ n:'UNIT 2080', on:true },{ n:'UNIT 2081', on:true },{ n:'UNIT 2090', on:false }], gReal:false, gDirty:false,
+  pm:'full', planMode:'', wt:{ start:8, base:8, days:'8888888', alarms:true }, tzc:'', tzSel:'', nxm:'', rqm:'',
   plan:'lite', lim:10, used:2, pz:1, pe:'', nx:'', req:'', pay:false,
   ag:{ on:{ waiting:true, silent:true, risk:true, stopped:true, gps:true, late:true }, waiting:15, silent:45, stopped:90, ar:'s' },
   view:'home', slots:['08:00','14:00','20:00'], smode:'review', son:false, bot:'', tz:'Asia/Tashkent', saving:false,
@@ -297,6 +362,12 @@ try {
   else if (q.get('plan')) { S.glist = []; S.gReal = true; }
   if (/^\d{8}$/.test(q.get('pe') || '')) S.pe = q.get('pe');
   if (planOf(q.get('nx') || '')) S.nx = q.get('nx');
+  if (MODES.indexOf(q.get('pm')) >= 0) S.pm = q.get('pm');
+  if (MODES.indexOf(q.get('nxm')) >= 0) S.nxm = q.get('nxm');
+  if (MODES.indexOf(q.get('rqm')) >= 0) S.rqm = q.get('rqm');
+  const wt = (q.get('wt') || '').match(/^(\d{1,2})-(8|10|12)-([08ac]{7})-([01])$/);
+  if (wt) S.wt = { start: +wt[1] % 24, base: +wt[2], days: wt[3], alarms: wt[4] === '1' };
+  if (q.get('tzc')) S.tzc = q.get('tzc');
   const ag = (q.get('ag') || '').match(/^([01]{6})-(\d+)-(\d+)-(\d+)-([osa])$/);
   if (ag) { ['waiting','silent','risk','stopped','gps','late'].forEach((k, i) => { S.ag.on[k] = ag[1][i] === '1'; }); S.ag.waiting = +ag[2]; S.ag.silent = +ag[3]; S.ag.stopped = +ag[4]; S.ag.ar = ag[5]; }
 } catch (e) {}
@@ -307,13 +378,13 @@ function planCard(withBtn) {
   if (S.plan === 'owner') return '<div class="card row" style="padding:14px 16px;border-radius:16px"><span class="col" style="flex:1;gap:3px"><b style="font-size:15px">Владелец бота</b><span class="small muted">Без лимита водителей</span></span></div>';
   const full = S.used >= S.lim, pct = Math.min(100, Math.round(S.used / Math.max(1, S.lim) * 100));
   return '<div class="card col" style="padding:14px 16px;border-radius:16px;gap:10px' + (S.pz ? ';border-color:var(--amber-bd)' : '') + '">' +
-    '<div class="row" style="justify-content:space-between"><span class="row" style="gap:8px"><span class="small muted">Тариф</span><b style="font-size:16px">' + planName(S.plan) + '</b></span><span class="small" style="color:' + (full ? 'var(--amber)' : 'var(--sub)') + '">В работе: ' + S.used + ' из ' + S.lim + '</span></div>' +
+    '<div class="row" style="justify-content:space-between"><span class="row" style="gap:8px"><span class="small muted">Тариф</span><b style="font-size:16px">' + planName(S.plan) + ' · ' + modeName(S.pm) + '</b></span><span class="small" style="color:' + (full ? 'var(--amber)' : 'var(--sub)') + '">В работе: ' + S.used + ' из ' + S.lim + '</span></div>' +
     '<div style="height:8px;border-radius:4px;background:var(--raised);overflow:hidden"><div style="width:' + pct + '%;height:100%;border-radius:4px;background:' + (full ? 'var(--amber)' : 'var(--mint)') + '"></div></div>' +
     (S.pz ? '<div class="xs" style="color:var(--amber);line-height:1.45">На паузе: ' + S.pz + '</div><div class="xs muted" style="line-height:1.45">По группам на паузе нет апдейтов и проверок. Бот сохраняет их сообщения.</div>' : '<div class="xs muted">Свободно мест: ' + Math.max(0, S.lim - S.used) + '</div>') +
     '<div class="xs muted">Апдейтов в день: до ' + umax() + '</div>' +
     (S.pe ? '<div class="xs muted">Период до ' + fdate(S.pe) + '</div>' : '') +
-    (S.nx && planOf(S.nx) ? '<div class="xs" style="color:var(--blue)">С ' + fdate(S.pe) + ' тариф ' + planName(S.nx) + '</div>' : '') +
-    (S.req && planOf(S.req) ? '<div class="xs" style="color:var(--blue)">Заявка на тариф ' + planName(S.req) + ' ждёт оплаты</div>' : '') +
+    (S.nx && planOf(S.nx) ? '<div class="xs" style="color:var(--blue)">С ' + fdate(S.pe) + ' тариф ' + planName(S.nx) + ' · ' + modeName(S.nxm || S.pm) + '</div>' : '') +
+    (S.req && planOf(S.req) ? '<div class="xs" style="color:var(--blue)">Заявка на тариф ' + planName(S.req) + ' · ' + modeName(S.rqm || S.pm) + ' ждёт оплаты</div>' : '') +
     (withBtn ? '<div class="grid2"><button class="btn" data-go="plans" style="height:40px;font-size:13px">Сменить тариф</button><button class="btn" data-go="groups" style="height:40px;font-size:13px">Группы в тарифе</button></div>' : '') + '</div>';
 }
 function sendToBot(start, cmd) {
@@ -325,15 +396,19 @@ function sendToBot(start, cmd) {
   try { navigator.clipboard.writeText(cmd).then(() => toast('Команда скопирована: отправьте её боту'), () => toast('Отправьте боту команду: ' + cmd)); } catch (x) { toast('Отправьте боту команду: ' + cmd); }
 }
 function rankOf(id) { return PLANS.map((p) => p[0]).indexOf(id); }
-function choosePlan(id) {
+function choosePlan(id, mode) {
   if (S.access === 'survey') { toast('Доступно после опроса /start'); return; }
   if (id === 'drivers') { sendToBot('plan-drivers', '/drivers'); return; }
-  if (id === 'keep') { S.nx = ''; S.req = ''; render(); sendToBot('plan-keep', '/plan ' + S.plan); return; }
+  if (id === 'keep') { S.nx = ''; S.nxm = ''; S.req = ''; render(); sendToBot('plan-keep', '/plan ' + S.plan); return; }
   const p = planOf(id); if (!p || S.plan === 'owner') return;
-  if (rankOf(id) > rankOf(S.plan)) { if (S.pay) S.req = id; else { S.plan = id; S.lim = p[2]; S.nx = ''; const on = Math.min(S.pz, S.lim - S.used); if (on > 0) { S.used += on; S.pz -= on; } } }
-  else if (rankOf(id) < rankOf(S.plan)) { S.nx = id; S.req = ''; }
+  mode = MODES.indexOf(mode) >= 0 ? mode : S.pm;
+  if (id === S.plan && mode === S.pm) return;
+  if (rankOf(id) >= rankOf(S.plan) && MODES.indexOf(mode) >= MODES.indexOf(S.pm)) {
+    if (S.pay) { S.req = id; S.rqm = mode; }
+    else { S.plan = id; S.pm = mode; S.lim = p[2]; S.nx = ''; const on = Math.min(S.pz, S.lim - S.used); if (on > 0) { S.used += on; S.pz -= on; } }
+  } else { S.nx = id; S.nxm = mode; S.req = ''; }
   render();
-  sendToBot('plan-' + id, '/plan ' + id);
+  sendToBot('plan-' + id + '-' + mode[0], '/plan ' + id + ' ' + mode);
 }
 function toast(text) {
   let el = document.getElementById('toast');
@@ -397,19 +472,33 @@ function schedCheck(list) {
   const mx = umax();
   if (sl.length > mx) { const up = PLANS.filter((p) => p[3] >= sl.length)[0]; return { ok: false, plan: true, up: up && rankOf(up[0]) > rankOf(S.plan) ? up : null, msg: 'В тарифе ' + planName(S.plan) + ' до ' + mx + ' апдейтов в день, а выбрано ' + sl.length + '.' }; }
   if (sl.length < 3) return { ok: false, msg: 'Выберите от 3 до ' + mx + ' времён. Сейчас выбрано: ' + sl.length };
-  for (let i = 0; i < sl.length; i++) {
-    const a = toMin(sl[i]), b = toMin(sl[(i + 1) % sl.length]);
-    if (((b - a) % 1440 + 1440) % 1440 < 120) return { ok: false, msg: 'Между апдейтами нужно не меньше 2 часов: ' + sl[i] + '–' + sl[(i + 1) % sl.length] };
+  const g = gapH() * 60;
+  if (S.pm === 'shift') {
+    const out = sl.filter((t) => hourState(t) === 'out');
+    if (out.length) return { ok: false, msg: 'Время ' + out[0] + ' вне смены (' + windowText() + ')' };
+    const o = sl.slice().sort((x, y) => offMin(x) - offMin(y));
+    for (let i = 0; i + 1 < o.length; i++) if (offMin(o[i + 1]) - offMin(o[i]) < g) return { ok: false, msg: 'Между апдейтами нужно не меньше ' + gapH() + ' ч: ' + o[i] + '–' + o[i + 1] };
+  } else {
+    for (let i = 0; i < sl.length; i++) {
+      const a = toMin(sl[i]), b = toMin(sl[(i + 1) % sl.length]);
+      if (((b - a) % 1440 + 1440) % 1440 < g) return { ok: false, msg: 'Между апдейтами нужно не меньше ' + gapH() + ' ч: ' + sl[i] + '–' + sl[(i + 1) % sl.length] };
+    }
   }
   return { ok: true, msg: 'Выбрано ' + sl.length + ': ' + sl.join(', ') };
 }
-function tzLabel() { return ({ 'Asia/Tashkent': S.lang === 'en' ? 'Tashkent' : 'Ташкент', 'America/Chicago': 'Chicago', 'America/New_York': 'New York' })[S.tz] || S.tz; }
+function tzLabel() { const r = tzRow(S.tzc); return S.lang === 'en' ? r[4] : r[3]; }
 function nowInTz() {
   try { const p = new Date().toLocaleTimeString('en-GB', { timeZone: S.tz, hour12: false }); return p.slice(0, 5); } catch (e) { const d = new Date(); return String(d.getHours()).padStart(2, '0') + ':' + String(d.getMinutes()).padStart(2, '0'); }
 }
 function nextSlot() {
   const sl = S.slots.slice().sort(); if (!sl.length) return '—';
-  const n = nowInTz(); return sl.find((t) => t > n) || sl[0];
+  const n = nowParts(); let best = null;
+  for (let d = 0; d < 8 && !best; d++) for (const t of sl) {
+    const m = parseInt(t, 10) * 60 + (+t.slice(3, 5));
+    if (d === 0 && m <= n.min) continue;
+    if (workingAt(n.wd + d, m)) { best = (d === 0 ? '' : (S.lang === 'en' ? ['Mon','Tue','Wed','Thu','Fri','Sat','Sun'] : DAYN)[(n.wd + d) % 7] + ' ') + t; break; }
+  }
+  return best || '—';
 }
 function timesCommand() { return '/times ' + S.slots.slice().sort().join(' '); }
 
@@ -454,10 +543,12 @@ function vShift() {
   for (let h = 0; h < 24; h++) hours.push((h < 10 ? '0' : '') + h + ':00');
   return head('Расписание апдейтов', 'Бот работает 24/7 и пишет в группы только в это время', 'home') +
     '<div class="col" style="gap:10px"><div class="label">Время апдейтов · ' + tzLabel() + '</div>' +
-      '<div style="display:grid;grid-template-columns:repeat(6,minmax(0,1fr));gap:6px">' + hours.map((t) => '<button class="seg' + (S.slots.indexOf(t) >= 0 ? ' on' : '') + '" style="height:44px;font-size:14px" data-slot="' + t + '">' + t + '</button>').join('') + '</div>' +
+      '<div style="display:grid;grid-template-columns:repeat(6,minmax(0,1fr));gap:6px">' + hours.map((t) => { const st = hourState(t); return st === 'out' && S.slots.indexOf(t) < 0 ? '<button class="seg" style="height:44px;font-size:14px;opacity:.3" data-slotoff="' + t + '" aria-label="' + t + ' вне смены">' + t + '</button>' : '<button class="seg' + (S.slots.indexOf(t) >= 0 ? ' on' : '') + '" style="height:44px;font-size:14px' + (st === 'long' ? ';border-style:dashed' : '') + '" data-slot="' + t + '">' + t + '</button>'; }).join('') + '</div>' +
       (chk.plan ? '<div class="card col" style="padding:14px 16px;border-radius:16px;gap:10px;border-color:var(--blue-bd);background:#0F1A30"><div class="row" style="align-items:flex-start;gap:10px"><span class="icon" style="width:34px;height:34px;border-radius:10px;background:var(--blue-bg);color:var(--blue)">' + ic('doc', 18, 'currentColor', 2) + '</span><span class="col" style="flex:1;gap:3px"><b style="font-size:14px">' + chk.msg + '</b><span class="small sub" style="line-height:1.45">' + (chk.up ? 'Для ' + S.slots.length + ' апдейтов нужен тариф ' + chk.up[1] + '. Или уберите лишнее время.' : 'Больше 12 апдейтов в день нельзя. Уберите лишнее время.') + '</span></span></div>' + (chk.up ? '<button class="btn primary" style="height:42px;font-size:14px" data-plan="' + chk.up[0] + '">Перейти на ' + chk.up[1] + '</button>' : '') + '</div>'
         : '<div class="xs" style="color:' + (chk.ok ? 'var(--mint-t)' : 'var(--amber)') + '">' + chk.msg + '</div>') +
-      '<div class="xs muted">' + (S.plan === 'owner' ? 'От 3 до 12 раз в сутки, не чаще чем раз в 2 часа.' : 'Тариф ' + planName(S.plan) + ': от 3 до ' + umax() + ' апдейтов в сутки, не чаще чем раз в 2 часа.') + '</div></div>' +
+      '<div class="xs muted" style="line-height:1.5">' + (S.pm === 'shift' ? 'Смена ' + windowText() + ': от 3 до ' + umax() + ' апдейтов, перерыв не меньше ' + gapH() + ' ч. Вне смены бот не пишет.' : '24/7: от 3 до ' + umax() + ' апдейтов в сутки, перерыв не меньше ' + gapH() + ' ч.') + '</div>' +
+      (S.pm === 'shift' && maxLen() > minLen() ? '<div class="xs" style="color:var(--blue)">Пунктир: время только в длинные дни</div>' : '') +
+      '<button class="btn" style="height:40px;font-size:13px" data-go="work">Рабочее время и часовой пояс</button></div>' +
     '<div class="col" style="gap:10px"><div class="label">Режим</div>' +
       [['review','Сначала показать мне','Бот присылает вам черновик, вы нажимаете «Отправить», «Изменить» или «Пропустить».'],['auto','Авто','Бот отправляет апдейты в группы сам и присылает вам короткую сводку.']].map((m) => {
         const on = S.smode === m[0];
@@ -516,27 +607,61 @@ function saveGroups() {
   sendToBot('plan-g' + S.glist.length + '-' + hex, '/drivers');
 }
 function vPlans() {
-  const owner = S.plan === 'owner', total = S.used + S.pz;
-  return head('Тарифы', 'Все функции и агенты на любом тарифе. Отличаются число водителей и апдейтов в день.', 'settings') +
+  const owner = S.plan === 'owner', total = S.used + S.pz, vm = S.planMode || S.pm;
+  return head('Тарифы', 'Все функции и агенты на любом тарифе. Отличаются число водителей, апдейтов в день и режим.', 'settings') +
     planCard(false) +
+    '<div style="display:grid;grid-template-columns:1fr 1fr;gap:8px">' + [['shift','Смена','дешевле'],['full','24/7','в любое время']].map((m) => '<button class="seg' + (vm === m[0] ? ' on' : '') + '" style="height:56px;display:flex;flex-direction:column;align-items:center;justify-content:center;gap:2px" data-pview="' + m[0] + '"><b style="font-size:15px">' + m[1] + '</b><span class="xs">' + m[2] + '</span></button>').join('') + '</div>' +
+    '<div class="xs muted" style="line-height:1.5">' + (vm === 'shift' ? 'Бот пишет в группы только в ваше рабочее время: смена 8, 10 или 12 ч, дни выбираете вы. Вне смены бот только анализирует, а в начале смены присылает сводку.' : 'Бот пишет в группы в любое время рабочих дней. Выходные дни можно отметить.') + '</div>' +
     '<div class="col" style="gap:10px">' + PLANS.map((p) => {
-      const cur = S.plan === p[0], next = S.nx === p[0], req = S.req === p[0];
-      const up = !owner && rankOf(p[0]) > rankOf(S.plan), small = !owner && total > p[2];
+      const cur = S.plan === p[0] && S.pm === vm, next = S.nx === p[0] && (S.nxm || S.pm) === vm, req = S.req === p[0] && (S.rqm || S.pm) === vm;
+      const up = !owner && rankOf(p[0]) >= rankOf(S.plan) && MODES.indexOf(vm) >= MODES.indexOf(S.pm), small = !owner && total > p[2];
       let right = '';
       if (cur) right = '<span class="chip c-done">Ваш тариф</span>';
       else if (next) right = '<span class="chip c-plan">С ' + fdate(S.pe) + '</span>';
       else if (req) right = '<span class="chip c-plan">Ждёт оплаты</span>';
-      else if (!owner) right = '<button class="btn' + (up ? ' primary' : '') + '" style="height:40px;font-size:13px;padding:0 14px" data-plan="' + p[0] + '">' + (up ? 'Перейти сейчас' : 'Со след. периода') + '</button>';
-      return '<div class="card row" style="padding:16px;border-radius:18px;align-items:flex-start;' + (cur ? 'border-color:var(--mint);background:#10261F' : '') + '"><span class="col" style="flex:1;gap:4px;min-width:0"><b style="font-size:17px">' + p[1] + '</b><span class="small sub">до ' + p[2] + ' водителей</span><span class="small sub">до ' + p[3] + ' апдейтов в день</span>' +
+      else if (!owner) right = '<button class="btn' + (up ? ' primary' : '') + '" style="height:40px;font-size:13px;padding:0 14px" data-plan="' + p[0] + '" data-pmode="' + vm + '">' + (up ? 'Перейти сейчас' : 'Со след. периода') + '</button>';
+      return '<div class="card row" style="padding:16px;border-radius:18px;align-items:flex-start;' + (cur ? 'border-color:var(--mint);background:#10261F' : '') + '"><span class="col" style="flex:1;gap:4px;min-width:0"><b style="font-size:17px">' + p[1] + ' · ' + modeName(vm) + '</b><span class="small sub">до ' + p[2] + ' водителей</span><span class="small sub">до ' + p[3] + ' апдейтов в день</span>' +
         (small ? '<span class="xs" style="color:var(--amber);line-height:1.45">У вас ' + total + ' групп: ' + (total - p[2]) + ' будут на паузе</span>' : '') +
-        '<span class="xs muted">Цена уточняется</span></span>' + right + '</div>';
+        '<span class="xs muted">' + (vm === 'shift' ? 'Дешевле · цена уточняется' : 'Цена уточняется') + '</span></span>' + right + '</div>';
     }).join('') + '</div>' +
-    (S.nx && !owner ? '<button class="btn" data-plan="keep">Оставить тариф ' + planName(S.plan) + '</button>' : '') +
+    (S.nx && !owner ? '<button class="btn" data-plan="keep">Оставить тариф ' + planName(S.plan) + ' · ' + modeName(S.pm) + '</button>' : '') +
     '<div class="col" style="gap:10px"><div class="label">Как меняется тариф</div><div class="listcard list">' +
-      [['Тариф больше','Включается сразу. ' + (S.pay ? 'Доплата только за оставшиеся дни периода.' : 'Пока оплата не подключена, без доплаты.')],['Тариф меньше','Со следующего периода. До этого можно отменить.'],['Период','30 дней. Напоминание за 3 дня и за 1 день до конца.'],['Не хватает мест','Новая группа встаёт на паузу. Бот предложит заменить другую группу, перейти на тариф больше или выйти из группы.'],['Борд больше тарифа','Бот следит только за водителями, чьи группы в работе, и раз в день пишет, кто не вошёл.']].map((r) => '<div class="col" style="gap:3px;align-items:flex-start"><b style="font-size:14px">' + r[0] + '</b><span class="small sub" style="line-height:1.45">' + r[1] + '</span></div>').join('') + '</div></div>' +
+      [['Тариф больше','Включается сразу. ' + (S.pay ? 'Доплата только за оставшиеся дни периода.' : 'Пока оплата не подключена, без доплаты.')],['Тариф меньше','Со следующего периода. До этого можно отменить.'],['Смена → 24/7','Считается тарифом больше: включается сразу.'],['24/7 → Смена','Со следующего периода.'],['Период','30 дней. Напоминание за 3 дня и за 1 день до конца.'],['Не хватает мест','Новая группа встаёт на паузу. Бот предложит заменить другую группу, перейти на тариф больше или выйти из группы.'],['Борд больше тарифа','Бот следит только за водителями, чьи группы в работе, и раз в день пишет, кто не вошёл.']].map((r) => '<div class="col" style="gap:3px;align-items:flex-start"><b style="font-size:14px">' + r[0] + '</b><span class="small sub" style="line-height:1.45">' + r[1] + '</span></div>').join('') + '</div></div>' +
     '<div class="col" style="gap:10px"><div class="label">Одинаково на любом тарифе</div><div class="listcard list">' +
-      ['Все функции бота','Все агенты и автоответ','Не меньше 2 часов между апдейтами','Окно и расширенный экран'].map((t) => '<div class="row" style="gap:10px">' + ic('check', 18, 'var(--mint)', 2.4) + '<span>' + t + '</span></div>').join('') + '</div></div>' +
-    '<div class="card pad col" style="gap:8px;border-radius:16px;background:#0F1626"><div class="small sub">Можно и командой в чате с ботом. Например:</div><div class="mono" style="padding:10px 12px">/plan start</div><div class="xs muted">Свой тариф: /plan. Какие группы в работе: /drivers</div></div>';
+      ['Все функции бота','Все агенты и автоответ','Окно и расширенный экран','Ваш часовой пояс'].map((t) => '<div class="row" style="gap:10px">' + ic('check', 18, 'var(--mint)', 2.4) + '<span>' + t + '</span></div>').join('') + '</div></div>' +
+    '<div class="card pad col" style="gap:8px;border-radius:16px;background:#0F1626"><div class="small sub">Можно и командой в чате с ботом. Например:</div><div class="mono" style="padding:10px 12px">/plan start shift</div><div class="xs muted">24/7: /plan start full. Свой тариф: /plan. Какие группы в работе: /drivers</div></div>';
+}
+
+/* ---------- рабочее время и часовой пояс ---------- */
+function vWork() {
+  const owner = S.plan === 'owner', shift = S.pm === 'shift', now = workingNow();
+  const lenBtns = [['0','Вых'],['8','8 ч'],['a','10 ч'],['c','12 ч']];
+  return head('Рабочее время', 'Когда бот пишет в группы и присылает сигналы', 'settings') +
+    '<button class="card row" data-go="tz" style="text-align:left;padding:14px 16px;border-radius:16px"><span class="col" style="flex:1;gap:3px;min-width:0"><span class="small muted">Часовой пояс</span><b style="font-size:15px">' + tzLabel() + '</b><span class="xs muted">Сейчас у вас ' + nowInTz() + '</span></span>' + ic('chev', 18, 'var(--muted)', 2) + '</button>' +
+    '<div class="col" style="gap:10px"><div class="label">Режим</div>' +
+      (owner ? '<div style="display:grid;grid-template-columns:1fr 1fr;gap:8px">' + [['shift','Смена'],['full','24/7']].map((m) => '<button class="seg' + (S.pm === m[0] ? ' on' : '') + '" data-pm="' + m[0] + '">' + m[1] + '</button>').join('') + '</div>'
+        : '<div class="card row" style="padding:14px 16px;border-radius:16px"><span class="col" style="flex:1;gap:3px"><b style="font-size:15px">' + modeName(S.pm) + '</b><span class="xs muted">Входит в тариф ' + planName(S.plan) + '</span></span><button class="btn" style="height:38px;font-size:13px" data-go="plans">Сменить</button></div>') +
+      '<div class="xs muted" style="line-height:1.5">' + (shift ? 'Бот пишет в группы и присылает сигналы только в смену. Вне смены он только анализирует, а в начале смены присылает сводку: что было, пока вас не было.' : 'Бот пишет в любое время рабочих дней. В выходные он только анализирует.') + '</div></div>' +
+    (shift ? '<div class="col" style="gap:10px"><div class="label">Начало смены</div><div style="display:grid;grid-template-columns:repeat(6,minmax(0,1fr));gap:6px">' + Array.from({ length: 24 }, (_, h) => '<button class="seg' + (S.wt.start === h ? ' on' : '') + '" style="height:40px;font-size:13px" data-wtstart="' + h + '">' + hh(h) + '</button>').join('') + '</div></div>' +
+      '<div class="col" style="gap:10px"><div class="label">Обычная длина смены</div><div style="display:grid;grid-template-columns:repeat(3,1fr);gap:8px">' + [8,10,12].map((n) => '<button class="seg' + (S.wt.base === n ? ' on' : '') + '" data-wtbase="' + n + '">' + n + ' ч</button>').join('') + '</div></div>' : '') +
+    '<div class="col" style="gap:10px"><div class="label">Дни недели</div><div class="listcard list">' + DAYN.map((d, i) => '<div class="row" style="justify-content:space-between;gap:10px"><span style="width:30px;font-weight:600">' + d + '</span><div style="display:grid;grid-template-columns:repeat(' + (shift ? 4 : 2) + ',minmax(0,1fr));gap:6px;flex:1;max-width:320px">' +
+      (shift ? lenBtns : [['0','Выходной'],['8','Работаем']]).map((b) => { const on = shift ? S.wt.days[i] === b[0] : ((S.wt.days[i] === '0') === (b[0] === '0')); return '<button class="pill' + (on ? ' on' : '') + '" style="justify-content:center" data-wtday="' + i + ':' + b[0] + '">' + b[1] + '</button>'; }).join('') + '</div></div>').join('') + '</div>' +
+      (shift ? '<div class="xs muted" style="line-height:1.5">Например, обычно 8 ч, а в дни, когда напарник отдыхает, 12 ч.</div>' : '') + '</div>' +
+    '<div class="card col" style="padding:14px 16px;border-radius:16px;gap:6px;border-color:' + (now ? 'var(--mint-bd)' : 'var(--line)') + '"><b style="font-size:14px;color:' + (now ? 'var(--mint-t)' : 'var(--sub)') + '">' + (now ? 'Сейчас рабочее время' : 'Сейчас не рабочее время') + '</b><span class="small sub">' + (shift ? 'Смена: ' + windowText() : 'Круглосуточно в рабочие дни') + '</span><span class="small sub">Перерыв между апдейтами: не меньше ' + gapH() + ' ч</span></div>' +
+    (shift ? '<div class="card row" style="padding:14px 16px;border-radius:16px"><span class="col" style="flex:1"><b style="font-size:15px">Тревоги вне смены</b><span class="xs muted">Авария, поломка, полиция: присылать сразу</span></span><button class="toggle' + (S.wt.alarms ? ' on' : '') + '" data-wtal="1" aria-label="Тревоги вне смены"><span></span></button></div>' : '') +
+    '<button class="btn primary" style="height:56px;font-size:17px" data-act="savewt">Сохранить</button>' +
+    '<div class="card pad col" style="gap:8px;border-radius:16px;background:#0F1626"><div class="small sub">Можно и командой в чате с ботом. Например:</div><div class="mono" style="padding:10px 12px">/worktime 16:00 8</div><div class="xs muted">Длинный день: /worktime sat 12. Выходной: /worktime sun off. Часовой пояс: /tz us-c</div></div>';
+}
+function vTz() {
+  const sel = S.tzSel || tzRow(S.tzc)[0];
+  return head('Часовой пояс', 'По нему бот считает апдейты, смену и даты', 'work') +
+    [['us','США'],['ru','Россия'],['other','Другие страны']].map((g) => '<div class="col" style="gap:8px"><div class="label">' + g[1] + '</div><div class="listcard list">' +
+      TZS.filter((t) => t[2] === g[0]).map((t) => '<button class="row" data-tzc="' + t[0] + '" style="justify-content:space-between;width:100%;background:none;border:0;font-size:14px;text-align:left;gap:10px"><span>' + (S.lang === 'en' ? t[4] : t[3]) + '</span><span style="flex:none;width:18px;height:18px;border-radius:50%;border:' + (sel === t[0] ? '6px solid var(--mint)' : '2px solid #4A5B7A') + '"></span></button>').join('') + '</div></div>').join('') +
+    '<button class="btn primary" style="height:56px;font-size:17px;position:sticky;bottom:96px" data-act="savetz">Сохранить</button>';
+}
+function saveWt() {
+  const pl = 'wt-' + S.wt.start + '-' + S.wt.base + '-' + S.wt.days + '-' + (S.wt.alarms ? 1 : 0) + (S.plan === 'owner' ? '-' + S.pm[0] : '');
+  sendToBot(pl, '/worktime ' + hh(S.wt.start) + ' ' + S.wt.base);
 }
 
 /* ---------- агенты ---------- */
@@ -599,6 +724,7 @@ function vSettings() {
     '<button class="card row" data-go="help" style="text-align:left;padding:16px;background:var(--mint-bg);border-color:var(--mint-bd)"><span class="icon" style="width:48px;height:48px;border-radius:14px;background:var(--mint)">' + ic('help', 24, '#06241A', 2.2) + '</span><span class="col" style="flex:1"><b style="font-size:16px">Инструкция и вопросы</b><span class="small" style="color:#C7E9D9">Как всё работает: ' + FAQ.length + ' ответов</span></span>' + ic('chev', 18, 'var(--mint-t)', 2) + '</button>' +
     '<div class="col" style="gap:10px"><div class="label">Язык бота</div><div style="display:grid;grid-template-columns:repeat(4,1fr);gap:8px">' + [['ru','RU'],['en','EN'],['tr','TR'],['uz','UZ']].map((l) => '<button class="seg' + (S.lang === l[0] ? ' on' : '') + '" data-lang="' + l[0] + '">' + l[1] + '</button>').join('') + '</div><div class="xs muted">' + (S.lang === 'tr' || S.lang === 'uz' ? 'Этот язык появится позже, пока окно и бот на русском' : 'Окно и бот переключаются на этот язык') + '</div></div>' +
     '<div class="col" style="gap:10px"><div class="label">Доступ (демо)</div><div class="wrap">' + [['active','Оплачено'],['survey','Опрос не пройден'],['unpaid','Не оплачено']].map((x) => '<button class="pill' + (S.access === x[0] ? ' on' : '') + '" data-access="' + x[0] + '">' + x[1] + '</button>').join('') + '</div><div class="xs muted">Переключатель только для показа. В настоящем боте статус придёт с сервера.</div></div>' +
+    '<div class="col" style="gap:10px"><div class="label">Рабочее время</div><div class="listcard list">' + [['Часовой пояс', tzLabel()],['Режим', modeName(S.pm)],[S.pm === 'shift' ? 'Смена' : 'Время', S.pm === 'shift' ? windowText() : 'круглосуточно'],['Выходные', DAYN.filter((d, i) => !dayLen(i)).join(', ') || 'нет']].map((r) => '<div class="row" style="justify-content:space-between;gap:12px"><span style="flex:none">' + r[0] + '</span><span class="small muted" style="text-align:right">' + esc(r[1]) + '</span></div>').join('') + '<button data-go="work" class="row" style="justify-content:space-between;width:100%;background:none;border:0;font-size:15px;text-align:left;color:var(--mint-t);font-weight:600"><span>Изменить рабочее время</span>' + ic('chev', 16, 'var(--mint-t)', 2) + '</button></div></div>' +
     '<div class="col" style="gap:10px"><div class="label">Расписание апдейтов</div><div class="listcard list">' + [['Время', S.slots.slice().sort().join(', ')],['Часовой пояс', tzLabel()],['Режим', S.smode === 'auto' ? 'Авто' : 'Сначала показать мне'],['Апдейты', S.son ? 'включены' : 'выключены']].map((r) => '<div class="row" style="justify-content:space-between"><span>' + r[0] + '</span><span class="small muted">' + esc(r[1]) + '</span></div>').join('') + '<button data-go="shift" class="row" style="justify-content:space-between;width:100%;background:none;border:0;font-size:15px;text-align:left;color:var(--mint-t);font-weight:600"><span>Изменить расписание</span>' + ic('chev', 16, 'var(--mint-t)', 2) + '</button></div><div class="xs muted">Или командой в чате, например: /times 08:00 14:00 20:00</div></div>' +
     '<div class="col" style="gap:10px"><div class="label">Агенты и автоответ</div><div class="listcard list">' + [['Включено', AGENTS.filter((a) => S.ag.on[a[0]]).length + ' из ' + AGENTS.length],['Водитель ждёт ответа', S.ag.on.waiting ? S.ag.waiting + ' мин' : 'выключен'],['Автоответ', ({ o:'выключен', s:'предлагать', a:'авто' })[S.ag.ar]]].map((r) => '<div class="row" style="justify-content:space-between"><span>' + r[0] + '</span><span class="small muted">' + r[1] + '</span></div>').join('') + '<button data-go="agents" class="row" style="justify-content:space-between;width:100%;background:none;border:0;font-size:15px;text-align:left;color:var(--mint-t);font-weight:600"><span>Изменить агентов</span>' + ic('chev', 16, 'var(--mint-t)', 2) + '</button></div><div class="xs muted">Агенты проверяют группы 24/7 и пишут только вам: водитель ждёт ответа, молчит, тревога, стоянка, нет GPS.</div></div>' +
     '<div class="col" style="gap:10px"><div class="label">Подключения и команда</div><div class="listcard list"><button data-go="groups" class="row" style="justify-content:space-between;width:100%;background:none;border:0;border-bottom:1px solid var(--line2);font-size:15px;text-align:left"><span>Группы водителей</span><span class="row small muted" style="gap:6px">' + (S.plan === 'owner' ? S.used : S.used + ' из ' + S.lim) + ' ' + ic('chev', 16, 'var(--muted)', 2) + '</span></button><div class="row" style="justify-content:space-between"><span>ELD · Samsara</span><span class="small" style="color:var(--mint-t)">Подключено (пример)</span></div><div class="row" style="justify-content:space-between"><span>Борд (Google Sheets)</span><span class="small muted">Update Board</span></div><div class="row" style="justify-content:space-between"><span>Тиммейты</span><span class="small muted">3 человека</span></div><div class="row" style="justify-content:space-between"><span>Amazon Relay</span><span class="chip c-plan">План</span></div></div></div>' +
@@ -638,12 +764,13 @@ function vDrivers() {
     }).join('') + '</div>';
 }
 
-const VIEWS = { home:vHome, shift:vShift, updates:vUpdates, eta:vEta, groups:vGroups, features:vFeatures, help:vHelp, settings:vSettings, plans:vPlans, agents:vAgents, board:vBoard, drivers:vDrivers };
+const VIEWS = { home:vHome, shift:vShift, updates:vUpdates, eta:vEta, groups:vGroups, features:vFeatures, help:vHelp, settings:vSettings, plans:vPlans, agents:vAgents, work:vWork, tz:vTz, board:vBoard, drivers:vDrivers };
 const TABS = [['home','Главная','home'],['updates','Апдейты','send'],['big','Большой экран','monitor'],['features','Функции','grid'],['settings','Настройки','sliders']];
 const NAV = [['home','Главная','home'],['board','Доска грузов','truck'],['drivers','Водители','wheel'],['updates','Апдейты','send'],['eta','Расчёт ETA','pin'],['groups','Группы','users'],['features','Все функции','grid'],['help','Инструкция','help'],['plans','Тарифы','doc'],['settings','Настройки','sliders']];
-const TAB_OF = { shift:'home', eta:'home', board:'home', drivers:'home', groups:'home', help:'settings', plans:'settings', agents:'settings' };
+const TAB_OF = { shift:'home', eta:'home', board:'home', drivers:'home', groups:'home', help:'settings', plans:'settings', agents:'settings', work:'settings', tz:'settings' };
 
 const EN = {
+"«Настройки» → «Рабочее время» → «Часовой пояс»: США (EST, CST, MST, PST и другие), все зоны России, Узбекистан и соседние страны, Турция, Европа. Или командой, например: /tz us-e":"“Settings” → “Working time” → “Time zone”: USA (EST, CST, MST, PST and more), every Russian zone, Uzbekistan and neighbours, Türkiye, Europe. Or with a command, for example: /tz us-e","Перерыв считает сам бот: рабочее окно делится на число апдейтов в тарифе, от 1 до 4 часов. Для 24/7 это обычно 4 часа, для смены 8 ч на 4 апдейта — 2 часа.":"The bot works out the gap itself: the working window divided by the plan's number of updates, from 1 to 4 hours. For 24/7 it is usually 4 hours, for an 8-h shift with 4 updates it is 2 hours.","Что такое режим «Смена»?":"What is the “Shift” mode?","Тариф дешевле: бот пишет в группы и присылает сигналы только в ваше рабочее время (смена 8, 10 или 12 ч, дни выбираете вы). Вне смены он только анализирует, а в начале смены присылает сводку. Тревоги можно получать всегда. Например: /plan lite shift":"A cheaper plan: the bot posts in groups and sends alerts only during your working time (an 8, 10 or 12-h shift, you pick the days). Outside the shift it only analyses and sends a summary when the shift starts. Alarms can still come at any time. Example: /plan lite shift","Как настроить смену и выходные?":"How do I set the shift and days off?","«Настройки» → «Рабочее время»: начало смены, обычная длина и каждый день недели (выходной, 8, 10 или 12 ч). Или командой, например: /worktime 16:00 8, /worktime sat 12, /worktime sun off":"“Settings” → “Working time”: shift start, usual length and every weekday (off, 8, 10 or 12 h). Or with a command, for example: /worktime 16:00 8, /worktime sat 12, /worktime sun off","Как выбрать часовой пояс?":"How do I pick my time zone?","Почему нельзя ставить апдейты чаще?":"Why can't I set updates more often?","Рабочее время":"Working time","круглосуточно":"around the clock","Выходные":"Days off","Изменить рабочее время":"Change working time","Пн":"Mon","Вт":"Tue","Ср":"Wed","Чт":"Thu","Пт":"Fri","Сб":"Sat","Вс":"Sun","Все функции и агенты на любом тарифе. Отличаются число водителей, апдейтов в день и режим.":"Every plan has all features and agents. Plans differ by drivers, updates a day and mode.","дешевле":"cheaper","в любое время":"any time","Бот пишет в группы в любое время рабочих дней. Выходные дни можно отметить.":"The bot posts in groups at any time on working days. You can mark days off.","Смена → 24/7":"Shift → 24/7","Считается тарифом больше: включается сразу.":"Counts as a bigger plan: starts now.","24/7 → Смена":"24/7 → Shift","Со следующего периода.":"From the next period.","Ваш часовой пояс":"Your time zone","24/7: /plan start full. Свой тариф: /plan. Какие группы в работе: /drivers":"24/7: /plan start full. Your plan: /plan. Which groups are working: /drivers","Когда бот пишет в группы и присылает сигналы":"When the bot posts in groups and sends alerts","Сменить":"Change","Бот пишет в любое время рабочих дней. В выходные он только анализирует.":"The bot posts at any time on working days. On days off it only analyses.","Дни недели":"Weekdays","Работаем":"Working","Сейчас рабочее время":"Working time now","Круглосуточно в рабочие дни":"Around the clock on working days","Длинный день: /worktime sat 12. Выходной: /worktime sun off. Часовой пояс: /tz us-c":"Long day: /worktime sat 12. Day off: /worktime sun off. Time zone: /tz us-c","По нему бот считает апдейты, смену и даты":"The bot uses it for updates, the shift and dates","США":"USA","Россия":"Russia","Другие страны":"Other countries","Пунктир: время только в длинные дни":"Dashed: only on long days","Бот пишет в группы только в ваше рабочее время: смена 8, 10 или 12 ч, дни выбираете вы. Вне смены бот только анализирует, а в начале смены присылает сводку.":"The bot posts in groups only during your working time: an 8, 10 or 12-h shift, you pick the days. Outside the shift it only analyses and sends a summary when the shift starts.","Дешевле · цена уточняется":"Cheaper · price to be set","Бот пишет в группы и присылает сигналы только в смену. Вне смены он только анализирует, а в начале смены присылает сводку: что было, пока вас не было.":"The bot posts in groups and sends alerts only during the shift. Outside it, it only analyses and when the shift starts sends a summary of what happened while you were away.","Начало смены":"Shift start","Обычная длина смены":"Usual shift length","Вых":"Off","Например, обычно 8 ч, а в дни, когда напарник отдыхает, 12 ч.":"For example, usually 8 h, and 12 h on the days your partner rests.","Сейчас не рабочее время":"Not working time now","Тревоги вне смены":"Alarms outside the shift","Авария, поломка, полиция: присылать сразу":"Accident, breakdown, police: send right away","Режим":"Mode","Часовой пояс":"Time zone","Время":"Time","нет":"none","Смена":"Shift",
 "Автоапдейты по расписанию":"Scheduled auto updates","Не чаще раза в 2 часа, время выбираете вы":"Not more often than every 2 hours, you pick the times","От 3 раз в сутки, не чаще одного раза в 2 часа. Максимум зависит от тарифа: Лайт 4, Старт 6, Про 8, Макс 12. Время каждого апдейта выбираете вы.":"At least 3 a day, not more often than every 2 hours. The maximum depends on the plan: Lite 4, Start 6, Pro 8, Max 12. You pick the time of each update.","Тарифы отличаются числом водителей и апдейтов в день, все функции есть на любом тарифе: Лайт до 10, Старт до 20, Про до 40, Макс до 80 водителей. Апдейтов в день: Лайт 4, Старт 6, Про 8, Макс 12. Цены ещё не утверждены.":"Plans differ by number of drivers and updates a day, every plan has all features: Lite up to 10, Start up to 20, Pro up to 40, Max up to 80 drivers. Updates a day: Lite 4, Start 6, Pro 8, Max 12. Prices are not approved yet.","Все функции и агенты на любом тарифе. Отличаются число водителей и апдейтов в день.":"Every plan has all features and agents. Plans differ by number of drivers and updates a day.","Не меньше 2 часов между апдейтами":"At least 2 hours between updates","От 3 до 12 раз в сутки, не чаще чем раз в 2 часа.":"3 to 12 times a day, not more often than every 2 hours.","От 3 раз в сутки, максимум по тарифу: в окне или командой /times":"At least 3 a day, the maximum by plan: in the window or with /times","Больше 12 апдейтов в день нельзя. Уберите лишнее время.":"No more than 12 updates a day. Remove the extra times.",
 "Включено":"Turned on","Изменить агентов":"Change agents","Автоответ":"Auto-reply","предлагать":"suggest","авто":"auto","выключен":"off","Агенты проверяют группы 24/7 и пишут только вам: водитель ждёт ответа, молчит, тревога, стоянка, нет GPS.":"Agents check groups 24/7 and write only to you: driver waiting, silent, alarm, long stop, no GPS.",
 "Бот работает с группами в тарифе 24/7. Писать в них будет только в выбранное время апдейтов.":"The bot works with the groups in your plan 24/7. It posts to them only at the chosen update times.","Вы владелец: бот работает со всеми группами UNIT, лимита нет.":"You are the owner: the bot works with every UNIT group, no limit.","Пример данных. Ваши группы появятся здесь, когда вы добавите бота в группы водителей.":"Sample data. Your groups appear here once you add the bot to driver groups.","В работе: апдейты и агенты":"Working: updates and agents","На паузе: только сохраняет сообщения":"Paused: only saves messages","Не хватает мест: «Сменить тариф» или /plan start":"Not enough room: “Change plan” or /plan start","Если в тарифе есть место, группа сразу в работе. Если нет, она встанет на паузу, и бот предложит, что сделать.":"If the plan has room, the group starts working right away. If not, it is paused and the bot offers what to do.","Владелец · без лимита":"Owner · no limit",
@@ -747,6 +874,16 @@ const EN = {
 'Telegram не дал включить полный экран на этом устройстве':'Telegram did not allow full screen on this device','Отдых 10 ч, до 04:00':'10 h rest, until 04:00','после отдыха 11 ч':'11 h after rest','У шиппера · 40 мин':'At shipper · 40 min'
 };
 const EN_RULES = [
+[/^([А-Яа-яЁё]+) · (24\/7|Смена)$/, (m, a, b) => trName(a + ' · ' + b)],
+[/^Сейчас у вас (\d\d:\d\d)$/, 'Your time now: $1'],
+[/^Входит в тариф (\S+)$/, (m, a) => 'Part of the ' + (EN[a] || a) + ' plan'],
+[/^(\d\d:\d\d) вне смены$/, '$1 outside the shift'],
+[/^Время (\d\d:\d\d) вне смены \((.+)\)$/, (m, a, b) => a + ' is outside the shift (' + (EN[b] || b) + ')'],
+[/^Смена (\S+): от 3 до (\d+) апдейтов, перерыв не меньше (\d+) ч\. Вне смены бот не пишет\.$/, 'Shift $1: 3 to $2 updates, at least $3 h apart. The bot does not post outside the shift.'],
+[/^24\/7: от 3 до (\d+) апдейтов в сутки, перерыв не меньше (\d+) ч\.$/, '24/7: 3 to $1 updates a day, at least $2 h apart.'],
+[/^Перерыв между апдейтами: не меньше (\d+) ч$/, 'Gap between updates: at least $1 h'],
+[/^Между апдейтами нужно не меньше (\d+) ч: (.+)$/, 'Updates must be at least $1 h apart: $2'],
+[/^Смена: (.+)$/, 'Shift: $1'],
 [/^до (\d+) апдейтов в день$/, 'up to $1 updates a day'],
 [/^Апдейтов в день: до (\d+)$/, 'Updates a day: up to $1'],
 [/^Тариф (\S+): от 3 до (\d+) апдейтов в сутки, не чаще чем раз в 2 часа\.$/, (m, a, b) => (EN[a] || a) + ' plan: 3 to ' + b + ' updates a day, not more often than every 2 hours.'],
@@ -760,16 +897,16 @@ const EN_RULES = [
 [/^В работе: (\d+) из (\d+)$/, 'Working: $1 of $2'],
 [/^На паузе: (\d+)$/, 'Paused: $1'],
 [/^Период до (\S+)$/, 'Period until $1'],
-[/^С (\d\d\.\d\d\.\d{4}) тариф (\S+)$/, (m, d, a) => 'From ' + d + ': plan ' + (EN[a] || a)],
+[/^С (\d\d\.\d\d\.\d{4}) тариф (.+)$/, (m, d, a) => 'From ' + d + ': plan ' + trName(a)],
 [/^С (\d\d\.\d\d\.\d{4})$/, 'From $1'],
 [/^У вас (\d+) групп: (\d+) будут на паузе$/, 'You have $1 groups: $2 will be paused'],
-[/^Оставить тариф (\S+)$/, (m, a) => 'Keep the ' + (EN[a] || a) + ' plan'],
+[/^Оставить тариф (.+)$/, (m, a) => 'Keep the ' + trName(a) + ' plan'],
 [/^Бот отвечает сам, если команда молчит (\d+) мин\. Тревожные сообщения не трогает, о каждом ответе сообщает вам$/, 'The bot replies by itself if the team is silent for $1 min. It never answers alarm messages and tells you about every reply'],
 [/^Водителей: (\d+) из (\d+)$/, 'Drivers: $1 of $2'],
 [/^(\d+) из (\d+)$/, '$1 of $2'],
 [/^Апдейты идут только по первым (\d+) группам$/, 'Updates go only to the first $1 groups'],
 [/^Свободно мест: (\d+)$/, 'Free slots: $1'],
-[/^Заявка на тариф (\S+) ждёт оплаты$/, (m, a) => 'Request for the ' + (EN[a] || a) + ' plan awaits payment'],
+[/^Заявка на тариф (.+) ждёт оплаты$/, (m, a) => 'Request for the ' + trName(a) + ' plan awaits payment'],
 [/^до (\d+) водителей$/, 'up to $1 drivers'],
 [/^У вас (\d+) групп: апдейты пойдут по первым (\d+)$/, 'You have $1 groups: updates go to the first $2'],
 [/^Отправьте боту команду: (.+)$/, 'Send the bot this command: $1'],
@@ -818,6 +955,7 @@ const EN_RULES = [
 [/^До (\d\d:\d\d) по времени США\. Режим: сначала показать мне\.$/, 'Until $1 US time. Mode: show me first.'],
 [/^До (\d\d:\d\d) по времени США\. Режим: авто\.$/, 'Until $1 US time. Mode: auto.']
 ];
+function trName(a) { return a.split(' · ').map((x) => EN[x] || x).join(' · '); }
 function trText(t) {
   const k = t.trim();
   if (!k || !/[А-Яа-яЁё]/.test(k)) return t;
@@ -861,7 +999,18 @@ document.addEventListener('click', (e) => {
     toast(S.access === 'survey' ? 'Доступно после опроса /start' : 'Доступно после оплаты тарифа');
     return;
   }
-  if (d.plan) { choosePlan(d.plan); return; }
+  if (d.plan) { choosePlan(d.plan, d.pmode); return; }
+  if (d.pview) { S.planMode = d.pview; render(); return; }
+  if (d.slotoff) { toast('Время ' + d.slotoff + ' вне смены (' + windowText() + ')'); return; }
+  if (locked() && (d.wtstart || d.wtbase || d.wtday || d.wtal || d.pm || d.tzc || d.act === 'savewt' || d.act === 'savetz')) { toast(S.access === 'survey' ? 'Доступно после опроса /start' : 'Доступно после оплаты тарифа'); return; }
+  if (d.wtstart) { S.wt.start = +d.wtstart; render(); return; }
+  if (d.wtbase) { const old = { 8:'8', 10:'a', 12:'c' }[S.wt.base]; S.wt.base = +d.wtbase; const nw = { 8:'8', 10:'a', 12:'c' }[S.wt.base]; S.wt.days = S.wt.days.split('').map((c) => c === old ? nw : c).join(''); render(); return; }
+  if (d.wtday) { const x = d.wtday.split(':'); const i = +x[0]; S.wt.days = S.wt.days.slice(0, i) + x[1] + S.wt.days.slice(i + 1); render(); return; }
+  if (d.wtal) { S.wt.alarms = !S.wt.alarms; render(); return; }
+  if (d.pm) { S.pm = d.pm; render(); return; }
+  if (d.tzc) { S.tzSel = d.tzc; render(); return; }
+  if (d.act === 'savewt') { saveWt(); return; }
+  if (d.act === 'savetz') { const r = tzRow(S.tzSel || S.tzc); S.tzc = r[0]; S.tz = r[1]; S.tzSel = ''; go('work'); sendToBot('tz-' + r[0], '/tz ' + r[0]); return; }
   if (locked() && (d.agt || d.agn || d.agar || d.act === 'saveag')) { toast(S.access === 'survey' ? 'Доступно после опроса /start' : 'Доступно после оплаты тарифа'); return; }
   if (locked() && (d.gtog || d.act === 'savegroups')) { toast(S.access === 'survey' ? 'Доступно после опроса /start' : 'Доступно после оплаты тарифа'); return; }
   if (d.gtog) { const g = S.glist[+d.gtog]; if (!g) return; if (!g.on && S.glist.filter((x) => x.on).length >= S.lim) { toast('Мест нет: в тарифе ' + planName(S.plan) + ' до ' + S.lim + ' водителей. Сначала поставьте на паузу другую группу или выберите тариф больше.'); return; } g.on = !g.on; S.gDirty = true; render(); return; }
@@ -898,7 +1047,7 @@ document.addEventListener('click', (e) => {
   else return;
   render();
 });
-if (tg && tg.BackButton) { try { tg.BackButton.onClick(() => go(S.view === 'help' || S.view === 'plans' || S.view === 'agents' ? 'settings' : 'home')); } catch (e) {} }
+if (tg && tg.BackButton) { try { tg.BackButton.onClick(() => go(S.view === 'tz' ? 'work' : (['help','plans','agents','work'].indexOf(S.view) >= 0 ? 'settings' : 'home'))); } catch (e) {} }
 window.addEventListener('resize', () => render());
 if (tg && tg.onEvent) { try { tg.onEvent('fullscreenChanged', render); tg.onEvent('fullscreenFailed', () => { try { tg.showAlert && tg.showAlert('Telegram не дал включить полный экран на этом устройстве'); } catch (x) {} }); } catch (e) {} }
 try { const v = new URLSearchParams(location.search).get('view'); if (v && VIEWS[v]) S.view = v; } catch (e) {}
