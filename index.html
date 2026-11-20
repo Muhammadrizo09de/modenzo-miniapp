@@ -348,6 +348,7 @@ const S = {
   upd:'pending', groups:{ a:true, b:true, team:true }, feat:'all', cat:'all', open:'q1',
   lang:'ru', notif:{ late:true, silent:true, group:true },
   tab:'transit', sel:'1042', q:'', showNew:true, queue:{}, compact:false,
+  updText:'Update Load# 1042\nRolling near Barstow, CA, 62 mph\nNext stop (3 of 4): PDX9 Troutdale, OR\nAppt Fri 16:20 PST\nMiles left 612 · drive 9h 40m (+30m break)\nTraffic +25 min in next 40 mi\nETA 17:05 PST · probably late 45 min', updEditing:false, updDraft:'', updEdited:false,
   access:'active', fromBot:false, act:{ s:1, p:1, e:1, g:1 }, lockSheet:''
 };
 /* язык: ссылка ?lang=, потом сохранённый выбор, потом язык Telegram */
@@ -399,7 +400,7 @@ function updLocked() { return locked() || !S.act.g || S.act.e !== 1; }
 /* what a button needs before it can work: '' = ready, otherwise the missing step */
 function blockedBy(d) {
   const action = !!(d.slot || d.smode || d.son || d.upd || d.group || d.notif || d.lockgo || d.agt || d.agn || d.agar || d.gtog || d.wtstart || d.wtbase || d.wtday || d.wtal || d.pm || d.tzc || d.offd !== undefined ||
-    ['save','saveag','savegroups','savewt','savetz','saveoff','launch','stop'].indexOf(d.act) >= 0);
+    ['save','saveag','savegroups','savewt','savetz','saveoff','launch','stop','updedit','updsave'].indexOf(d.act) >= 0);
   if (!S.act.s && (action || d.plan)) return 'survey';
   if (!S.act.p && (action || d.plan === 'drivers' || d.plan === 'keep')) return 'paid';
   const updOn = (d.son && !S.son) || d.lockgo === 'updates' || d.upd === 'sent' || (d.act === 'save' && S.son);
@@ -631,9 +632,13 @@ function vUpdates() {
   const pending = S.upd === 'pending', sent = S.upd === 'sent';
   const badge = pending ? ['Ждёт вашего решения','var(--amber)','var(--amber-bd)'] : (sent ? ['Отправлено (демо)','var(--mint-t)','var(--mint-bd)'] : ['Пропущено','var(--muted)','var(--line)']);
   return mzHead('Апдейты', 'Ничего не уходит водителям без вас') +
+    '<div class="xs muted" style="line-height:1.5">Это пример. Настоящие черновики приходят в чат с ботом с теми же кнопками: «Отправить», «Изменить», «Пропустить».</div>' +
     '<div class="card pad col" style="gap:14px;border-color:' + badge[2] + '"><div class="row" style="justify-content:space-between"><span class="label" style="color:' + badge[1] + '">' + badge[0] + '</span><span class="xs muted">Группа Driver A · 20:00</span></div>' +
-    '<div class="mono">Update Load# 1042\nRolling near Barstow, CA, 62 mph\nNext stop (3 of 4): PDX9 Troutdale, OR\nAppt Fri 16:20 PST\nMiles left 612 · drive 9h 40m (+30m break)\nTraffic +25 min in next 40 mi\nETA 17:05 PST · probably late 45 min</div>' +
-    (pending ? '<div style="display:grid;grid-template-columns:repeat(3,1fr);gap:8px"><button class="btn primary" data-upd="sent">Отправить</button><button class="btn">Изменить</button><button class="btn ghost" data-upd="skipped">Пропустить</button></div>' : '<button class="btn ghost" data-upd="pending">Вернуть (демо)</button>') + '</div>' +
+    (S.updEditing
+      ? '<textarea id="updta" class="mono" rows="8" style="width:100%;resize:vertical;font:inherit;border:1px solid var(--mint-bd);outline:none;background:#0B1220;color:var(--text)">' + esc(S.updDraft) + '</textarea><div class="grid2"><button class="btn primary" data-act="updsave">Сохранить текст</button><button class="btn" data-act="updcancel">Отмена</button></div>'
+      : '<div class="mono">' + esc(S.updText) + '</div>' + (S.updEdited ? '<div class="xs" style="color:var(--blue)">Текст изменён вами</div>' : '')) +
+    (pending && !S.updEditing ? '<div style="display:grid;grid-template-columns:repeat(3,1fr);gap:8px"><button class="btn primary" data-upd="sent">Отправить</button><button class="btn" data-act="updedit">Изменить</button><button class="btn ghost" data-upd="skipped">Пропустить</button></div>' : '') +
+    (pending ? '' : '<button class="btn ghost" data-upd="pending">Вернуть (демо)</button>') + '</div>' +
     '<button class="card row" data-go="eta" style="justify-content:space-between;height:52px;padding:0 16px;border-radius:16px;font-weight:600">Как посчитан этот ETA' + ic('chev', 18, 'var(--muted)', 2) + '</button>' +
     '<div class="col" style="gap:10px"><div class="label">Точность ETA</div><div class="card pad row" style="gap:14px;border-radius:18px"><h2 style="font-size:28px;color:#4A5B7A">—</h2><div class="small muted" style="line-height:1.5">Бот сравнит прогноз с реальным прибытием по GPS и покажет точность за последние 30 прогнозов. Скоро.</div></div></div>';
 }
@@ -863,6 +868,7 @@ const NAV = [['home','Главная','home'],['board','Доска грузов'
 const TAB_OF = { shift:'home', eta:'home', board:'home', drivers:'home', groups:'home', help:'settings', plans:'settings', agents:'settings', work:'settings', tz:'settings' };
 
 const EN = {
+"Это пример. Настоящие черновики приходят в чат с ботом с теми же кнопками: «Отправить», «Изменить», «Пропустить».":"This is an example. Real drafts come to the bot chat with the same buttons: “Send”, “Edit”, “Skip”.","Сохранить текст":"Save text","Отмена":"Cancel","Текст изменён вами":"Text edited by you","Текст сохранён. Нажмите «Отправить»":"Text saved. Tap “Send”",
 "Активация":"Activation","Опрос":"Survey","4 коротких вопроса в чате с ботом":"4 short questions in the bot chat","Выбрать и оплатить":"Pick and pay","Ключ на проверке":"Key being checked","Бот добавлен хотя бы в одну группу":"The bot is in at least one group","Настройки уже можно менять. Апдейты включатся после всех шагов.":"You can change settings already. Updates turn on after all steps.","Отправить ключ заново":"Send the key again","Ключ ELD на проверке":"ELD key being checked","Ключ получен и проверяется. Как только он заработает, апдейты можно будет включить. Если ключ неверный, отправьте новый.":"The key is received and being checked. Once it works you can turn updates on. If the key is wrong, send a new one.","Почему некоторые кнопки с замком?":"Why do some buttons have a lock?","Пока активация не закончена, часть функций закрыта, чтобы ничего не сломать. Шаги: опрос, тариф, ELD, хотя бы одна группа водителя. Нажмите на кнопку с замком: окно подскажет, какой шаг остался, и даст кнопку, чтобы его сделать. Например, ELD подключается командой /eld":"Until activation is finished some features are closed so nothing breaks. Steps: survey, plan, ELD, at least one driver group. Tap a locked button: the window tells you which step is left and gives a button to do it. For example, the ELD is connected with /eld","Ключ, чтобы бот видел, где траки":"A key so the bot sees where trucks are","Пока активация не закончена, окно работает только для просмотра.":"Until activation is finished the window is view-only.","Сначала пройдите опрос":"Finish the survey first","Это 4 коротких вопроса в чате с ботом: язык, борд, грузы, ключ ELD. После него функции включатся. Смотреть окно можно и сейчас.":"It is 4 short questions in the bot chat: language, board, freight, ELD key. Then features turn on. You can look around the window already.","Выбрать тариф":"Pick a plan","Выберите и оплатите тариф":"Pick and pay for a plan","Функции включатся после оплаты. Смотреть окно, тарифы и инструкцию можно и сейчас.":"Features turn on after payment. You can look at the window, plans and guide already.","Подключите ELD":"Connect your ELD","Подключить ELD":"Connect ELD","Без ELD бот не видит, где траки, и апдейты будут без местоположения. Бот спросит, какой у вас ELD, и проверит ключ. Это пара минут.":"Without an ELD the bot cannot see where trucks are and updates have no location. The bot asks which ELD you have and checks the key. It takes a couple of minutes.","Добавьте бота в группу водителя":"Add the bot to a driver group","Апдейты идут в группы водителей. Добавьте бота хотя бы в одну группу, и он сам проверит, видит ли сообщения.":"Updates go to driver groups. Add the bot to at least one group and it checks by itself whether it can read messages.","Как добавить":"How to add","Пройти опрос":"Take survey","Группы водителей":"Driver groups","Тариф":"Plan","Понятно":"Got it",
 "Окно переключается на этот язык. Язык ответов бота: /start":"The window switches to this language. The bot's reply language: /start","Окно переключается на этот язык":"The window switches to this language",
 "Рабочее время и часовой пояс":"Working time and time zone","Можно взять выходной на несколько дней?":"Can I take several days off?","Да, в любой момент: «Настройки» → «Рабочее время» → календарь «Разовые выходные». Нажмите на нужные даты и «Сохранить даты». Или командой, например: /off 25.11-27.11 или /off 3. В эти дни бот не пишет в группы и не шлёт сигналы, а когда вы вернётесь, пришлёт сводку.":"Yes, at any time: “Settings” → “Working time” → the “One-off days off” calendar. Tap the dates and “Save dates”. Or with a command, for example: /off 25.11-27.11 or /off 3. On those days the bot does not post in groups or send alerts, and sends a summary when you are back.","Разовые даты":"One-off dates","Разовые выходные и длинные дни":"One-off days off and long days","Нажмите на дату: рабочий день станет выходным, а выходной по неделе станет разово рабочим. Например, отпуск на 3 дня.":"Tap a date: a working day becomes a day off, and a weekly day off becomes a one-off working day. For example, a 3-day vacation.","Нажмите на дату: рабочий день станет выходным (ещё нажатие: 12 ч), а выходной по неделе станет разово рабочим. Например, отпуск на 3 дня.":"Tap a date: a working day becomes a day off (tap again: 12 h), and a weekly day off becomes a one-off working day. For example, a 3-day vacation.","раб":"on","вых":"off","Цветом отмечены разовые изменения. Остальные дни идут по дням недели.":"Colored dates are one-off changes. Other days follow the weekdays.","Сохранить даты":"Save dates","Командой: /off 25.11-27.11 или /off 3 (три дня с сегодня)":"By command: /off 25.11-27.11 or /off 3 (three days from today)","Бот только анализирует. Сводка придёт в начале смены.":"The bot only analyses. A summary comes when the shift starts.",
@@ -1096,6 +1102,8 @@ function renderInner() {
   }
   app.innerHTML = side + '<div class="main"><div class="content">' + (S.view === 'home' || S.view === 'settings' || locked() ? activationCard() : '') + body + '</div>' + tabbar + '</div>' + sheet + lockSheetHtml();
   if (S.lang === 'en') translateDom(app);
+  const ta = document.getElementById('updta');
+  if (ta) ta.addEventListener('input', (e) => { S.updDraft = e.target.value; });
   const q = document.getElementById('q');
   if (q) q.addEventListener('input', (e) => { S.q = e.target.value; const pos = e.target.selectionStart; render(); const n = document.getElementById('q'); if (n) { n.focus(); n.setSelectionRange(pos, pos); } });
   if (tg && tg.BackButton) { try { if (S.view !== 'home') tg.BackButton.show(); else tg.BackButton.hide(); } catch (e) {} }
@@ -1129,6 +1137,9 @@ function onClick(e) {
   if (d.wtal) { S.wt.alarms = !S.wt.alarms; render(); return; }
   if (d.offd !== undefined) { const i = +d.offd, k = dayKey(i), nx = nextOffCode(i); if (nx === undefined) delete S.offMap[k]; else S.offMap[k] = nx; S.offDirty = true; render(); return; }
   if (d.act === 'saveoff') { saveOff(); return; }
+  if (d.act === 'updedit') { S.updEditing = true; S.updDraft = S.updText; render(); const ta = document.getElementById('updta'); if (ta) { ta.focus(); } return; }
+  if (d.act === 'updsave') { const v = (S.updDraft || '').trim(); if (v) { S.updText = v; S.updEdited = true; } S.updEditing = false; render(); toast('Текст сохранён. Нажмите «Отправить»'); return; }
+  if (d.act === 'updcancel') { S.updEditing = false; render(); return; }
   if (d.pm) { S.pm = d.pm; render(); return; }
   if (d.tzc) { S.tzSel = d.tzc; render(); return; }
   if (d.act === 'savewt') { saveWt(); return; }
