@@ -51,6 +51,7 @@ h1,h2,h3{margin:0;font-family:'Space Grotesk',Inter,sans-serif;letter-spacing:-0
 .btn.danger{background:transparent;border-color:var(--red-bd);color:var(--red)}
 .chip{display:inline-flex;align-items:center;height:24px;padding:0 10px;border-radius:12px;font-size:12px;font-weight:600;white-space:nowrap;border:1px solid}
 .c-done{background:var(--mint-bg);color:var(--mint-t);border-color:var(--mint-bd)}
+.c-test{background:rgba(120,200,255,.08);color:#9FD8FF;border-color:rgba(120,200,255,.35)}
 .c-dev{background:var(--amber-bg);color:var(--amber);border-color:var(--amber-bd)}
 .c-plan{background:var(--blue-bg);color:var(--blue);border-color:var(--blue-bd)}
 .c-disp{background:var(--violet-bg);color:var(--violet);border-color:var(--violet-bd)}
@@ -163,48 +164,48 @@ const ST = { upcoming:['Upcoming','c-plan'], dispatched:['Dispatched','c-disp'],
 const VC = { late:'var(--red)', tight:'var(--amber)', ok:'var(--mint-t)', none:'var(--muted)' };
 const TC = (t) => t === 'Rolling' ? 'var(--mint-t)' : (t === 'Stopped' ? 'var(--amber)' : 'var(--muted)');
 
-const D='done', W='dev', P='plan';
+const D='done', K='test', W='dev', P='plan';
 const FEATURES = [
   ['Чтение чатов и память', [
     ['Запись сообщений из групп водителей','Всё, что пишут водители, сохраняется в базе',D],
     ['Проверка, видит ли бот группу','Если не видит, подскажет, что сделать',D],
-    ['«Как решали раньше»','Подсказки по прошлым ответам сотрудников',D],
-    ['Разбор фото: BOL, пломба, номер трейлера','Кнопка «Разобрать фото» в /proof',D]]],
+    ['«Как решали раньше»','Подсказки по прошлым ответам сотрудников',K],
+    ['Разбор фото: BOL, пломба, номер трейлера','Кнопка «Разобрать фото» в /proof',K]]],
   ['Водитель и груз', [
-    ['GPS из Samsara','Где грузовик сейчас',D],
-    ['Проверка ключа ELD','Samsara, Motive, Geotab',D],
-    ['GPS из Motive и Geotab','Сейчас GPS берётся только из Samsara',P],
+    ['GPS из Samsara','Где грузовик сейчас. Пока только у владельца бота',D],
+    ['Проверка ключа ELD','Samsara, Motive, Geotab: код готов, на настоящих ключах клиентов ещё не проверяли',K],
+    ['GPS у каждого клиента из его ELD','После запуска сервера: Samsara, Motive, Geotab',P],
     ['Часы водителя (HOS)','Перерыв 30 мин после 8 ч, отдых 10 ч. Остаток часов из ELD в плане',W],
     ['Грузовик: Rolling, Stopped, Off duty','По данным ELD, со скоростью и временем стоянки',P]]],
   ['Честный ETA', [
-    ['Маршрут с пробками и погода','Mapbox и служба погоды США (NWS)',D],
-    ['Вердикт: вовремя, впритык, опоздает на N мин','Запас 30+ мин, 0–30 мин или опоздание',D],
+    ['Маршрут с пробками и погода','Mapbox и служба погоды США (NWS)',K],
+    ['Вердикт: вовремя, впритык, опоздает на N мин','Запас 30+ мин, 0–30 мин или опоздание',K],
     ['Часовой пояс стопа и цепочка стопов','Пояс по штату готов. Цепочка стопов после подключения борда',W],
     ['Точность за последние 30 прогнозов','Сравнение прогноза с реальным прибытием',P],
-    ['Команда /eta','Командой или формой в окне, ответ в чате',D]]],
+    ['Команда /eta','Командой или формой в окне. Пока только у владельца бота',K]]],
   ['Апдейты', [
     ['Расписание апдейтов','От 3 раз в сутки, максимум по тарифу: в окне или командой /times',D],
-    ['Режим «сначала показать мне»','Отправить, изменить или пропустить',D],
-    ['Автоапдейты по расписанию','Не чаще раза в 2 часа, время выбираете вы',D],
+    ['Режим «сначала показать мне»','Отправить, изменить или пропустить',K],
+    ['Автоапдейты по расписанию','Не чаще раза в 2 часа, время выбираете вы',K],
     ['Выключение апдейтов','Переключатель в окне или команда /updates off',D]]],
   ['Ответы и языки', [
     ['Ответы на вопросы по логистике','Amazon Relay, Street и другие',D],
-    ['Только логистика','Другие темы бот вежливо отклоняет, отвечает по вашей базе знаний',D],
-    ['Русский, английский, узбекский','Окно, бот и ответы',D],
-    ['Турецкий для водителей','Бот понимает водителей на турецком и отвечает им по-турецки',D],
-    ['Перевод для водителя','Команда /tr: русский → английский для водителя и обратно',D]]],
+    ['Только логистика','Другие темы бот вежливо отклоняет, отвечает по вашей базе знаний',K],
+    ['Русский, английский, узбекский','Окно и бот',D],
+    ['Турецкий для водителей','Бот понимает водителей на турецком и отвечает им по-турецки',K],
+    ['Перевод для водителя','Команда /tr: русский → английский для водителя и обратно',K]]],
   ['Предупреждения', [
     ['Груз опаздывает: раньше, чем позвонит брокер','Какой груз и на сколько. После подключения борда',W],
-    ['Агенты 24/7','Водитель ждёт ответа, молчит, тревога, стоянка, нет GPS, автоответ',D],
-    ['Тревога «водитель молчит»','Если водитель долго не отвечает',D],
-    ['Проблемы с группой или ключом ELD','Сообщение владельцу',D]]],
+    ['Агенты 24/7','Водитель ждёт ответа, молчит, тревога, автоответ. Стоянка и «нет GPS» пока только у владельца',K],
+    ['Тревога «водитель молчит»','Если водитель долго не отвечает',K],
+    ['Проблемы с группой или ключом ELD','Сообщение владельцу',K]]],
   ['Отчёты и доказательства', [
-    ['Отчёт после смены и передача смены','Сам в конце смены или командой /report',D],
-    ['Утренняя сводка','Каждое утро в 09:00 в режиме 24/7',D],
-    ['Папка /proof по грузу','Фото, сообщения и письмо брокеру при простое',D]]],
+    ['Отчёт после смены и передача смены','Сам в конце смены или командой /report',K],
+    ['Утренняя сводка','Каждое утро в 09:00 в режиме 24/7',K],
+    ['Папка /proof по грузу','Фото, сообщения и письмо брокеру при простое',K]]],
   ['Приложение и интеграции', [
     ['Это окно (Mini App)','Настройки, расписание, тарифы, агенты, рабочее время',D],
-    ['Рабочее время и часовой пояс','Смена или 24/7, дни недели, разовые выходные',D],
+    ['Рабочее время и часовой пояс','Смена или 24/7, дни недели, разовые выходные',K],
     ['Расширенный экран','Экран готов. Данные грузов после подключения борда',W],
     ['Статусы грузов','Upcoming, Dispatched, In transit, Delivered',P],
     ['Новый груз','Бот замечает новый груз в борде и ставит статус',P],
@@ -215,7 +216,7 @@ const FEATURES = [
     ['Тарифы, оферта, пробная неделя','Тарифы и смена тарифа готовы. Оферта и пробная неделя в плане',W],
     ['Оплата: Click, Payme и другие','Появится после запуска сервера',P]]]
 ];
-const SM = { done:['Есть','c-done'], dev:['В разработке','c-dev'], plan:['План','c-plan'] };
+const SM = { done:['Есть','c-done'], test:['Проверяем','c-test'], dev:['В разработке','c-dev'], plan:['План','c-plan'] };
 
 const FAQ = [
   ['start','Что такое Modenzo AI?','Помощник диспетчера в Telegram. Он читает чаты водителей, смотрит GPS и часы работы, считает честный ETA и заранее предупреждает, какой груз опаздывает и на сколько. Апдейты отправляет только с вашего согласия.'],
@@ -817,8 +818,8 @@ function agPayload() { return AGENTS.map((a) => S.ag.on[a[0]] ? '1' : '0').join(
 function vFeatures() {
   const all = [].concat.apply([], FEATURES.map((s) => s[1]));
   const n = (k) => all.filter((x) => x[2] === k).length;
-  const filters = [['all','Все · ' + all.length],[D,'Есть · ' + n(D)],[W,'В разработке · ' + n(W)],[P,'План · ' + n(P)]];
-  return mzHead('Все функции', 'Что уже работает, что в разработке и что в плане. Все функции есть на любом тарифе.') +
+  const filters = [['all','Все · ' + all.length],[D,'Есть · ' + n(D)],[K,'Проверяем · ' + n(K)],[W,'В разработке · ' + n(W)],[P,'План · ' + n(P)]];
+  return mzHead('Все функции', 'Все функции есть на любом тарифе.') + '<div class="card pad col" style="gap:6px;border-radius:16px"><div class="xs"><b>Есть</b> — работает и проверено на живых данных.</div><div class="xs"><b>Проверяем</b> — код готов и прошёл тесты, ждёт проверки в настоящих группах.</div><div class="xs"><b>В разработке</b> и <b>План</b> — ещё не работает.</div></div>' +
     '<div class="wrap">' + filters.map((f) => '<button class="pill' + (S.feat === f[0] ? ' on' : '') + '" data-feat="' + f[0] + '">' + f[1] + '</button>').join('') + '</div>' +
     FEATURES.map((sec) => {
       const items = sec[1].filter((x) => S.feat === 'all' || x[2] === S.feat);
@@ -855,7 +856,7 @@ function vSettings() {
     '<div class="col" style="gap:10px"><div class="label">Подключения и команда</div><div class="listcard list"><button data-go="groups" class="row" style="justify-content:space-between;width:100%;background:none;border:0;border-bottom:1px solid var(--line2);font-size:15px;text-align:left"><span>Группы водителей</span><span class="row small muted" style="gap:6px">' + (S.plan === 'owner' ? S.used : S.used + ' из ' + S.lim) + ' ' + ic('chev', 16, 'var(--muted)', 2) + '</span></button><div class="row" style="justify-content:space-between"><span>ELD · Samsara</span><span class="small" style="color:var(--mint-t)">Подключено (пример)</span></div><div class="row" style="justify-content:space-between"><span>Борд (Google Sheets)</span><span class="small muted">Update Board</span></div><div class="row" style="justify-content:space-between"><span>Тиммейты</span><span class="small muted">3 человека</span></div><div class="row" style="justify-content:space-between"><span>Amazon Relay</span><span class="chip c-plan">План</span></div></div></div>' +
     '<div class="col" style="gap:10px"><div class="label">Уведомления мне</div><div class="listcard list">' + nl.map((t) => '<div class="row"><span class="col" style="flex:1"><span>' + t[1] + '</span><span class="xs muted">' + t[2] + '</span></span><button class="toggle' + (S.notif[t[0]] ? ' on' : '') + '" data-notif="' + t[0] + '" aria-label="' + t[1] + '"><span></span></button></div>').join('') + '</div></div>' +
     '<div class="col" style="gap:10px"><div class="label">Тариф и оплата</div>' + planCard(true) + '<div class="listcard list">' + [['Пробная неделя','появится позже'],['Оплата','Click · Payme · другие'],['Оферта','готовится']].map((r) => '<div class="row" style="justify-content:space-between"><span>' + r[0] + '</span><span class="small muted">' + r[1] + '</span></div>').join('') + '</div><div class="xs muted">Тарифы отличаются числом водителей и апдейтов в день. Оплата заработает после запуска сервера.</div><div class="xs muted">Или командой в чате, например: /plan pro</div></div>' +
-    '<div class="xs" style="text-align:center;color:var(--faint)">Modenzo AI · версия окна 2026-11-20 23:40</div>';
+    '<div class="xs" style="text-align:center;color:var(--faint)">Modenzo AI · версия окна 2026-11-20 19:55</div>';
 }
 
 function inTab(l, t) { return t === 'all' || (t === 'risk' ? (l.v === 'late' || l.v === 'tight') && l.st !== 'delivered' : l.st === t); }
@@ -895,10 +896,11 @@ const NAV = [['home','Главная','home'],['board','Доска грузов'
 const TAB_OF = { shift:'home', eta:'home', board:'home', drivers:'home', groups:'home', help:'settings', plans:'settings', agents:'settings', work:'settings', tz:'settings' };
 
 const EN = {
+"Проверяем":"Testing","Все функции есть на любом тарифе.":"Every plan has all features.","— работает и проверено на живых данных.":"— works and was checked on live data.","— код готов и прошёл тесты, ждёт проверки в настоящих группах.":"— the code is ready and passed tests, waiting for a check in real groups.","и":"and","— ещё не работает.":"— not working yet.","Где грузовик сейчас. Пока только у владельца бота":"Where the truck is now. For now only for the bot owner","Samsara, Motive, Geotab: код готов, на настоящих ключах клиентов ещё не проверяли":"Samsara, Motive, Geotab: code ready, not yet tested with real client keys","GPS у каждого клиента из его ELD":"GPS for every client from their own ELD","После запуска сервера: Samsara, Motive, Geotab":"After the server launch: Samsara, Motive, Geotab","Командой или формой в окне. Пока только у владельца бота":"By command or the form in the window. For now only for the bot owner","Окно и бот":"Window and bot","Водитель ждёт ответа, молчит, тревога, автоответ. Стоянка и «нет GPS» пока только у владельца":"Driver waiting, silent, alarm, auto-reply. Long stop and \"no GPS\" for now only for the owner",
 "Окно и бот: русский, английский и узбекский. Водителей бот понимает и на турецком и отвечает им на их языке.":"The window and the bot: Russian, English and Uzbek. The bot also understands drivers in Turkish and answers them in their language.","Да, командой /tr: русский текст превращается в короткое английское сообщение водителю, английский переводится на русский. Например: /tr пришли фото BOL":"Yes, with /tr: Russian text becomes a short English message for the driver, English is translated to Russian. Example: /tr пришли фото BOL","Тарифы отличаются числом водителей и апдейтов в день. Оплата заработает после запуска сервера.":"Plans differ by number of drivers and updates a day. Payment works after the server launch.","Русский, английский, узбекский":"Russian, English, Uzbek","Окно, бот и ответы":"Window, bot and answers","Турецкий для водителей":"Turkish for drivers","Бот понимает водителей на турецком и отвечает им по-турецки":"The bot understands drivers in Turkish and answers them in Turkish","Язык окна и бота":"Window and bot language","Окно переключается сразу.":"The window switches right away.","Язык сообщений бота":"Bot messages language","Сменить и в боте":"Change in the bot too","Водителям бот отвечает на их языке, в том числе на турецком.":"The bot answers drivers in their language, Turkish included.","Русский":"Russian","Английский":"English","Узбекский":"Uzbek",
 "Кнопка «Разобрать фото» в /proof":"The “Read the photos” button in /proof","Перерыв 30 мин после 8 ч, отдых 10 ч. Остаток часов из ELD в плане":"30-min break after 8 h, 10-h rest. Hours left from the ELD planned","Пояс по штату готов. Цепочка стопов после подключения борда":"Zone by state is ready. The stop chain after the board is connected","Команда /eta":"The /eta command","Командой или формой в окне, ответ в чате":"By command or the window form, answer in the chat","Другие темы бот вежливо отклоняет, отвечает по вашей базе знаний":"Other topics are politely declined, answers use your knowledge base","Команда /tr: русский → английский для водителя и обратно":"The /tr command: Russian → English for the driver and back","Агенты 24/7":"Agents 24/7","Водитель ждёт ответа, молчит, тревога, стоянка, нет GPS, автоответ":"Driver waiting, silent, alarm, long stop, no GPS, auto-reply","Какой груз и на сколько. После подключения борда":"Which load and by how much. After the board is connected","Сам в конце смены или командой /report":"By itself at shift end or with /report","Утренняя сводка":"Morning summary","Каждое утро в 09:00 в режиме 24/7":"Every morning at 09:00 in 24/7 mode","Фото, сообщения и письмо брокеру при простое":"Photos, messages and a detention email to the broker","Настройки, расписание, тарифы, агенты, рабочее время":"Settings, schedule, plans, agents, working time","Рабочее время и часовой пояс":"Working time and time zone","Смена или 24/7, дни недели, разовые выходные":"Shift or 24/7, weekdays, one-off days off","Экран готов. Данные грузов после подключения борда":"The screen is ready. Load data after the board is connected","Группы и настройки уже отдельно. Свой ELD и шифрование ключей на сервере":"Groups and settings are already separate. Own ELD and key encryption on the server","Тарифы и смена тарифа готовы. Оферта и пробная неделя в плане":"Plans and plan changes are ready. Offer and trial week planned",
 "Расчёт ETA":"ETA calculation","От GPS трака до стопа: пробки, часы водителя, погода":"From truck GPS to the stop: traffic, driver hours, weather","Посчитать ETA":"Calculate ETA","Номер трака, например 2080":"Truck number, for example 2080","Адрес стопа, например PDX9, Troutdale, OR":"Stop address, for example PDX9, Troutdale, OR","Appointment по времени стопа, например 21.11 16:20":"Appointment in stop time, for example 21.11 16:20","Штат в адресе (OR, TX...) нужен, чтобы знать часовой пояс стопа. Appointment можно не писать.":"The state in the address (OR, TX...) tells the stop time zone. The appointment is optional.","Посчитать в чате с ботом":"Calculate in the bot chat","Ответ придёт в чат с ботом.":"The answer comes to the bot chat.","Ответ придёт в чат с ботом. Пока /eta работает только у владельца бота: GPS берётся из его Samsara. У вас заработает после подключения вашего ELD на сервере (в плане).":"The answer comes to the bot chat. For now /eta works only for the bot owner: GPS comes from the owner's Samsara. It works for you after your ELD is connected on the server (planned).","Пример разбора: Load 1042":"Sample breakdown: Load 1042","Напишите номер трака и адрес стопа":"Write the truck number and the stop address","Команда скопирована: вставьте её в чат и отправьте":"Command copied: paste it in the chat and send","Окно и бот переключаются на этот язык":"The window and the bot switch to this language","Написать в поддержку":"Write to support","Все команды бота":"All bot commands",
-"Modenzo AI · версия окна 2026-11-20 23:40":"Modenzo AI · window version 2026-11-20 19:20",
+"Modenzo AI · версия окна 2026-11-20 19:55":"Modenzo AI · window version 2026-11-20 19:20",
 "Это пример. Настоящие черновики приходят в чат с ботом с теми же кнопками: «Отправить», «Изменить», «Пропустить».":"This is an example. Real drafts come to the bot chat with the same buttons: “Send”, “Edit”, “Skip”.","Сохранить текст":"Save text","Отмена":"Cancel","Текст изменён вами":"Text edited by you","Текст сохранён. Нажмите «Отправить»":"Text saved. Tap “Send”",
 "Активация":"Activation","Опрос":"Survey","7 коротких вопросов в чате с ботом":"7 short questions in the bot chat","Выбрать и оплатить":"Pick and pay","Ключ на проверке":"Key being checked","Бот добавлен хотя бы в одну группу":"The bot is in at least one group","Настройки уже можно менять. Апдейты включатся после всех шагов.":"You can change settings already. Updates turn on after all steps.","Отправить ключ заново":"Send the key again","Ключ ELD на проверке":"ELD key being checked","Ключ получен и проверяется. Как только он заработает, апдейты можно будет включить. Если ключ неверный, отправьте новый.":"The key is received and being checked. Once it works you can turn updates on. If the key is wrong, send a new one.","Почему некоторые кнопки с замком?":"Why do some buttons have a lock?","Пока активация не закончена, часть функций закрыта, чтобы ничего не сломать. Шаги: опрос, тариф, ELD, хотя бы одна группа водителя. Нажмите на кнопку с замком: окно подскажет, какой шаг остался, и даст кнопку, чтобы его сделать. Например, ELD подключается командой /eld":"Until activation is finished some features are closed so nothing breaks. Steps: survey, plan, ELD, at least one driver group. Tap a locked button: the window tells you which step is left and gives a button to do it. For example, the ELD is connected with /eld","Ключ, чтобы бот видел, где траки":"A key so the bot sees where trucks are","Пока активация не закончена, окно работает только для просмотра.":"Until activation is finished the window is view-only.","Сначала пройдите опрос":"Finish the survey first","Это 7 коротких вопросов в чате с ботом: борд, грузы, ELD, коллеги, часовой пояс, смена, число водителей. После него функции включатся. Смотреть окно можно и сейчас.":"It is 7 short questions in the bot chat: board, freight, ELD, teammates, time zone, shift, number of drivers. Then features turn on. You can look around the window already.","Выбрать тариф":"Pick a plan","Выберите и оплатите тариф":"Pick and pay for a plan","Функции включатся после оплаты. Смотреть окно, тарифы и инструкцию можно и сейчас.":"Features turn on after payment. You can look at the window, plans and guide already.","Подключите ELD":"Connect your ELD","Подключить ELD":"Connect ELD","Без ELD бот не видит, где траки, и апдейты будут без местоположения. Бот спросит, какой у вас ELD, и проверит ключ. Это пара минут.":"Without an ELD the bot cannot see where trucks are and updates have no location. The bot asks which ELD you have and checks the key. It takes a couple of minutes.","Добавьте бота в группу водителя":"Add the bot to a driver group","Апдейты идут в группы водителей. Добавьте бота хотя бы в одну группу, и он сам проверит, видит ли сообщения.":"Updates go to driver groups. Add the bot to at least one group and it checks by itself whether it can read messages.","Как добавить":"How to add","Пройти опрос":"Take survey","Группы водителей":"Driver groups","Тариф":"Plan","Понятно":"Got it",
 "Окно переключается на этот язык. Язык ответов бота: /start":"The window switches to this language. The bot's reply language: /start","Окно переключается на этот язык":"The window switches to this language",
@@ -1007,6 +1009,19 @@ const EN = {
 'Telegram не дал включить полный экран на этом устройстве':'Telegram did not allow full screen on this device','Отдых 10 ч, до 04:00':'10 h rest, until 04:00','после отдыха 11 ч':'11 h after rest','У шиппера · 40 мин':'At shipper · 40 min'
 };
 const UZ = {
+"Проверяем":"Tekshirilmoqda",
+"Все функции есть на любом тарифе.":"Barcha funksiyalar har qanday tarifda bor.",
+"— работает и проверено на живых данных.":"— ishlaydi va jonli ma'lumotlarda tekshirilgan.",
+"— код готов и прошёл тесты, ждёт проверки в настоящих группах.":"— kod tayyor va testlardan o'tgan, haqiqiy guruhlarda tekshiruvni kutmoqda.",
+"и":"va",
+"— ещё не работает.":"— hali ishlamaydi.",
+"Где грузовик сейчас. Пока только у владельца бота":"Trak hozir qayerda. Hozircha faqat bot egasida",
+"Samsara, Motive, Geotab: код готов, на настоящих ключах клиентов ещё не проверяли":"Samsara, Motive, Geotab: kod tayyor, mijozlarning haqiqiy kalitlarida hali tekshirilmagan",
+"GPS у каждого клиента из его ELD":"Har bir mijozga o'z ELD idan GPS",
+"После запуска сервера: Samsara, Motive, Geotab":"Server ishga tushgandan keyin: Samsara, Motive, Geotab",
+"Командой или формой в окне. Пока только у владельца бота":"Buyruq yoki oynadagi forma orqali. Hozircha faqat bot egasida",
+"Окно и бот":"Oyna va bot",
+"Водитель ждёт ответа, молчит, тревога, автоответ. Стоянка и «нет GPS» пока только у владельца":"Haydovchi kutyapti, jim, xavotir, avtojavob. Uzoq to'xtash va «GPS yo'q» hozircha faqat egasida",
 "нет":"yo'q",
 "Ответ придёт в чат с ботом. Пока /eta работает только у владельца бота: GPS берётся из его Samsara. У вас заработает после подключения вашего ELD на сервере (в плане).":"Javob bot bilan chatga keladi. Hozircha /eta faqat bot egasida ishlaydi: GPS uning Samsara'sidan olinadi. Sizda ELD serverga ulangandan keyin ishlaydi (rejada).",
 "Лайт":"Lite",
@@ -1347,7 +1362,7 @@ const UZ = {
 "готовится":"tayyorlanmoqda",
 "Тарифы отличаются только числом водителей. Оплата заработает после запуска сервера.":"Tariflar haydovchilar va kunlik apdeytlar soni bilan farq qiladi. To'lov server ishga tushgandan keyin ishlaydi.",
 "Или командой в чате, например: /plan pro":"Yoki chatda buyruq bilan, masalan: /plan pro",
-"Modenzo AI · версия окна 2026-11-20 23:40":"Modenzo AI · oyna versiyasi 2026-11-20 19:20",
+"Modenzo AI · версия окна 2026-11-20 19:55":"Modenzo AI · oyna versiyasi 2026-11-20 19:20",
 "Все функции и агенты на любом тарифе. Отличаются число водителей, апдейтов в день и режим.":"Barcha funksiyalar va agentlar har qanday tarifda. Haydovchilar, kunlik apdeytlar soni va rejim bilan farq qiladi.",
 "Смена":"Smena",
 "дешевле":"arzonroq",
@@ -1560,6 +1575,7 @@ const UZ_RULES = [
 [/^Решения · (\d+)$/, 'Qarorlar · $1'],
 [/^Все · (\d+)$/, 'Hammasi · $1'],
 [/^Есть · (\d+)$/, 'Bor · $1'],
+[/^Проверяем · (\d+)$/, 'Tekshirilmoqda · $1'],
 [/^В разработке · (\d+)$/, 'Ishlab chiqilmoqda · $1'],
 [/^План · (\d+)$/, 'Reja · $1'],
 [/^Под риском · (\d+)$/, 'Xavf ostida · $1'],
@@ -1637,6 +1653,7 @@ const EN_RULES = [
 [/^Решения · (\d+)$/, 'Decisions · $1'],
 [/^Все · (\d+)$/, 'All · $1'],
 [/^Есть · (\d+)$/, 'Live · $1'],
+[/^Проверяем · (\d+)$/, 'Testing · $1'],
 [/^В разработке · (\d+)$/, 'In development · $1'],
 [/^План · (\d+)$/, 'Planned · $1'],
 [/^Под риском · (\d+)$/, 'At risk · $1'],
