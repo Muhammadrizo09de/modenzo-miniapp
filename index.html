@@ -865,7 +865,7 @@ function vSettings() {
     '<div class="col" style="gap:10px"><div class="label">Подключения и команда</div><div class="listcard list"><button data-go="groups" class="row" style="justify-content:space-between;width:100%;background:none;border:0;border-bottom:1px solid var(--line2);font-size:15px;text-align:left"><span>Группы водителей</span><span class="row small muted" style="gap:6px">' + (S.plan === 'owner' ? S.used : S.used + ' из ' + S.lim) + ' ' + ic('chev', 16, 'var(--muted)', 2) + '</span></button><div class="row" style="justify-content:space-between"><span>ELD · Samsara</span><span class="small" style="color:var(--mint-t)">Подключено (пример)</span></div><div class="row" style="justify-content:space-between"><span>Борд (Google Sheets)</span><span class="small muted">Update Board</span></div><div class="row" style="justify-content:space-between"><span>Тиммейты</span><span class="small muted">3 человека</span></div><div class="row" style="justify-content:space-between"><span>Amazon Relay</span><span class="chip c-plan">План</span></div></div></div>' +
     '<div class="col" style="gap:10px"><div class="label">Уведомления мне</div><div class="listcard list">' + nl.map((t) => '<div class="row"><span class="col" style="flex:1"><span>' + t[1] + '</span><span class="xs muted">' + t[2] + '</span></span><button class="toggle' + (S.notif[t[0]] ? ' on' : '') + '" data-notif="' + t[0] + '" aria-label="' + t[1] + '"><span></span></button></div>').join('') + '</div></div>' +
     '<div class="col" style="gap:10px"><div class="label">Тариф и оплата</div>' + planCard(true) + '<div class="listcard list">' + [['Пробная неделя','появится позже'],['Оплата','Click · Payme · другие'],['Оферта','готовится']].map((r) => '<div class="row" style="justify-content:space-between"><span>' + r[0] + '</span><span class="small muted">' + r[1] + '</span></div>').join('') + '</div><div class="xs muted">Тарифы отличаются числом водителей и апдейтов в день. Оплата заработает после запуска сервера.</div><div class="xs muted">Или командой в чате, например: /plan pro</div></div>' +
-    '<div class="xs" style="text-align:center;color:var(--faint)">Modenzo AI · версия окна 2026-11-22 05:10</div>';
+    '<div class="xs" style="text-align:center;color:var(--faint)">Modenzo AI · версия окна 2026-11-22 06:00</div>';
 }
 
 function inTab(l, t) { return t === 'all' || (t === 'risk' ? (l.v === 'late' || l.v === 'tight') && l.st !== 'delivered' : l.st === t); }
@@ -1308,7 +1308,7 @@ function truckSvg(style, size) {
   return '<svg width="' + Math.round(s * 0.55) + '" height="' + Math.round(s * 1.1) + '" viewBox="0 0 20 40">' + tr + cab + '</svg>';
 }
 function mpStyle(u) { return S.mp.styles[u] || 'std'; }
-function mpVisible() { return MP.filter((k) => { const st = mpState(k); return S.mp.f === 'all' || (S.mp.f === 'roll' && st.st === 'roll') || (S.mp.f === 'stop' && st.st !== 'roll') || (S.mp.f === 'risk' && k.v !== 'ok'); }); }
+function mpVisible() { return MP.filter((k) => { const st = mpState(k); if (S.mp.zone && zoneOf(st.ll) !== S.mp.zone) return false; return S.mp.f === 'all' || (S.mp.f === 'roll' && st.st === 'roll') || (S.mp.f === 'stop' && st.st !== 'roll') || (S.mp.f === 'risk' && k.v !== 'ok'); }); }
 /* map engine: Leaflet when it loads, otherwise a simple drawn map; the map element is kept between renders */
 let LMAP = null, LMAP_EL = null, LMK = {}, LLINES = [], LTRAIL = null, LSTOPS = [], LLOAD = 0;
 function mpLoadLib(cb) {
@@ -1687,6 +1687,7 @@ function vMap() {
       '<div class="row" style="justify-content:space-between;gap:10px"><button class="back" data-mtk="" aria-label="Назад">' + ic('back', 18, '#EAF0FA', 2) + '</button><span class="col" style="flex:1;min-width:0;gap:1px"><b style="font-size:17px">UNIT ' + sel.u + ' · ' + esc(sel.d) + '</b><span class="xs muted">Load ' + sel.load + ' · ' + (st.st === 'roll' ? '<span data-mspd2="' + sel.u + '">' + sel.mph + ' mph</span>' : MP_ST[st.st]) + '</span></span><span class="chip" style="background:' + mpRing(sel) + '22;color:' + mpRing(sel) + ';border:1px solid ' + mpRing(sel) + '55">' + MP_V[sel.v][0] + '</span></div>' +
       '<div class="col" style="gap:6px"><div class="row xs muted" style="justify-content:space-between"><span>' + esc(sel.stops.length ? 'Маршрут' : '') + '</span><span><span data-mleft="' + sel.u + '">' + (st.next ? Math.round(st.left) + ' mi' : '—') + '</span> ' + tr3('до стопа', 'to the stop', 'stopgacha') + '</span></div><span style="display:block;height:8px;border-radius:4px;background:#1A2438;overflow:hidden"><span style="display:block;height:100%;width:' + pct + '%;background:linear-gradient(90deg,#2BB57A,' + mpRing(sel) + ')"></span></span></div>' +
       '<div style="display:grid;grid-template-columns:repeat(3,minmax(0,1fr));gap:8px">' + [['ETA', st.etaH ? '<span data-meta="' + sel.u + '">' + hm(st.etaH) + '</span>' : '—'], ['Часы', sel.hos], ['Пройдено', pct + '%']].map((x) => '<div class="card col" style="padding:10px;border-radius:12px;gap:2px;background:var(--raised)"><span class="xs muted">' + x[0] + '</span><b style="font-size:14px">' + x[1] + '</b></div>').join('') + '</div>' +
+      (function () { const z = tzOf(zoneOf(st.ll)); return '<div class="row" style="justify-content:space-between;padding:10px 12px;border-radius:12px;background:' + z[3] + '1A;border:1px solid ' + z[3] + '55"><span class="xs" style="color:' + z[3] + ';font-weight:600">' + tr3('Местное время трака', 'Truck local time', 'Trakning mahalliy vaqti') + ' · ' + z[1] + (stateAt(st.ll) ? ' · ' + stateAt(st.ll) : '') + '</span><b style="font-size:14px;font-variant-numeric:tabular-nums" data-tzclk="' + z[2] + '">' + tzClock(z[2]) + '</b></div>'; })() +
       '<div class="col" style="gap:8px"><span class="label">Стопы</span>' + sel.stops.map((s, i) => { const done = s.at <= st.dist + 0.5, nxt = st.next === s; return '<div class="row" style="gap:10px;align-items:flex-start"><span style="width:24px;height:24px;border-radius:50%;flex:none;display:flex;align-items:center;justify-content:center;font-size:12px;font-weight:700;background:' + (done ? 'var(--mint)' : (nxt ? '#F5B83D' : 'var(--raised)')) + ';color:' + (done || nxt ? '#0B1220' : 'var(--sub)') + '">' + (done ? '✓' : i + 1) + '</span><span class="col" style="gap:1px;flex:1;min-width:0"><span style="font-size:13px;font-weight:600">' + esc(s.n) + '</span><span class="xs muted">Appt ' + s.appt + (nxt ? ' · ' + tr3('следующий', 'next', 'keyingi') : '') + '</span></span></div>'; }).join('') + '</div>' +
       '<div class="col" style="gap:6px"><div class="row" style="justify-content:space-between"><span class="label">Где был</span><span class="xs muted">' + (S.mp.replay ? tr3(S.mp.replay + ' ч назад', S.mp.replay + 'h ago', S.mp.replay + ' soat oldin') : tr3('сейчас', 'now', 'hozir')) + '</span></div><input type="range" id="mpReplay" min="0" max="12" step="1" value="' + S.mp.replay + '" style="width:100%;accent-color:#3DDC97" aria-label="Где был"></div>' +
       '<div class="grid2"><button class="btn" style="height:40px;font-size:13px" data-ltt="' + sel.u + '">✉️ Текст брокеру</button><button class="btn" style="height:40px;font-size:13px" data-act="mppick">' + (S.mp.pick ? 'Скрыть виды' : 'Вид трака') + '</button></div>' +
@@ -1694,8 +1695,8 @@ function vMap() {
       '</div>';
   }
   const top = '<div class="row" style="justify-content:space-between;gap:10px;flex-wrap:wrap"><span class="row" style="gap:10px"><h1 class="title" style="font-size:24px">Слежка</h1><span class="chip c-dev">бета · демо</span></span><span class="row" style="gap:6px">' + [[1,'Реально'],[60,'×60']].map((x) => '<button class="seg' + (S.mp.mult === x[0] ? ' on' : '') + '" data-mpm="' + x[0] + '" style="height:32px;padding:0 10px;font-size:12px">' + x[1] + '</button>').join('') + '</span></div>' +
-    '<div class="xs muted" style="line-height:1.5">12 траков с примерными данными. Живые траки, маршруты и скорость появятся после подключения ELD и сервера.</div>';
-  const overlay = '<div style="position:absolute;right:10px;top:10px;z-index:500;display:flex;flex-direction:column;gap:6px"><button class="btn" data-act="mpfit" title="Все траки" aria-label="Все траки" style="height:36px;width:36px;padding:0;background:#0E1626ee">' + ic('target', 18, 'currentColor', 2) + '</button>' + (sel ? '<button class="btn' + (S.mp.follow ? ' primary' : '') + '" data-act="mpfollow" style="height:36px;padding:0 10px;font-size:12px;background:' + (S.mp.follow ? '' : '#0E1626ee') + '">' + (S.mp.follow ? 'Слежу' : 'Следить') + '</button>' : '') + '</div>' +
+    '<div class="xs muted" style="line-height:1.5">12 траков с примерными данными. Живые траки, маршруты и скорость появятся после подключения ELD и сервера.</div>' + tzStrip();
+  const overlay = '<div style="position:absolute;right:10px;top:10px;z-index:500;display:flex;flex-direction:column;gap:6px;align-items:flex-end"><button class="btn' + (S.mp.tint ? ' primary' : '') + '" data-act="mptint" style="height:36px;padding:0 10px;font-size:12px;background:' + (S.mp.tint ? '' : '#0E1626ee') + '">Пояса</button><button class="btn" data-act="mpfit" title="Все траки" aria-label="Все траки" style="height:36px;width:36px;padding:0;background:#0E1626ee">' + ic('target', 18, 'currentColor', 2) + '</button>' + (sel ? '<button class="btn' + (S.mp.follow ? ' primary' : '') + '" data-act="mpfollow" style="height:36px;padding:0 10px;font-size:12px;background:' + (S.mp.follow ? '' : '#0E1626ee') + '">' + (S.mp.follow ? 'Слежу' : 'Следить') + '</button>' : '') + '</div>' +
     '<div style="position:absolute;left:10px;bottom:10px;z-index:500;display:flex;gap:10px;padding:6px 10px;border-radius:10px;background:#0B1220dd;font-size:11px;color:var(--sub)">' + ['ok','tight','late'].map((v) => '<span class="row" style="gap:5px"><span style="width:8px;height:8px;border-radius:4px;background:' + MP_V[v][1] + '"></span>' + MP_V[v][0] + '</span>').join('') + '</div>';
   const mapBox = '<div style="position:relative;width:100%;height:' + (isWide() ? 'calc(100vh - 170px)' : '56vh') + ';min-height:360px;border-radius:18px;overflow:hidden;border:1px solid var(--line);background:#0B1220"><div id="mapSlot" style="position:absolute;inset:0"></div>' + overlay + '</div>';
   if (isWide()) return top + '<div style="display:grid;grid-template-columns:minmax(0,1fr) 360px;gap:14px;align-items:start">' + mapBox + '<div class="col" style="gap:10px;max-height:calc(100vh - 170px);overflow:auto;padding-right:2px">' + (panel || list) + '</div></div>';
@@ -1740,7 +1741,8 @@ function mpDrawFallback(slot) {
   const W = 1000, H = 600, X = (o) => (o - minO) / (maxO - minO) * W, Y = (a) => H - (a - minA) / (maxA - minA) * H;
   const pts = (arr) => arr.map((p) => X(p[1]).toFixed(1) + ',' + Y(p[0]).toFixed(1)).join(' ');
   let svg = '<svg viewBox="0 0 ' + W + ' ' + H + '" preserveAspectRatio="none" style="position:absolute;inset:0;width:100%;height:100%"><defs><pattern id="mzg" width="40" height="40" patternUnits="userSpaceOnUse"><path d="M40 0H0V40" fill="none" stroke="#141D30" stroke-width="1"/></pattern></defs><rect width="' + W + '" height="' + H + '" fill="url(#mzg)"/>' +
-    '<polygon points="' + pts(US_OUT) + '" fill="#111B2E" stroke="#2A3A58" stroke-width="2" stroke-linejoin="round"/>';
+    (STATES ? STATES.map((f) => { const g = f.geometry, polys = g.type === 'Polygon' ? [g.coordinates] : g.coordinates, z = tzOf(zoneOfState(f.ab)), on = S.mp.tint && (!S.mp.zone || S.mp.zone === z[0]); return polys.map((pl) => '<polygon points="' + pl[0].map((q) => X(q[0]).toFixed(1) + ',' + Y(q[1]).toFixed(1)).join(' ') + '" fill="' + (on ? z[3] : '#111B2E') + '" fill-opacity="' + (on ? 0.16 : 1) + '" stroke="#3A4C6E" stroke-width="1"/>').join(''); }).join('') + STATES.filter((f) => !SMALL_ST[f.ab]).map((f) => '<text x="' + X(f.c[1]).toFixed(1) + '" y="' + (Y(f.c[0]) + 4).toFixed(1) + '" text-anchor="middle" font-size="12" font-weight="700" fill="#9FB0CA" opacity=".7" font-family="Inter,system-ui">' + f.ab + '</text>').join('')
+      : '<polygon points="' + pts(US_OUT) + '" fill="#111B2E" stroke="#2A3A58" stroke-width="2" stroke-linejoin="round"/>');
   MP.forEach((k) => {
     if (k.u === S.mp.sel) return;
     svg += '<polyline points="' + pts(k.pts) + '" fill="none" stroke="#5B9DFF" stroke-width="2" opacity="' + (S.mp.sel ? 0.12 : 0.35) + '" stroke-linecap="round"/>';
@@ -1761,6 +1763,8 @@ function mpDrawFallback(slot) {
   slot.dataset.fb = '1';
 }
 function mpClick(d) {
+  if (d.mpz !== undefined) { S.mp.zone = S.mp.zone === d.mpz ? '' : d.mpz; if (LMAP) mpStatesLayer(); render(); return true; }
+  if (d.act === 'mptint') { S.mp.tint = !S.mp.tint; if (LMAP) mpStatesLayer(); render(); return true; }
   if (d.act === 'mpfit') { S.mp.follow = false; mpFit(); return true; }
   if (d.act === 'mpfollow') { S.mp.follow = !S.mp.follow; render(); return true; }
   return false;
@@ -1768,7 +1772,7 @@ function mpClick(d) {
 
 function mpMount() {
   const slot = document.getElementById('mapSlot'); if (!slot) return;
-  if (S.mp.fail) { mpDrawFallback(slot); return; }
+  if (S.mp.fail) { mpLoadStates(); mpDrawFallback(slot); return; }
   slot.innerHTML = '<div style="position:absolute;inset:0;display:flex;align-items:center;justify-content:center;color:var(--muted);font-size:13px">' + (S.lang === 'en' ? 'Loading map…' : (S.lang === 'uz' ? 'Xarita yuklanmoqda…' : 'Загружаю карту…')) + '</div>';
   mpLoadLib(() => {
     const sl = document.getElementById('mapSlot'); if (!sl || S.view !== 'map') return;
@@ -1778,13 +1782,15 @@ function mpMount() {
         LMAP_EL = document.createElement('div'); LMAP_EL.style.cssText = 'position:absolute;inset:0;background:#0B1220';
         sl.innerHTML = ''; sl.appendChild(LMAP_EL);
         LMAP = L.map(LMAP_EL, { zoomControl: true, attributionControl: true, worldCopyJump: true }).setView([38.5, -97], 4);
-        L.tileLayer('https://{s}.basemaps.cartocdn.com/dark_all/{z}/{x}/{y}{r}.png', { maxZoom: 18, subdomains: 'abcd', attribution: '&copy; OpenStreetMap &copy; CARTO' }).addTo(LMAP);
+        L.tileLayer('https://{s}.basemaps.cartocdn.com/dark_nolabels/{z}/{x}/{y}{r}.png', { maxZoom: 18, subdomains: 'abcd', attribution: '&copy; OpenStreetMap &copy; CARTO' }).addTo(LMAP);
         MP.forEach((k) => {
           LLINES.push(L.polyline(k.pts, { color: '#5B9DFF', weight: 2, opacity: 0.25 }).addTo(LMAP));
           const st = mpState(k);
           LMK[k.u] = L.marker(st.ll, { icon: mpIcon(k, st.hd), riseOnHover: true }).addTo(LMAP).on('click', () => { S.mp.sel = k.u; S.mp.pick = false; render(); });
         });
         LMAP.fitBounds(L.latLngBounds(MP.map((k) => k.pts).flat()), { padding: [30, 30] });
+        if (LMAP.on) LMAP.on('zoomend', mpStatesLayer);
+        mpLoadStates(mpStatesLayer);
       } else { sl.innerHTML = ''; sl.appendChild(LMAP_EL); }
       setTimeout(() => { try { LMAP.invalidateSize(); } catch (x) {} }, 30);
       mpDecor();
@@ -1799,6 +1805,7 @@ function mpTick() {
     document.querySelectorAll('[data-mleft="' + k.u + '"]').forEach((el) => { el.textContent = st.next ? Math.round(st.left) + ' mi' : '—'; });
     document.querySelectorAll('[data-meta="' + k.u + '"]').forEach((el) => { if (st.etaH) el.textContent = hm(st.etaH); });
   });
+  document.querySelectorAll('[data-tzclk]').forEach((el) => { el.textContent = tzClock(el.dataset.tzclk); });
   const k = MP.filter((x) => x.u === S.mp.sel)[0];
   if (k && LMAP && LDONE && LAHEAD && !S.mp.fail) {
     const st = mpState(k), done = [], ahead = [st.ll];
@@ -1810,12 +1817,74 @@ function mpTick() {
   const slot = document.getElementById('mapSlot'); if (slot && slot.dataset.fb) mpDrawFallback(slot);
 }
 
+/* ---------------- map v3: US time-zone clocks on top, state borders + abbreviations, soft time-zone tint ---------------- */
+S.mp.zone = ''; S.mp.tint = true;
+const TZ4 = [['pt','Pacific','America/Los_Angeles','#3BA7C9'],['mt','Mountain','America/Denver','#E58A6E'],['ct','Central','America/Chicago','#E2B85A'],['et','Eastern','America/New_York','#36C2A8']];
+const FIPS = { '01':'AL','04':'AZ','05':'AR','06':'CA','08':'CO','09':'CT','10':'DE','11':'DC','12':'FL','13':'GA','16':'ID','17':'IL','18':'IN','19':'IA','20':'KS','21':'KY','22':'LA','23':'ME','24':'MD','25':'MA','26':'MI','27':'MN','28':'MS','29':'MO','30':'MT','31':'NE','32':'NV','33':'NH','34':'NJ','35':'NM','36':'NY','37':'NC','38':'ND','39':'OH','40':'OK','41':'OR','42':'PA','44':'RI','45':'SC','46':'SD','47':'TN','48':'TX','49':'UT','50':'VT','51':'VA','53':'WA','54':'WV','55':'WI','56':'WY' };
+/* main zone of each state (split states use the zone most of the state is in) */
+const ST_ZONE = { WA:'pt',OR:'pt',CA:'pt',NV:'pt', ID:'mt',MT:'mt',WY:'mt',UT:'mt',CO:'mt',AZ:'mt',NM:'mt', ND:'ct',SD:'ct',NE:'ct',KS:'ct',OK:'ct',TX:'ct',MN:'ct',IA:'ct',MO:'ct',AR:'ct',LA:'ct',WI:'ct',IL:'ct',MS:'ct',AL:'ct',TN:'ct' };
+const SMALL_ST = { RI:1, DE:1, DC:1, CT:1, NJ:1, MD:1, MA:1, NH:1, VT:1 };
+let STATES = null, ST_LOAD = 0;
+function zoneOfState(ab) { return ST_ZONE[ab] || 'et'; }
+function tzClock(iana) { try { return new Date().toLocaleTimeString('en-US', { timeZone: iana, hour: 'numeric', minute: '2-digit' }); } catch (e) { return '--:--'; } }
+function tzDay(iana) { try { return new Date().toLocaleDateString(S.lang === 'en' ? 'en-US' : (S.lang === 'uz' ? 'uz-Latn' : 'ru-RU'), { timeZone: iana, weekday: 'short', day: 'numeric', month: 'short' }); } catch (e) { return ''; } }
+function inRing(pt, ring) { let c = false; for (let i = 0, j = ring.length - 1; i < ring.length; j = i++) { const xi = ring[i][0], yi = ring[i][1], xj = ring[j][0], yj = ring[j][1]; if (((yi > pt[1]) !== (yj > pt[1])) && (pt[0] < (xj - xi) * (pt[1] - yi) / (yj - yi) + xi)) c = !c; } return c; }
+function stateAt(ll) {
+  if (!STATES) return '';
+  const pt = [ll[1], ll[0]];
+  for (const f of STATES) { const g = f.geometry, polys = g.type === 'Polygon' ? [g.coordinates] : g.coordinates; for (const p of polys) if (inRing(pt, p[0])) return f.ab; }
+  return '';
+}
+function zoneOf(ll) { const ab = stateAt(ll); if (ab) return zoneOfState(ab); const o = ll[1]; return o < -114.5 ? 'pt' : (o < -102 ? 'mt' : (o < -86.5 ? 'ct' : 'et')); }
+function tzOf(code) { return TZ4.filter((z) => z[0] === code)[0] || TZ4[2]; }
+function mpLoadStates(cb) {
+  if (STATES) return cb && cb();
+  if (ST_LOAD) return; ST_LOAD = 1;
+  const done = (topo) => {
+    try {
+      const fc = window.topojson.feature(topo, topo.objects.states);
+      STATES = fc.features.filter((f) => FIPS[String(f.id).padStart(2, '0')]).map((f) => {
+        f.ab = FIPS[String(f.id).padStart(2, '0')];
+        const g = f.geometry, polys = g.type === 'Polygon' ? [g.coordinates] : g.coordinates;
+        let best = polys[0][0], area = 0;
+        polys.forEach((p) => { const r = p[0]; let a = 0; for (let i = 0, j = r.length - 1; i < r.length; j = i++) a += (r[j][0] + r[i][0]) * (r[j][1] - r[i][1]); if (Math.abs(a) > area) { area = Math.abs(a); best = r; } });
+        let x = 0, y = 0; best.forEach((p) => { x += p[0]; y += p[1]; }); f.c = [y / best.length, x / best.length];
+        return f;
+      });
+      ST_LOAD = 2; if (S.view === 'map') { if (LMAP) mpStatesLayer(); else render(); }
+      if (cb) cb();
+    } catch (e) { ST_LOAD = 3; console.warn('states', e); }
+  };
+  const go = () => fetch('https://cdn.jsdelivr.net/npm/us-atlas@3.0.1/states-10m.json').then((r) => r.json()).then(done).catch(() => { ST_LOAD = 3; });
+  if (window.topojson) return go();
+  const s = document.createElement('script'); s.src = 'https://cdn.jsdelivr.net/npm/topojson-client@3.1.0/dist/topojson-client.min.js';
+  s.onload = go; s.onerror = () => { ST_LOAD = 3; }; document.head.appendChild(s);
+}
+let LSTATES = null, LLABELS = [];
+function mpStatesLayer() {
+  const L = window.L; if (!LMAP || !L || !STATES) return;
+  if (LSTATES) LMAP.removeLayer(LSTATES); LLABELS.forEach((m) => LMAP.removeLayer(m)); LLABELS = [];
+  LSTATES = L.geoJSON({ type: 'FeatureCollection', features: STATES }, { interactive: false, style: (f) => { const z = tzOf(zoneOfState(f.ab)); const on = S.mp.tint && (!S.mp.zone || S.mp.zone === z[0]); return { color: '#3A4C6E', weight: 1, fillColor: z[3], fillOpacity: on ? 0.13 : 0.02 }; } }).addTo(LMAP);
+  if (LSTATES.bringToBack) LSTATES.bringToBack();
+  const zoom = LMAP.getZoom ? LMAP.getZoom() : 4;
+  STATES.forEach((f) => { if (SMALL_ST[f.ab] && zoom < 6) return; LLABELS.push(L.marker(f.c, { interactive: false, zIndexOffset: -500, icon: L.divIcon({ className: 'mzAb', iconSize: [30, 14], iconAnchor: [15, 7], html: '<div style="font:700 11px Inter,system-ui;letter-spacing:.04em;color:#9FB0CA;opacity:.75;text-align:center">' + f.ab + '</div>' }) }).addTo(LMAP)); });
+}
+function tzStrip() {
+  const mine = tzRow(S.tzc), mineIana = mine ? mine[1] : 'America/Chicago';
+  const cnt = {}; MP.forEach((k) => { const z = zoneOf(mpState(k).ll); cnt[z] = (cnt[z] || 0) + 1; });
+  const box = (key, title, iana, col, n) => '<button class="card col" ' + (key ? 'data-mpz="' + key + '"' : 'data-mpz=""') + ' style="flex:1 0 118px;padding:10px 12px;border-radius:14px;gap:2px;text-align:center;align-items:center;' + (col ? 'background:' + col + (S.mp.zone === key ? '33' : '14') + ';border-color:' + col + (S.mp.zone === key ? '' : '55') : 'background:var(--raised)') + '">' +
+    '<span class="xs" style="color:' + (col || 'var(--sub)') + ';font-weight:600">' + title + '</span><b style="font-size:22px;font-variant-numeric:tabular-nums;letter-spacing:-.01em" data-tzclk="' + iana + '">' + tzClock(iana) + '</b><span class="xs muted" data-tzday="' + iana + '">' + tzDay(iana) + '</span>' + (key ? '<span class="xs" style="color:var(--sub)">' + tr3((n || 0) + ' трак.', (n || 0) + ' trucks', (n || 0) + ' trak') + '</span>' : '') + '</button>';
+  return '<div class="row" style="gap:8px;overflow-x:auto;padding-bottom:2px">' + box('', '⌂ Ваше время', mineIana, '', 0) + TZ4.map((z) => box(z[0], z[1], z[2], z[3], cnt[z[0]])).join('') + '</div>';
+}
+
 const VIEWS = { custom:vCustom, ai:vAi, support:vSupport, answers:vAnswers, map:vMap, setup:vSetup, ub:vUb, home:vHome, shift:vShift, updates:vUpdates, eta:vEta, groups:vGroups, features:vFeatures, help:vHelp, settings:vSettings, plans:vPlans, agents:vAgents, work:vWork, tz:vTz, board:vBoard, drivers:vDrivers };
 const TABS = [['home','Главная','home'],['updates','Апдейты','send'],['big','Большой экран','monitor'],['features','Функции','grid'],['settings','Настройки','sliders']];
 const NAV = [['home','Главная','home'],['ub','Update Board','bell'],['map','Слежка','map'],['board','Доска грузов','truck'],['drivers','Водители','wheel'],['updates','Апдейты','send'],['eta','Расчёт ETA','pin'],['groups','Группы','users'],['features','Все функции','grid'],['help','Инструкция','help'],['settings','Настройки','sliders']];
 const TAB_OF = { ai:'home', support:'settings', answers:'settings', map:'home', ub:'home', shift:'home', eta:'home', board:'home', drivers:'home', groups:'home', help:'settings', plans:'settings', agents:'settings', work:'settings', tz:'settings' };
 
 const EN = {
+"⌂ Ваше время":"⌂ Your time",
+"Пояса":"Zones",
 "Поиск":"Search",
 "Street грузы ваши, Amazon пока пример.":"Street loads are yours, Amazon is a sample for now.",
 "Пример данных. Добавьте свой груз кнопкой справа.":"Sample data. Add your load with the button on the right.",
@@ -2095,7 +2164,7 @@ const EN = {
 "Окно и бот: русский, английский и узбекский. Водителей бот понимает и на турецком и отвечает им на их языке.":"The window and the bot: Russian, English and Uzbek. The bot also understands drivers in Turkish and answers them in their language.","Да, командой /tr: русский текст превращается в короткое английское сообщение водителю, английский переводится на русский. Например: /tr пришли фото BOL":"Yes, with /tr: Russian text becomes a short English message for the driver, English is translated to Russian. Example: /tr пришли фото BOL","Тарифы отличаются числом водителей и апдейтов в день. Оплата заработает после запуска сервера.":"Plans differ by number of drivers and updates a day. Payment works after the server launch.","Русский, английский, узбекский":"Russian, English, Uzbek","Окно, бот и ответы":"Window, bot and answers","Турецкий для водителей":"Turkish for drivers","Бот понимает водителей на турецком и отвечает им по-турецки":"The bot understands drivers in Turkish and answers them in Turkish","Язык окна и бота":"Window and bot language","Окно переключается сразу.":"The window switches right away.","Язык сообщений бота":"Bot messages language","Сменить и в боте":"Change in the bot too","Водителям бот отвечает на их языке, в том числе на турецком.":"The bot answers drivers in their language, Turkish included.","Русский":"Russian","Английский":"English","Узбекский":"Uzbek",
 "Кнопка «Разобрать фото» в /proof":"The “Read the photos” button in /proof","Перерыв 30 мин после 8 ч, отдых 10 ч. Остаток часов из ELD в плане":"30-min break after 8 h, 10-h rest. Hours left from the ELD planned","Пояс по штату готов. Цепочка стопов после подключения борда":"Zone by state is ready. The stop chain after the board is connected","Команда /eta":"The /eta command","Командой или формой в окне, ответ в чате":"By command or the window form, answer in the chat","Другие темы бот вежливо отклоняет, отвечает по вашей базе знаний":"Other topics are politely declined, answers use your knowledge base","Команда /tr: русский → английский для водителя и обратно":"The /tr command: Russian → English for the driver and back","Агенты 24/7":"Agents 24/7","Водитель ждёт ответа, молчит, тревога, стоянка, нет GPS, автоответ":"Driver waiting, silent, alarm, long stop, no GPS, auto-reply","Какой груз и на сколько. После подключения борда":"Which load and by how much. After the board is connected","Сам в конце смены или командой /report":"By itself at shift end or with /report","Утренняя сводка":"Morning summary","Каждое утро в 09:00 в режиме 24/7":"Every morning at 09:00 in 24/7 mode","Фото, сообщения и письмо брокеру при простое":"Photos, messages and a detention email to the broker","Настройки, расписание, тарифы, агенты, рабочее время":"Settings, schedule, plans, agents, working time","Рабочее время и часовой пояс":"Working time and time zone","Смена или 24/7, дни недели, разовые выходные":"Shift or 24/7, weekdays, one-off days off","Экран готов. Данные грузов после подключения борда":"The screen is ready. Load data after the board is connected","Группы и настройки уже отдельно. Свой ELD и шифрование ключей на сервере":"Groups and settings are already separate. Own ELD and key encryption on the server","Тарифы и смена тарифа готовы. Оферта и пробная неделя в плане":"Plans and plan changes are ready. Offer and trial week planned",
 "Расчёт ETA":"ETA calculation","От GPS трака до стопа: пробки, часы водителя, погода":"From truck GPS to the stop: traffic, driver hours, weather","Посчитать ETA":"Calculate ETA","Номер трака, например 2080":"Truck number, for example 2080","Адрес стопа, например PDX9, Troutdale, OR":"Stop address, for example PDX9, Troutdale, OR","Appointment по времени стопа, например 21.11 16:20":"Appointment in stop time, for example 21.11 16:20","Штат в адресе (OR, TX...) нужен, чтобы знать часовой пояс стопа. Appointment можно не писать.":"The state in the address (OR, TX...) tells the stop time zone. The appointment is optional.","Посчитать в чате с ботом":"Calculate in the bot chat","Ответ придёт в чат с ботом.":"The answer comes to the bot chat.","Ответ придёт в чат с ботом. Пока /eta работает только у владельца бота: GPS берётся из его Samsara. У вас заработает после подключения вашего ELD на сервере (в плане).":"The answer comes to the bot chat. For now /eta works only for the bot owner: GPS comes from the owner's Samsara. It works for you after your ELD is connected on the server (planned).","Пример разбора: Load 1042":"Sample breakdown: Load 1042","Напишите номер трака и адрес стопа":"Write the truck number and the stop address","Команда скопирована: вставьте её в чат и отправьте":"Command copied: paste it in the chat and send","Окно и бот переключаются на этот язык":"The window and the bot switch to this language","Написать в поддержку":"Write to support","Все команды бота":"All bot commands",
-"Modenzo AI · версия окна 2026-11-22 05:10":"Modenzo AI · window version 2026-11-22 05:10",
+"Modenzo AI · версия окна 2026-11-22 06:00":"Modenzo AI · window version 2026-11-22 06:00",
 "Это пример. Настоящие черновики приходят в чат с ботом с теми же кнопками: «Отправить», «Изменить», «Пропустить».":"This is an example. Real drafts come to the bot chat with the same buttons: “Send”, “Edit”, “Skip”.","Сохранить текст":"Save text","Отмена":"Cancel","Текст изменён вами":"Text edited by you","Текст сохранён. Нажмите «Отправить»":"Text saved. Tap “Send”",
 "Активация":"Activation","Опрос":"Survey","7 коротких вопросов в чате с ботом":"7 short questions in the bot chat","Выбрать и оплатить":"Pick and pay","Ключ на проверке":"Key being checked","Бот добавлен хотя бы в одну группу":"The bot is in at least one group","Настройки уже можно менять. Апдейты включатся после всех шагов.":"You can change settings already. Updates turn on after all steps.","Отправить ключ заново":"Send the key again","Ключ ELD на проверке":"ELD key being checked","Ключ получен и проверяется. Как только он заработает, апдейты можно будет включить. Если ключ неверный, отправьте новый.":"The key is received and being checked. Once it works you can turn updates on. If the key is wrong, send a new one.","Почему некоторые кнопки с замком?":"Why do some buttons have a lock?","Пока активация не закончена, часть функций закрыта, чтобы ничего не сломать. Шаги: опрос, тариф, ELD, хотя бы одна группа водителя. Нажмите на кнопку с замком: окно подскажет, какой шаг остался, и даст кнопку, чтобы его сделать. Например, ELD подключается командой /eld":"Until activation is finished some features are closed so nothing breaks. Steps: survey, plan, ELD, at least one driver group. Tap a locked button: the window tells you which step is left and gives a button to do it. For example, the ELD is connected with /eld","Ключ, чтобы бот видел, где траки":"A key so the bot sees where trucks are","Пока активация не закончена, окно работает только для просмотра.":"Until activation is finished the window is view-only.","Сначала пройдите опрос":"Finish the survey first","Это 7 коротких вопросов в чате с ботом: борд, грузы, ELD, коллеги, часовой пояс, смена, число водителей. После него функции включатся. Смотреть окно можно и сейчас.":"It is 7 short questions in the bot chat: board, freight, ELD, teammates, time zone, shift, number of drivers. Then features turn on. You can look around the window already.","Выбрать тариф":"Pick a plan","Выберите и оплатите тариф":"Pick and pay for a plan","Функции включатся после оплаты. Смотреть окно, тарифы и инструкцию можно и сейчас.":"Features turn on after payment. You can look at the window, plans and guide already.","Подключите ELD":"Connect your ELD","Подключить ELD":"Connect ELD","Без ELD бот не видит, где траки, и апдейты будут без местоположения. Бот спросит, какой у вас ELD, и проверит ключ. Это пара минут.":"Without an ELD the bot cannot see where trucks are and updates have no location. The bot asks which ELD you have and checks the key. It takes a couple of minutes.","Добавьте бота в группу водителя":"Add the bot to a driver group","Апдейты идут в группы водителей. Добавьте бота хотя бы в одну группу, и он сам проверит, видит ли сообщения.":"Updates go to driver groups. Add the bot to at least one group and it checks by itself whether it can read messages.","Как добавить":"How to add","Пройти опрос":"Take survey","Группы водителей":"Driver groups","Тариф":"Plan","Понятно":"Got it",
 "Окно переключается на этот язык. Язык ответов бота: /start":"The window switches to this language. The bot's reply language: /start","Окно переключается на этот язык":"The window switches to this language",
@@ -2204,6 +2273,8 @@ const EN = {
 'Telegram не дал включить полный экран на этом устройстве':'Telegram did not allow full screen on this device','Отдых 10 ч, до 04:00':'10 h rest, until 04:00','после отдыха 11 ч':'11 h after rest','У шиппера · 40 мин':'At shipper · 40 min'
 };
 const UZ = {
+"⌂ Ваше время":"⌂ Sizning vaqtingiz",
+"Пояса":"Mintaqalar",
 "Поиск":"Qidiruv",
 "Street грузы ваши, Amazon пока пример.":"Street yuklar sizniki, Amazon hozircha namuna.",
 "Пример данных. Добавьте свой груз кнопкой справа.":"Namunaviy ma'lumot. O'z yukingizni o'ngdagi tugma bilan qo'shing.",
@@ -2872,7 +2943,7 @@ const UZ = {
 "готовится":"tayyorlanmoqda",
 "Тарифы отличаются только числом водителей. Оплата заработает после запуска сервера.":"Tariflar haydovchilar va kunlik apdeytlar soni bilan farq qiladi. To'lov server ishga tushgandan keyin ishlaydi.",
 "Или командой в чате, например: /plan pro":"Yoki chatda buyruq bilan, masalan: /plan pro",
-"Modenzo AI · версия окна 2026-11-22 05:10":"Modenzo AI · oyna versiyasi 2026-11-22 05:10",
+"Modenzo AI · версия окна 2026-11-22 06:00":"Modenzo AI · oyna versiyasi 2026-11-22 06:00",
 "Все функции и агенты на любом тарифе. Отличаются число водителей, апдейтов в день и режим.":"Barcha funksiyalar va agentlar har qanday tarifda. Haydovchilar, kunlik apdeytlar soni va rejim bilan farq qiladi.",
 "Смена":"Smena",
 "дешевле":"arzonroq",
