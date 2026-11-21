@@ -871,7 +871,7 @@ function vSettings() {
     '<div class="col" style="gap:10px"><div class="label">Подключения и команда</div><div class="listcard list"><button data-go="groups" class="row" style="justify-content:space-between;width:100%;background:none;border:0;border-bottom:1px solid var(--line2);font-size:15px;text-align:left"><span>Группы водителей</span><span class="row small muted" style="gap:6px">' + (S.plan === 'owner' ? S.used : S.used + ' из ' + S.lim) + ' ' + ic('chev', 16, 'var(--muted)', 2) + '</span></button><div class="row" style="justify-content:space-between"><span>ELD · Samsara</span><span class="small" style="color:var(--mint-t)">Подключено (пример)</span></div><div class="row" style="justify-content:space-between"><span>Борд (Google Sheets)</span><span class="small muted">Update Board</span></div><div class="row" style="justify-content:space-between"><span>Тиммейты</span><span class="small muted">3 человека</span></div><div class="row" style="justify-content:space-between"><span>Amazon Relay</span><span class="chip c-plan">План</span></div></div></div>' +
     '<div class="col" style="gap:10px"><div class="label">Уведомления мне</div><div class="listcard list">' + nl.map((t) => '<div class="row"><span class="col" style="flex:1"><span>' + t[1] + '</span><span class="xs muted">' + t[2] + '</span></span><button class="toggle' + (S.notif[t[0]] ? ' on' : '') + '" data-notif="' + t[0] + '" aria-label="' + t[1] + '"><span></span></button></div>').join('') + '</div></div>' +
     '<div class="col" style="gap:10px"><div class="label">Тариф и оплата</div>' + planCard(true) + '<div class="listcard list">' + [['Пробная неделя','появится позже'],['Оплата','Click · Payme · другие'],['Оферта','готовится']].map((r) => '<div class="row" style="justify-content:space-between"><span>' + r[0] + '</span><span class="small muted">' + r[1] + '</span></div>').join('') + '</div><div class="xs muted">Тарифы отличаются числом водителей и апдейтов в день. Оплата заработает после запуска сервера.</div><div class="xs muted">Или командой в чате, например: /plan pro</div></div>' +
-    '<div class="xs" style="text-align:center;color:var(--faint)">Modenzo AI · версия окна 2026-11-22 09:40</div>';
+    '<div class="xs" style="text-align:center;color:var(--faint)">Modenzo AI · версия окна 2026-11-22 10:30</div>';
 }
 
 function inTab(l, t) { return t === 'all' || (t === 'risk' ? (l.v === 'late' || l.v === 'tight') && l.st !== 'delivered' : l.st === t); }
@@ -1482,7 +1482,7 @@ function sendText(text) {
 }
 
 /* ---------- loads: Amazon rows (demo until the Relay extension) + Street rows (from the bot, param ld) ---------- */
-const LST = { ns:['Not started','c-plan'], dp:['Dispatched','c-disp'], pu:['At pickup','c-dev'], tr:['In transit','c-done'], dl:['At delivery','c-dev'], dn:['Delivered','c-gray'], cx:['Cancelled','c-gray'] };
+const LST = { ns:['Upcoming','c-plan'], dp:['Dispatched','c-disp'], pu:['At pickup','c-dev'], tr:['In transit','c-done'], dl:['At delivery','c-dev'], dn:['Delivered','c-gray'], cx:['Cancelled','c-gray'] };
 const LST_ORDER = ['ns','dp','pu','tr','dl','dn'];
 const AMZ_ST = { upcoming:'ns', dispatched:'dp', transit:'tr', delivered:'dn' };
 let STREET = [
@@ -1512,10 +1512,10 @@ function vBoard() {
   const bySrc = all.filter((r) => S.src === 'all' || r.src === S.src);
   const rows = bySrc.filter((r) => lTab(r, S.tab) && (!q || (r.no + ' ' + r.who + ' ' + r.stop).toLowerCase().indexOf(q) >= 0));
   const sel = all.filter((r) => r.key === S.lsel)[0] || rows[0] || all[0];
-  const tabs = [['all','Все'],['risk','At risk'],['ns','Not started'],['dp','Dispatched'],['transit','In transit'],['dn','Delivered']];
+  const tabs = [['all','Все'],['risk','At risk'],['ns','Upcoming'],['dp','Dispatched'],['transit','In transit'],['dn','Delivered']];
   const srcBtn = (k, label, n, sub) => '<button class="seg' + (S.src === k ? ' on' : '') + '" data-src="' + k + '" style="height:44px;padding:0 14px;font-size:13px;display:flex;flex-direction:column;justify-content:center;gap:1px;line-height:1.1"><span><b>' + label + '</b> · ' + n + '</span>' + (sub ? '<span style="font-size:10px;opacity:.75">' + sub + '</span>' : '') + '</button>';
   const sum = STREET.filter((l) => l.st !== 'cx').reduce((s, l) => s + (l.rate || 0), 0);
-  const kpi = [['В пути', bySrc.filter((r) => ['pu','tr','dl'].indexOf(r.st) >= 0).length, 'var(--mint-t)'], ['At risk', bySrc.filter((r) => lTab(r, 'risk')).length, 'var(--red)'], ['Not started', bySrc.filter((r) => r.st === 'ns').length, 'var(--blue)'], ['Delivered', bySrc.filter((r) => r.st === 'dn').length, 'var(--text)'], ['Street, ставки', '$' + sum.toLocaleString('en-US'), 'var(--amber)']];
+  const kpi = [['В пути', bySrc.filter((r) => ['pu','tr','dl'].indexOf(r.st) >= 0).length, 'var(--mint-t)'], ['At risk', bySrc.filter((r) => lTab(r, 'risk')).length, 'var(--red)'], ['Upcoming', bySrc.filter((r) => r.st === 'ns').length, 'var(--blue)'], ['Delivered', bySrc.filter((r) => r.st === 'dn').length, 'var(--text)'], ['Street, ставки', '$' + sum.toLocaleString('en-US'), 'var(--amber)']];
   let detail = '';
   if (sel && sel.src === 'amazon') {
     const l = sel.raw;
@@ -1953,7 +1953,7 @@ async function apiSupport(tp, tx) {
 }
 async function apiLoad(text) {
   S.busy = 'load'; render();
-  try { const j = await apiCall('/api/load', { tx: text }); S.addRes = { ok: j.ok, texts: j.texts || [] }; }
+  try { const j = await apiCall('/api/load', { tx: text }); if (!draftFromReply(j)) S.addRes = { ok: j.ok, texts: j.texts || [] }; }
   catch (e) { apiFail(e); return; }
   S.busy = ''; render();
 }
@@ -1964,7 +1964,7 @@ async function apiUpload() {
   if (!/pdf|jpe?g|png/i.test(f.type || f.name)) { toast('Только PDF, JPG или PNG'); return; }
   const fd = new FormData(); fd.append('file', f, f.name);
   S.busy = 'load'; S.addRes = null; render();
-  try { const j = await apiCall('/api/upload', null, fd); S.addRes = { ok: j.ok, texts: j.texts || [] }; }
+  try { const j = await apiCall('/api/upload', null, fd); if (!draftFromReply(j)) S.addRes = { ok: j.ok, texts: j.texts || [] }; }
   catch (e) { apiFail(e); return; }
   S.busy = ''; render();
 }
@@ -2034,7 +2034,7 @@ async function takeRcFile(f) {
   if (f.size > 10 * 1024 * 1024) { a.drop = { name: f.name, st: 'big' }; render(); return; }
   const isPdf = /pdf/i.test(f.type) || /\.pdf$/i.test(f.name), isImg = /^image\/(jpeg|png)$/i.test(f.type) || /\.(jpe?g|png)$/i.test(f.name);
   if (!isPdf && !isImg) { a.drop = { name: f.name, st: 'type' }; render(); return; }
-  if (apiOn()) { const fd = new FormData(); fd.append('file', f, f.name); S.busy = 'load'; S.addRes = null; render(); try { const j = await apiCall('/api/upload', null, fd); S.addRes = { ok: j.ok, texts: j.texts || [] }; } catch (e) { apiFail(e); return; } S.busy = ''; render(); return; }
+  if (apiOn()) { const fd = new FormData(); fd.append('file', f, f.name); S.busy = 'load'; S.addRes = null; render(); try { const j = await apiCall('/api/upload', null, fd); if (!draftFromReply(j)) S.addRes = { ok: j.ok, texts: j.texts || [] }; } catch (e) { apiFail(e); return; } S.busy = ''; render(); return; }
   if (isImg) { a.drop = { name: f.name, st: 'photo' }; render(); return; }
   a.drop = { name: f.name, st: 'reading' }; render();
   let text = '';
@@ -2047,7 +2047,7 @@ function dropZone() {
   const a = S.addL, d = a.drop || {};
   const msg = { reading: ['⏳', 'Читаю файл…', 'Проверяю, что это rate confirmation.'], big: ['⚠️', 'Файл больше 10 МБ', 'Выберите файл поменьше.'], type: ['⛔', 'Это не PDF и не фото', 'Принимаю только rate confirmation: PDF, JPG или PNG.'],
     notrc: ['⛔', 'Это не rate confirmation', 'Файл не принят. Проверка бесплатная, ИИ не потратился.'], photo: ['📷', 'Фото принято', 'Фото и сканы бот читает через чат, пока у него нет сервера. Отправьте фото в чат кнопкой ниже.'],
-    scan: ['📷', 'Это скан без текста', 'Такой файл бот прочитает через чат. Отправьте его кнопкой ниже.'], ready: ['✅', 'Rate confirmation принят', 'Нажмите «Добавить на доску»: бот прочитает детали и пришлёт карточку груза.'] }[d.st];
+    scan: ['📷', 'Это скан без текста', 'Такой файл бот прочитает через чат. Отправьте его кнопкой ниже.'], ready: ['✅', 'Rate confirmation принят', 'Нажмите «Добавить на доску»: бот прочитает детали и покажет их для проверки (брокер, appt, ставка). Если что-то не так, исправите перед добавлением.'] }[d.st];
   return '<div id="rcDrop" class="card col" style="padding:22px 16px;border-radius:16px;gap:10px;align-items:center;text-align:center;border:2px dashed ' + (d.st === 'notrc' || d.st === 'type' || d.st === 'big' ? 'var(--red)' : 'var(--mint-bd)') + ';background:#0E1F19;transition:background .15s">' +
     (msg ? '<span style="font-size:34px">' + msg[0] + '</span><b style="font-size:16px">' + msg[1] + '</b><span class="xs muted" style="word-break:break-all">' + esc(d.name || '') + '</span><span class="xs muted" style="line-height:1.5;max-width:380px">' + msg[2] + '</span>'
       : '<span style="font-size:34px">📄</span><b style="font-size:16px">Перетащите rate con сюда</b><span class="xs muted" style="line-height:1.5;max-width:380px">PDF или фото. Бот прочитает всё: стопы, адреса, PU #, appointment, ставку, брокера и его контакты.</span><div class="wrap" style="justify-content:center;gap:6px"><span class="chip c-done">PDF</span><span class="chip c-done">JPG / PNG</span><span class="chip c-gray">до 10 МБ</span></div><span class="xs" style="color:var(--amber);line-height:1.45">Другие файлы (BOL, POD, счета) не принимаются: проверка бесплатная, ИИ на них не тратится.</span>') +
@@ -2069,8 +2069,62 @@ function dropClick(d) {
   if (d.act === 'rcsend') {
     const t = S.addL && S.addL.drop && S.addL.drop.text; if (!t) return true;
     if (canSendData()) { try { tg.sendData(JSON.stringify({ v:1, k:'load', tx:t.slice(0, 3900) })); return true; } catch (x) {} }
+    if (apiOn()) { apiLoad(t); return true; }
     S.addL = null; render(); sendText('/load ' + t); return true;
   }
+  return false;
+}
+
+/* ---------------- check the read rate con before it goes to the board (editable) ---------------- */
+S.draft = null;
+function drGet(path) { return path.split('.').reduce((o, k) => (o == null ? '' : o[k]), S.draft.load); }
+function drSet(path, v) { const ks = path.split('.'); let o = S.draft.load; for (let i = 0; i < ks.length - 1; i++) { if (o[ks[i]] == null) o[ks[i]] = {}; o = o[ks[i]]; } o[ks[ks.length - 1]] = v; }
+function drField(path, label, opts) {
+  const o = opts || {}, v = drGet(path), empty = v === '' || v == null || v === 0;
+  return '<label class="col" style="gap:4px;min-width:0;' + (o.span ? 'grid-column:span ' + o.span : '') + '"><span class="xs" style="color:' + (empty && o.need ? 'var(--amber)' : 'var(--muted)') + '"><span>' + label + '</span>' + (empty && o.need ? '<span> · нет в рейтконе</span>' : '') + '</span>' +
+    '<input data-dr="' + path + '"' + (o.type ? ' type="' + o.type + '"' : '') + ' value="' + esc(v == null ? '' : String(v)) + '" placeholder="' + (o.ph || '') + '" style="height:40px;padding:0 10px;border-radius:10px;border:1px solid ' + (empty && o.need ? 'var(--amber)' : 'var(--line)') + ';background:#0B1220;color:var(--text);font:inherit;font-size:14px;min-width:0;width:100%"></label>';
+}
+function draftSheet() {
+  const dr = S.draft; if (!dr) return '';
+  const L = dr.load, stops = L.stops || [];
+  const busy = S.busy === 'draft';
+  return '<div style="position:fixed;inset:0;background:#0009;z-index:75;display:flex;align-items:flex-end;justify-content:center"><div class="card col" role="dialog" aria-label="Проверка груза" style="width:min(720px,100%);max-height:94vh;overflow:auto;padding:18px;border-radius:22px 22px 0 0;gap:14px;background:#0E1626">' +
+    '<div class="row" style="justify-content:space-between;gap:10px"><div class="col" style="gap:2px"><h2 style="font-size:20px">Проверьте груз</h2><span class="xs muted">ИИ прочитал rate con. Исправьте, если что-то не так, и добавьте на доску как Upcoming.</span></div><button class="back" data-act="drcancel" aria-label="Отмена">' + ic('x', 18) + '</button></div>' +
+    (dr.missing && dr.missing.length ? '<div class="card row" style="padding:10px 12px;border-radius:12px;gap:10px;border-color:#5A3A1F;background:#1C150E"><span style="font-size:18px">⚠️</span><span class="xs" style="line-height:1.45;color:var(--amber)">' + tr3('Нет в рейтконе: ', 'Missing in the rate con: ', "Reytkonda yo'q: ") + esc(dr.missing.join(', ')) + '. ' + tr3('Можно дописать здесь или спросить брокера.', 'Fill it in here or ask the broker.', "Shu yerda yozing yoki brokerdan so'rang.") + '</span></div>' : '') +
+    '<div style="display:grid;grid-template-columns:repeat(' + (isWide() ? 4 : 2) + ',minmax(0,1fr));gap:10px">' +
+      drField('load_no', 'Load #', { need: 1 }) + drField('rate', 'Rate $', { need: 1, type: 'number' }) + drField('equipment', 'Equipment') + drField('truck', 'Трак (юнит)') +
+      drField('broker.name', 'Брокер', { need: 1, span: 2 }) + drField('broker.contact', 'Контакт') + drField('broker.phone', 'Телефон брокера', { need: 1 }) +
+      drField('broker.email', 'Email брокера', { span: 2 }) + drField('weight', 'Вес') + drField('commodity', 'Груз') + '</div>' +
+    stops.map((s, i) => '<div class="card col" style="padding:12px;border-radius:14px;gap:10px;background:#0B1424"><div class="row" style="gap:8px"><span class="chip ' + (s.type === 'DEL' ? 'c-dev' : 'c-done') + '">' + (i + 1) + ' · ' + (s.type === 'DEL' ? 'Delivery' : 'Pickup') + '</span><b style="font-size:14px">' + esc(s.name || [s.city, s.state].filter(Boolean).join(', ')) + '</b></div>' +
+      '<div style="display:grid;grid-template-columns:repeat(' + (isWide() ? 4 : 2) + ',minmax(0,1fr));gap:10px">' + drField('stops.' + i + '.name', 'Склад / компания', { span: 2 }) + drField('stops.' + i + '.address', 'Адрес', { need: 1, span: 2 }) +
+      drField('stops.' + i + '.city', 'Город', { need: 1 }) + drField('stops.' + i + '.state', 'Штат', { ph: 'TX' }) + drField('stops.' + i + '.zip', 'ZIP') + drField('stops.' + i + '.appt', 'Тип', { ph: 'appointment / FCFS' }) +
+      drField('stops.' + i + '.date', 'Дата', { need: 1, type: 'date' }) + drField('stops.' + i + '.time', 'Время', { need: 1, type: 'time' }) + drField('stops.' + i + '.time_to', 'До (окно)', { type: 'time' }) +
+      (s.type === 'DEL' ? drField('stops.' + i + '.refs', 'Delivery # / ref') : drField('stops.' + i + '.pu_number', 'PU #', { need: 1 })) + '</div></div>').join('') +
+    (L.detention || L.requirements || L.tracking ? '<div class="xs muted" style="line-height:1.5">' + [L.detention ? 'Detention: ' + esc(L.detention) : '', L.tracking ? 'Tracking: ' + esc(L.tracking) : '', L.requirements ? esc(L.requirements) : ''].filter(Boolean).join('<br>') + '</div>' : '') +
+    '<div class="grid2" style="position:sticky;bottom:-18px;background:#0E1626;padding:10px 0 4px"><button class="btn" style="height:48px" data-act="drcancel">Отмена</button><button class="btn primary" style="height:48px;font-size:15px" data-act="drsave">' + (busy ? '…' : 'Добавить как Upcoming') + '</button></div></div></div>';
+}
+async function draftSave() {
+  if (S.busy) return;
+  S.busy = 'draft'; render();
+  try { const j = await apiCall('/api/draft/save', { id: S.draft.id, load: S.draft.load }); S.draft = null; S.addL = S.addL || { mode: 'file', text: '', f: {} }; S.addRes = { ok: j.ok, texts: j.texts || [] }; }
+  catch (e) { apiFail(e); return; }
+  S.busy = ''; render();
+}
+async function draftCancel() {
+  const id = S.draft && S.draft.id; S.draft = null; render();
+  if (id) { try { await apiCall('/api/draft/cancel', { id }); } catch (e) {} }
+  toast('Груз не добавлен');
+}
+function draftFromReply(j) {
+  if (j && j.draft && j.load) { S.draft = { id: j.draft, load: j.load, missing: j.missing || [] }; S.addL = null; S.addRes = null; return true; }
+  return false;
+}
+function draftAfterRender() {
+  document.querySelectorAll('[data-dr]').forEach((el) => ['input', 'change'].forEach((ev) => el.addEventListener(ev, () => { const p = el.dataset.dr; drSet(p, p === 'rate' ? (parseFloat(el.value) || 0) : el.value); })));
+}
+function draftClick(d) {
+  if (d.act === 'drsave') { draftSave(); return true; }
+  if (d.act === 'drcancel') { draftCancel(); return true; }
   return false;
 }
 
@@ -2080,6 +2134,25 @@ const NAV = [['home','Главная','home'],['ub','Update Board','bell'],['map
 const TAB_OF = { ai:'home', support:'settings', answers:'settings', map:'home', ub:'home', shift:'home', eta:'home', board:'home', drivers:'home', groups:'home', help:'settings', plans:'settings', agents:'settings', work:'settings', tz:'settings' };
 
 const EN = {
+"Проверьте груз":"Check the load",
+"ИИ прочитал rate con. Исправьте, если что-то не так, и добавьте на доску как Upcoming.":"The AI read the rate con. Correct anything that is wrong and add it to the board as Upcoming.",
+"· нет в рейтконе":"· not in the rate con",
+"Телефон брокера":"Broker phone",
+"Email брокера":"Broker email",
+"Контакт":"Contact",
+"Вес":"Weight",
+"Склад / компания":"Facility / company",
+"Адрес":"Address",
+"Город":"City",
+"Штат":"State",
+"Тип":"Type",
+"Дата":"Date",
+"До (окно)":"Until (window)",
+"Delivery # / ref":"Delivery # / ref",
+"Добавить как Upcoming":"Add as Upcoming",
+"Груз не добавлен":"Load not added",
+"Проверка груза":"Load check",
+"Нажмите «Добавить на доску»: бот прочитает детали и покажет их для проверки (брокер, appt, ставка). Если что-то не так, исправите перед добавлением.":"Tap \"Add to the board\": the bot reads the details and shows them for checking (broker, appt, rate). If something is wrong, correct it before adding.",
 "Перетащите rate con сюда":"Drop the rate con here",
 "PDF или фото. Бот прочитает всё: стопы, адреса, PU #, appointment, ставку, брокера и его контакты.":"PDF or photo. The bot reads everything: stops, addresses, PU #, appointments, rate, broker and contacts.",
 "Другие файлы (BOL, POD, счета) не принимаются: проверка бесплатная, ИИ на них не тратится.":"Other files (BOL, POD, invoices) are refused: the check is free, no AI is spent on them.",
@@ -2410,7 +2483,7 @@ const EN = {
 "Окно и бот: русский, английский и узбекский. Водителей бот понимает и на турецком и отвечает им на их языке.":"The window and the bot: Russian, English and Uzbek. The bot also understands drivers in Turkish and answers them in their language.","Да, командой /tr: русский текст превращается в короткое английское сообщение водителю, английский переводится на русский. Например: /tr пришли фото BOL":"Yes, with /tr: Russian text becomes a short English message for the driver, English is translated to Russian. Example: /tr пришли фото BOL","Тарифы отличаются числом водителей и апдейтов в день. Оплата заработает после запуска сервера.":"Plans differ by number of drivers and updates a day. Payment works after the server launch.","Русский, английский, узбекский":"Russian, English, Uzbek","Окно, бот и ответы":"Window, bot and answers","Турецкий для водителей":"Turkish for drivers","Бот понимает водителей на турецком и отвечает им по-турецки":"The bot understands drivers in Turkish and answers them in Turkish","Язык окна и бота":"Window and bot language","Окно переключается сразу.":"The window switches right away.","Язык сообщений бота":"Bot messages language","Сменить и в боте":"Change in the bot too","Водителям бот отвечает на их языке, в том числе на турецком.":"The bot answers drivers in their language, Turkish included.","Русский":"Russian","Английский":"English","Узбекский":"Uzbek",
 "Кнопка «Разобрать фото» в /proof":"The “Read the photos” button in /proof","Перерыв 30 мин после 8 ч, отдых 10 ч. Остаток часов из ELD в плане":"30-min break after 8 h, 10-h rest. Hours left from the ELD planned","Пояс по штату готов. Цепочка стопов после подключения борда":"Zone by state is ready. The stop chain after the board is connected","Команда /eta":"The /eta command","Командой или формой в окне, ответ в чате":"By command or the window form, answer in the chat","Другие темы бот вежливо отклоняет, отвечает по вашей базе знаний":"Other topics are politely declined, answers use your knowledge base","Команда /tr: русский → английский для водителя и обратно":"The /tr command: Russian → English for the driver and back","Агенты 24/7":"Agents 24/7","Водитель ждёт ответа, молчит, тревога, стоянка, нет GPS, автоответ":"Driver waiting, silent, alarm, long stop, no GPS, auto-reply","Какой груз и на сколько. После подключения борда":"Which load and by how much. After the board is connected","Сам в конце смены или командой /report":"By itself at shift end or with /report","Утренняя сводка":"Morning summary","Каждое утро в 09:00 в режиме 24/7":"Every morning at 09:00 in 24/7 mode","Фото, сообщения и письмо брокеру при простое":"Photos, messages and a detention email to the broker","Настройки, расписание, тарифы, агенты, рабочее время":"Settings, schedule, plans, agents, working time","Рабочее время и часовой пояс":"Working time and time zone","Смена или 24/7, дни недели, разовые выходные":"Shift or 24/7, weekdays, one-off days off","Экран готов. Данные грузов после подключения борда":"The screen is ready. Load data after the board is connected","Группы и настройки уже отдельно. Свой ELD и шифрование ключей на сервере":"Groups and settings are already separate. Own ELD and key encryption on the server","Тарифы и смена тарифа готовы. Оферта и пробная неделя в плане":"Plans and plan changes are ready. Offer and trial week planned",
 "Расчёт ETA":"ETA calculation","От GPS трака до стопа: пробки, часы водителя, погода":"From truck GPS to the stop: traffic, driver hours, weather","Посчитать ETA":"Calculate ETA","Номер трака, например 2080":"Truck number, for example 2080","Адрес стопа, например PDX9, Troutdale, OR":"Stop address, for example PDX9, Troutdale, OR","Appointment по времени стопа, например 21.11 16:20":"Appointment in stop time, for example 21.11 16:20","Штат в адресе (OR, TX...) нужен, чтобы знать часовой пояс стопа. Appointment можно не писать.":"The state in the address (OR, TX...) tells the stop time zone. The appointment is optional.","Посчитать в чате с ботом":"Calculate in the bot chat","Ответ придёт в чат с ботом.":"The answer comes to the bot chat.","Ответ придёт в чат с ботом. Пока /eta работает только у владельца бота: GPS берётся из его Samsara. У вас заработает после подключения вашего ELD на сервере (в плане).":"The answer comes to the bot chat. For now /eta works only for the bot owner: GPS comes from the owner's Samsara. It works for you after your ELD is connected on the server (planned).","Пример разбора: Load 1042":"Sample breakdown: Load 1042","Напишите номер трака и адрес стопа":"Write the truck number and the stop address","Команда скопирована: вставьте её в чат и отправьте":"Command copied: paste it in the chat and send","Окно и бот переключаются на этот язык":"The window and the bot switch to this language","Написать в поддержку":"Write to support","Все команды бота":"All bot commands",
-"Modenzo AI · версия окна 2026-11-22 09:40":"Modenzo AI · window version 2026-11-22 09:40",
+"Modenzo AI · версия окна 2026-11-22 10:30":"Modenzo AI · window version 2026-11-22 10:30",
 "Это пример. Настоящие черновики приходят в чат с ботом с теми же кнопками: «Отправить», «Изменить», «Пропустить».":"This is an example. Real drafts come to the bot chat with the same buttons: “Send”, “Edit”, “Skip”.","Сохранить текст":"Save text","Отмена":"Cancel","Текст изменён вами":"Text edited by you","Текст сохранён. Нажмите «Отправить»":"Text saved. Tap “Send”",
 "Активация":"Activation","Опрос":"Survey","7 коротких вопросов в чате с ботом":"7 short questions in the bot chat","Выбрать и оплатить":"Pick and pay","Ключ на проверке":"Key being checked","Бот добавлен хотя бы в одну группу":"The bot is in at least one group","Настройки уже можно менять. Апдейты включатся после всех шагов.":"You can change settings already. Updates turn on after all steps.","Отправить ключ заново":"Send the key again","Ключ ELD на проверке":"ELD key being checked","Ключ получен и проверяется. Как только он заработает, апдейты можно будет включить. Если ключ неверный, отправьте новый.":"The key is received and being checked. Once it works you can turn updates on. If the key is wrong, send a new one.","Почему некоторые кнопки с замком?":"Why do some buttons have a lock?","Пока активация не закончена, часть функций закрыта, чтобы ничего не сломать. Шаги: опрос, тариф, ELD, хотя бы одна группа водителя. Нажмите на кнопку с замком: окно подскажет, какой шаг остался, и даст кнопку, чтобы его сделать. Например, ELD подключается командой /eld":"Until activation is finished some features are closed so nothing breaks. Steps: survey, plan, ELD, at least one driver group. Tap a locked button: the window tells you which step is left and gives a button to do it. For example, the ELD is connected with /eld","Ключ, чтобы бот видел, где траки":"A key so the bot sees where trucks are","Пока активация не закончена, окно работает только для просмотра.":"Until activation is finished the window is view-only.","Сначала пройдите опрос":"Finish the survey first","Это 7 коротких вопросов в чате с ботом: борд, грузы, ELD, коллеги, часовой пояс, смена, число водителей. После него функции включатся. Смотреть окно можно и сейчас.":"It is 7 short questions in the bot chat: board, freight, ELD, teammates, time zone, shift, number of drivers. Then features turn on. You can look around the window already.","Выбрать тариф":"Pick a plan","Выберите и оплатите тариф":"Pick and pay for a plan","Функции включатся после оплаты. Смотреть окно, тарифы и инструкцию можно и сейчас.":"Features turn on after payment. You can look at the window, plans and guide already.","Подключите ELD":"Connect your ELD","Подключить ELD":"Connect ELD","Без ELD бот не видит, где траки, и апдейты будут без местоположения. Бот спросит, какой у вас ELD, и проверит ключ. Это пара минут.":"Without an ELD the bot cannot see where trucks are and updates have no location. The bot asks which ELD you have and checks the key. It takes a couple of minutes.","Добавьте бота в группу водителя":"Add the bot to a driver group","Апдейты идут в группы водителей. Добавьте бота хотя бы в одну группу, и он сам проверит, видит ли сообщения.":"Updates go to driver groups. Add the bot to at least one group and it checks by itself whether it can read messages.","Как добавить":"How to add","Пройти опрос":"Take survey","Группы водителей":"Driver groups","Тариф":"Plan","Понятно":"Got it",
 "Окно переключается на этот язык. Язык ответов бота: /start":"The window switches to this language. The bot's reply language: /start","Окно переключается на этот язык":"The window switches to this language",
@@ -2519,6 +2592,26 @@ const EN = {
 'Telegram не дал включить полный экран на этом устройстве':'Telegram did not allow full screen on this device','Отдых 10 ч, до 04:00':'10 h rest, until 04:00','после отдыха 11 ч':'11 h after rest','У шиппера · 40 мин':'At shipper · 40 min'
 };
 const UZ = {
+"Проверьте груз":"Yukni tekshiring",
+"ИИ прочитал rate con. Исправьте, если что-то не так, и добавьте на доску как Upcoming.":"AI rate con ni o'qidi. Noto'g'ri narsa bo'lsa tuzating va doskaga Upcoming sifatida qo'shing.",
+"· нет в рейтконе":"· reytkonda yo'q",
+"Телефон брокера":"Broker telefoni",
+"Email брокера":"Broker emaili",
+"Контакт":"Kontakt",
+"Вес":"Og'irlik",
+"Склад / компания":"Ombor / kompaniya",
+"Адрес":"Manzil",
+"Город":"Shahar",
+"Штат":"Shtat",
+"Тип":"Turi",
+"Дата":"Sana",
+"До (окно)":"Gacha (oyna)",
+"Delivery # / ref":"Delivery # / ref",
+"Отмена":"Bekor qilish",
+"Добавить как Upcoming":"Upcoming sifatida qo'shish",
+"Груз не добавлен":"Yuk qo'shilmadi",
+"Проверка груза":"Yuk tekshiruvi",
+"Нажмите «Добавить на доску»: бот прочитает детали и покажет их для проверки (брокер, appt, ставка). Если что-то не так, исправите перед добавлением.":"«Doskaga qo'shish» ni bosing: bot tafsilotlarni o'qib, tekshirish uchun ko'rsatadi (broker, appt, stavka). Noto'g'ri bo'lsa, qo'shishdan oldin tuzatasiz.",
 "Перетащите rate con сюда":"Rate con ni shu yerga tashlang",
 "PDF или фото. Бот прочитает всё: стопы, адреса, PU #, appointment, ставку, брокера и его контакты.":"PDF yoki rasm. Bot hammasini o'qiydi: stoplar, manzillar, PU #, appointment, stavka, broker va uning kontaktlari.",
 "Другие файлы (BOL, POD, счета) не принимаются: проверка бесплатная, ИИ на них не тратится.":"Boshqa fayllar (BOL, POD, hisoblar) qabul qilinmaydi: tekshiruv bepul, AI sarflanmaydi.",
@@ -3238,7 +3331,7 @@ const UZ = {
 "готовится":"tayyorlanmoqda",
 "Тарифы отличаются только числом водителей. Оплата заработает после запуска сервера.":"Tariflar haydovchilar va kunlik apdeytlar soni bilan farq qiladi. To'lov server ishga tushgandan keyin ishlaydi.",
 "Или командой в чате, например: /plan pro":"Yoki chatda buyruq bilan, masalan: /plan pro",
-"Modenzo AI · версия окна 2026-11-22 09:40":"Modenzo AI · oyna versiyasi 2026-11-22 09:40",
+"Modenzo AI · версия окна 2026-11-22 10:30":"Modenzo AI · oyna versiyasi 2026-11-22 10:30",
 "Все функции и агенты на любом тарифе. Отличаются число водителей, апдейтов в день и режим.":"Barcha funksiyalar va agentlar har qanday tarifda. Haydovchilar, kunlik apdeytlar soni va rejim bilan farq qiladi.",
 "Смена":"Smena",
 "дешевле":"arzonroq",
@@ -3611,7 +3704,7 @@ function renderInner() {
     console.error('view ' + S.view, err);
     body = '<div class="card pad col" style="gap:10px;border-radius:18px;border-color:var(--amber-bd)"><b>Этот экран не открылся</b><div class="small sub" style="line-height:1.5">Пришлите скриншот разработчику: ' + esc(S.view + ': ' + (err && err.message || err)) + '</div><button class="btn" data-go="home">На главную</button></div>';
   }
-  app.innerHTML = side + '<div class="main"><div class="content">' + (S.view !== 'setup' && (S.view === 'home' || S.view === 'settings' || locked()) ? activationCard() : '') + (S.view === 'home' ? (isWide() ? '' : gsButton()) + previewRibbon() + phoneTip() : '') + body + '</div>' + (S.view === 'setup' ? '' : tabbar) + '</div>' + sheet + lockSheetHtml() + tourCard() + addLoadSheet() + gsOverlay() + viewerSheet();
+  app.innerHTML = side + '<div class="main"><div class="content">' + (S.view !== 'setup' && (S.view === 'home' || S.view === 'settings' || locked()) ? activationCard() : '') + (S.view === 'home' ? (isWide() ? '' : gsButton()) + previewRibbon() + phoneTip() : '') + body + '</div>' + (S.view === 'setup' ? '' : tabbar) + '</div>' + sheet + lockSheetHtml() + tourCard() + addLoadSheet() + draftSheet() + gsOverlay() + viewerSheet();
   if (S.lang !== 'ru') translateDom(app);
   [['etaTruck','truck'],['etaAddr','addr'],['etaAppt','appt']].forEach((x) => { const el = document.getElementById(x[0]); if (el) el.addEventListener('input', (e) => { S.etaF[x[1]] = e.target.value; const mono = el.parentNode.querySelector('.mono'); if (mono) mono.textContent = etaCommand(); }); });
   [['tkWho','who'],['tkTime','time'],['tkNote','note']].forEach((x) => { const el = document.getElementById(x[0]); if (el) el.addEventListener('input', (e) => { S.tkForm[x[1]] = e.target.value; const mono = el.parentNode.querySelector('.mono'); if (mono) mono.textContent = tkCommand(); }); });
@@ -3626,6 +3719,7 @@ function renderInner() {
   ltAfterRender();
   b2AfterRender();
   dropAfterRender();
+  draftAfterRender();
   if (tg && tg.BackButton) { try { if (S.view !== 'home') tg.BackButton.show(); else tg.BackButton.hide(); } catch (e) {} }
 }
 
@@ -3671,6 +3765,7 @@ function onClick(e) {
   if (d.setup) { S.lockSheet = ''; render(); sendToBot('setup-' + d.setup, ({ eld:'/eld', support:'/support', help:'/help' })[d.setup] || '/start'); return; }
   if (d.go && S.lockSheet) S.lockSheet = '';
   if (d.su || d.sub || d.sua || d.sue || d.sutz || d.sutzall || d.sum || d.sust || d.sulen || d.sud || d.sugo) { suClick(d); return; }
+  if (draftClick(d)) return;
   if (dropClick(d)) return;
   if (apiClick(d)) return;
   if (b2Click(d)) return;
