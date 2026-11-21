@@ -543,7 +543,7 @@ function bigScreen() {
 }
 function windowBar(withSeparate) {
   const b = [];
-  if (withSeparate && tg && tg.platform && tg.platform !== 'unknown') b.push('<button class="btn primary" style="height:40px;font-size:13px" data-act="separate">Открыть отдельным окном</button>');
+  if (withSeparate && tg && tg.platform && tg.platform !== 'unknown') b.push('<button class="btn" style="height:40px;font-size:13px" data-act="separate">Открыть отдельным окном</button>');
   if (fsSupported()) b.push('<button class="btn" style="height:40px;font-size:13px" data-act="fs">' + (fsOn() ? 'Выйти из полного экрана' : 'На весь экран') + '</button>');
   if (screenWide()) b.push('<button class="btn" style="height:40px;font-size:13px" data-act="compact">' + (S.compact ? 'Расширенный экран' : 'Компактный вид') + '</button>');
   return b.join('');
@@ -715,7 +715,7 @@ function saveGroups() {
 function vPlans() {
   const owner = S.plan === 'owner', total = S.used + S.pz, vm = S.planMode || S.pm;
   return mzHead('Тарифы', 'Все функции и агенты на любом тарифе. Отличаются число водителей, апдейтов в день и режим.', 'settings') +
-    planCard(false) + cheaperCard() +
+    planCard(false) + cheaperCard() + customCard() +
     '<div style="display:grid;grid-template-columns:1fr 1fr;gap:8px">' + [['shift','Смена','дешевле'],['full','24/7','в любое время']].map((m) => '<button class="seg' + (vm === m[0] ? ' on' : '') + '" style="height:56px;display:flex;flex-direction:column;align-items:center;justify-content:center;gap:2px" data-pview="' + m[0] + '"><b style="font-size:15px">' + m[1] + '</b><span class="xs">' + m[2] + '</span></button>').join('') + '</div>' +
     '<div class="xs muted" style="line-height:1.5">' + (vm === 'shift' ? 'Бот пишет в группы только в ваше рабочее время: смена 8, 10 или 12 ч, дни выбираете вы. Вне смены бот только анализирует, а в начале смены присылает сводку.' : 'Бот пишет в группы в любое время рабочих дней. Выходные дни можно отметить.') + '</div>' +
     '<div class="col" style="gap:10px">' + PLANS.map((p) => {
@@ -865,31 +865,10 @@ function vSettings() {
     '<div class="col" style="gap:10px"><div class="label">Подключения и команда</div><div class="listcard list"><button data-go="groups" class="row" style="justify-content:space-between;width:100%;background:none;border:0;border-bottom:1px solid var(--line2);font-size:15px;text-align:left"><span>Группы водителей</span><span class="row small muted" style="gap:6px">' + (S.plan === 'owner' ? S.used : S.used + ' из ' + S.lim) + ' ' + ic('chev', 16, 'var(--muted)', 2) + '</span></button><div class="row" style="justify-content:space-between"><span>ELD · Samsara</span><span class="small" style="color:var(--mint-t)">Подключено (пример)</span></div><div class="row" style="justify-content:space-between"><span>Борд (Google Sheets)</span><span class="small muted">Update Board</span></div><div class="row" style="justify-content:space-between"><span>Тиммейты</span><span class="small muted">3 человека</span></div><div class="row" style="justify-content:space-between"><span>Amazon Relay</span><span class="chip c-plan">План</span></div></div></div>' +
     '<div class="col" style="gap:10px"><div class="label">Уведомления мне</div><div class="listcard list">' + nl.map((t) => '<div class="row"><span class="col" style="flex:1"><span>' + t[1] + '</span><span class="xs muted">' + t[2] + '</span></span><button class="toggle' + (S.notif[t[0]] ? ' on' : '') + '" data-notif="' + t[0] + '" aria-label="' + t[1] + '"><span></span></button></div>').join('') + '</div></div>' +
     '<div class="col" style="gap:10px"><div class="label">Тариф и оплата</div>' + planCard(true) + '<div class="listcard list">' + [['Пробная неделя','появится позже'],['Оплата','Click · Payme · другие'],['Оферта','готовится']].map((r) => '<div class="row" style="justify-content:space-between"><span>' + r[0] + '</span><span class="small muted">' + r[1] + '</span></div>').join('') + '</div><div class="xs muted">Тарифы отличаются числом водителей и апдейтов в день. Оплата заработает после запуска сервера.</div><div class="xs muted">Или командой в чате, например: /plan pro</div></div>' +
-    '<div class="xs" style="text-align:center;color:var(--faint)">Modenzo AI · версия окна 2026-11-22 03:20</div>';
+    '<div class="xs" style="text-align:center;color:var(--faint)">Modenzo AI · версия окна 2026-11-22 05:10</div>';
 }
 
 function inTab(l, t) { return t === 'all' || (t === 'risk' ? (l.v === 'late' || l.v === 'tight') && l.st !== 'delivered' : l.st === t); }
-function vBoard() {
-  const q = S.q.toLowerCase();
-  const tabs = [['all','Все'],['risk','Под риском'],['upcoming','Upcoming'],['dispatched','Dispatched'],['transit','In transit'],['delivered','Delivered']];
-  const rows = LOADS.filter((l) => inTab(l, S.tab) && (!q || (l.id + ' ' + l.driver + ' ' + l.stop).toLowerCase().indexOf(q) >= 0));
-  const sel = LOADS.find((l) => l.id === S.sel) || LOADS[0];
-  const kpi = [['В пути', LOADS.filter((l) => l.st === 'transit').length, 'var(--text)'], ['Rolling', LOADS.filter((l) => l.truck === 'Rolling').length, 'var(--mint-t)'], ['Stopped', LOADS.filter((l) => l.truck === 'Stopped' && l.st !== 'delivered').length, 'var(--amber)'], ['Опаздывают', LOADS.filter((l) => l.v === 'late').length, 'var(--red)'], ['Upcoming', LOADS.filter((l) => l.st === 'upcoming').length, 'var(--blue)']];
-  return '<div class="row" style="flex-wrap:wrap;gap:12px 16px"><div style="flex:1 1 240px">' + (isWide() ? '' : '<button class="back" data-go="home" aria-label="Назад" style="margin-bottom:10px">' + ic('back', 20, '#EAF0FA', 2) + '</button>') + '<h1 class="title" style="font-size:28px">Доска грузов</h1><div class="small muted">Пример данных. Нажмите на груз, чтобы открыть детали.</div></div>' +
-    '<label class="card row" style="flex:0 1 280px;min-width:200px;height:44px;border-radius:12px;padding:0 12px;gap:8px">' + ic('search', 16, 'var(--muted)', 2) + '<input id="q" aria-label="Поиск по грузам" value="' + esc(S.q) + '" placeholder="Load, водитель, склад" style="flex:1;min-width:0;background:transparent;border:0;outline:none;font-size:14px"></label></div>' +
-    (S.showNew ? '<div class="card row" style="flex-wrap:wrap;padding:12px 16px;border-radius:16px;background:#0F1A30;border-color:var(--blue-bd)"><span class="icon" style="width:36px;height:36px;border-radius:10px;background:var(--blue-bg);color:var(--blue)">' + ic('plus', 18, 'currentColor', 2) + '</span><span style="flex:1 1 240px;font-size:14px;line-height:1.45"><b>Новый груз 1231</b> появился в борде. Бот поставил статус Upcoming и ждёт назначения водителя.</span><button class="btn" style="height:40px;background:var(--blue);color:#0A1530;border:0" data-act="opennew">Показать</button><button class="btn ghost" style="height:40px;width:40px;padding:0" data-act="hidenew" aria-label="Скрыть">' + ic('x', 16, 'var(--blue)', 2) + '</button></div>' : '') +
-    '<div class="kpis">' + kpi.map((k) => '<div class="card" style="padding:14px 16px;border-radius:16px"><h2 style="font-size:26px;color:' + k[2] + '">' + k[1] + '</h2><div class="small muted">' + k[0] + '</div></div>').join('') + '</div>' +
-    '<div class="wrap" role="tablist">' + tabs.map((t) => '<button role="tab" aria-selected="' + (S.tab === t[0]) + '" class="pill' + (S.tab === t[0] ? ' on' : '') + '" data-tab="' + t[0] + '">' + t[1] + ' · ' + LOADS.filter((l) => inTab(l, t[0])).length + '</button>').join('') + '</div>' +
-    '<div class="board"><div class="card" style="flex:999 1 800px;min-width:0;overflow:hidden"><div class="tbl"><div style="min-width:800px"><div class="trow thead" style="cursor:default"><span>Груз и водитель</span><span>Статус</span><span>Грузовик</span><span>Следующий стоп</span><span>ETA</span></div>' +
-      (rows.length ? rows.map((l) => '<button class="trow' + (S.sel === l.id ? ' on' : '') + '" data-sel="' + l.id + '"><span class="col"><b style="font-size:14px">' + l.id + '</b><span class="xs muted">' + esc(l.driver) + '</span></span><span><span class="chip ' + ST[l.st][1] + '">' + ST[l.st][0] + '</span></span><span class="col"><span class="row" style="gap:6px;font-size:13px;font-weight:600;color:' + TC(l.truck) + '"><span class="dot" style="background:' + TC(l.truck) + '"></span>' + l.truck + '</span><span class="xs muted">' + esc(l.truckSub) + '</span></span><span class="col"><span style="font-size:13px;font-weight:600">' + esc(l.stop) + '</span><span class="xs muted">' + l.appt + '</span></span><span class="col"><span style="font-size:13px;font-weight:600">' + l.eta + '</span><span class="xs" style="font-weight:600;color:' + VC[l.v] + '">' + l.verdict + '</span></span></button>').join('') : '<div class="small muted" style="padding:28px;text-align:center">Нет грузов с таким статусом</div>') +
-    '</div></div></div>' +
-    '<div class="card col" style="flex:1 1 300px;min-width:0;padding:18px;gap:16px"><div class="row" style="justify-content:space-between;align-items:flex-start"><div><h2 style="font-size:22px">Load ' + sel.id + '</h2><div class="small muted">' + esc(sel.driver) + ' · трак ' + sel.truckNo + '</div></div><span class="chip ' + ST[sel.st][1] + '">' + ST[sel.st][0] + '</span></div>' +
-      '<div class="grid2"><div style="background:var(--bg);border:1px solid var(--line2);border-radius:14px;padding:10px 12px"><div class="xs muted">Грузовик</div><b style="font-size:14px;color:' + TC(sel.truck) + '">' + sel.truck + '</b><div class="xs muted">' + esc(sel.truckSub) + '</div></div><div style="background:var(--bg);border:1px solid var(--line2);border-radius:14px;padding:10px 12px"><div class="xs muted">Вердикт ETA</div><b style="font-size:14px;color:' + VC[sel.v] + '">' + sel.verdict + '</b><div class="xs muted">' + sel.eta + '</div></div></div><div class="row small" style="justify-content:space-between"><span class="muted">Осталось вождения</span><b>' + sel.hos + '</b></div>' +
-      '<div class="col" style="gap:8px"><div class="label" style="font-size:11px">Стопы</div>' + stopsHtml(sel.stops) + '</div>' +
-      '<div class="col" style="gap:8px"><div class="label" style="font-size:11px">Последнее из группы</div>' + (sel.msgs.length ? sel.msgs.map((m) => '<div style="background:var(--bg);border:1px solid var(--line2);border-radius:12px;padding:10px 12px" class="col"><div class="row xs muted" style="justify-content:space-between"><span>' + esc(m[0]) + '</span><span>' + m[1] + '</span></div><div class="small" style="line-height:1.45;margin-top:4px">' + esc(m[2]) + '</div>' + (m[3] ? '<div class="xs" style="color:var(--blue);margin-top:4px">' + esc(m[3]) + '</div>' : '') + '</div>').join('') : '<div class="small muted">Сообщений по этому грузу пока нет</div>') + '</div>' +
-      '<div class="grid2"><button class="btn primary" style="height:44px;font-size:14px" data-lockgo="updates">Подготовить апдейт</button><button class="btn" style="height:44px;font-size:14px" data-go="eta">Разбор ETA</button></div></div></div>' +
-    '<div class="xs" style="color:var(--faint)">Статусы грузов будут браться из борда, позже из Amazon Relay; Rolling и Stopped из ELD.</div>';
-}
 
 function vDrivers() {
   return mzHead('Водители', 'Кто едет, кто стоит и сколько часов вождения осталось. Пример данных.', isWide() ? '' : 'home') +
@@ -1206,7 +1185,7 @@ function vSupport() {
     '<div class="label">Сообщение</div>' +
     '<textarea id="spText" rows="5" maxlength="1500" placeholder="Опишите, что случилось. Например: апдейт в группу UNIT 2080 не ушёл в 14:00" style="width:100%;padding:12px 14px;border-radius:14px;border:1px solid var(--line);background:#0B1220;color:var(--text);font:inherit;font-size:15px;resize:vertical">' + esc(f.tx) + '</textarea>' +
     '<button class="btn primary" style="height:50px;font-size:16px' + (f.tp && f.tx.trim().length > 3 ? '' : ';opacity:.45') + '" data-act="spsend">Отправить</button>' +
-    '<div class="xs muted" style="line-height:1.5;margin-top:-4px">' + (canSendData() ? 'Сообщение уйдёт боту сразу, окно закроется.' : 'Откроется чат с ботом. Текст уже скопирован: вставьте его и отправьте.') + '</div>' +
+    '<div class="xs muted" style="line-height:1.5;margin-top:-4px">' + (canSendData() ? 'Сообщение уйдёт боту сразу, окно закроется.' : 'Откроется чат с готовым сообщением: останется нажать «Отправить».') + '</div>' +
     '<div class="label" style="margin-top:6px">Мои обращения</div>' +
     (S.sp.length ? '<div class="listcard list">' + S.sp.map((t) => { const st = SP_ST[t.st] || SP_ST.o; return '<div class="row" style="justify-content:space-between;gap:10px"><span class="col" style="gap:2px;min-width:0"><b style="font-size:14px">№' + t.id + ' · ' + spTopic(t.tp) + '</b><span class="xs muted">' + (t.st === 'r' ? 'Ответ в чате с ботом' : (t.st === 'o' ? 'Владелец ответит в чате' : (t.st === 'a' ? 'Ответ ИИ в чате' : 'Закрыто'))) + '</span></span><span class="chip ' + st[1] + '">' + st[0] + '</span></div>'; }).join('') + '</div>' : '<div class="xs muted">Пока нет обращений.</div>') +
     '<button class="card row" data-go="help" style="justify-content:space-between;height:50px;padding:0 16px;border-radius:14px;font-weight:600">Частые вопросы' + ic('chev', 18, 'var(--muted)', 2) + '</button>';
@@ -1216,9 +1195,8 @@ function spSend() {
   if (!f.tp) { toast('Выберите тему'); return; }
   if (tx.length < 4) { toast('Напишите сообщение'); return; }
   if (canSendData()) { try { tg.sendData(JSON.stringify({ v:1, k:'sup', tp:f.tp, tx:tx.slice(0, 1500), lang:S.lang })); return; } catch (x) {} }
-  copyText(tx);
   S.spF = { tp:'', tx:'' }; render();
-  sendToBot('sp-' + f.tp, '/support ' + tx);
+  sendText('/support ' + tx);
 }
 
 /* ---------------- my answers: change what was chosen in the survey, through safe paths ---------------- */
@@ -1331,31 +1309,6 @@ function truckSvg(style, size) {
 }
 function mpStyle(u) { return S.mp.styles[u] || 'std'; }
 function mpVisible() { return MP.filter((k) => { const st = mpState(k); return S.mp.f === 'all' || (S.mp.f === 'roll' && st.st === 'roll') || (S.mp.f === 'stop' && st.st !== 'roll') || (S.mp.f === 'risk' && k.v !== 'ok'); }); }
-function vMap() {
-  const sel = MP.filter((k) => k.u === S.mp.sel)[0];
-  const rows = mpVisible();
-  const counts = { roll: MP.filter((k) => mpState(k).st === 'roll').length, risk: MP.filter((k) => k.v !== 'ok').length };
-  const filt = '<div class="wrap" style="gap:6px">' + [['all','Все ' + MP.length],['roll','Едут ' + counts.roll],['stop','Стоят ' + (MP.length - counts.roll)],['risk','Риск ' + counts.risk]].map((x) => '<button class="chip' + (S.mp.f === x[0] ? ' c-done' : ' c-gray') + '" style="height:30px;cursor:pointer" data-mpf="' + x[0] + '">' + x[1] + '</button>').join('') + '</div>';
-  const list = '<div class="col" style="gap:8px">' + rows.map((k) => { const st = mpState(k); return '<button class="card row" data-mtk="' + k.u + '" style="padding:10px 12px;border-radius:14px;gap:10px;text-align:left;' + (S.mp.sel === k.u ? 'border-color:var(--mint)' : '') + '"><span style="width:30px;display:flex;justify-content:center;flex:none">' + truckSvg(mpStyle(k.u), 24) + '</span><span class="col" style="flex:1;min-width:0;gap:2px"><b style="font-size:14px">UNIT ' + k.u + ' · ' + esc(k.d) + '</b><span class="xs muted" style="white-space:nowrap;overflow:hidden;text-overflow:ellipsis">' + (st.next ? esc(st.next.n) : 'Доставил') + '</span></span><span class="col" style="align-items:flex-end;gap:2px;flex:none"><b class="xs" data-mspd="' + k.u + '">' + (st.st === 'roll' ? k.mph + ' mph' : MP_ST[st.st]) + '</b><span class="xs" style="color:' + MP_V[k.v][1] + '">' + MP_V[k.v][0] + '</span></span></button>'; }).join('') + '</div>';
-  let panel = '';
-  if (sel) {
-    const st = mpState(sel), cur = mpStyle(sel.u);
-    panel = '<div class="card col" style="padding:14px;border-radius:18px;gap:10px">' +
-      '<div class="row" style="justify-content:space-between;gap:10px"><span class="row" style="gap:10px"><span style="width:30px;display:flex;justify-content:center">' + truckSvg(cur, 28) + '</span><span class="col" style="gap:2px"><b style="font-size:16px">UNIT ' + sel.u + '</b><span class="xs muted">' + esc(sel.d) + ' · Load ' + sel.load + '</span></span></span><button class="back" data-mtk="" aria-label="Закрыть">' + ic('x', 18) + '</button></div>' +
-      '<div style="display:grid;grid-template-columns:repeat(3,minmax(0,1fr));gap:8px">' + [['Скорость', st.st === 'roll' ? sel.mph + ' mph' : MP_ST[st.st], 'mspd2'],['Осталось', st.next ? Math.round(st.left) + ' mi' : '—', 'mleft'],['Часы', sel.hos, '']].map((x) => '<div class="card col" style="padding:10px;border-radius:12px;gap:2px;background:var(--raised)"><span class="xs muted">' + x[0] + '</span><b style="font-size:14px"' + (x[2] ? ' data-' + x[2] + '="' + sel.u + '"' : '') + '>' + x[1] + '</b></div>').join('') + '</div>' +
-      '<div class="col" style="gap:6px"><span class="label">Стопы</span>' + sel.stops.map((s, i) => { const done = s.at <= st.dist + 0.5; return '<div class="row" style="gap:10px;align-items:flex-start"><span style="width:20px;height:20px;border-radius:50%;flex:none;margin-top:1px;display:flex;align-items:center;justify-content:center;font-size:11px;font-weight:700;background:' + (done ? 'var(--mint)' : 'var(--raised)') + ';color:' + (done ? 'var(--on-mint)' : 'var(--sub)') + '">' + (done ? '✓' : i + 1) + '</span><span class="col" style="gap:1px"><span style="font-size:13px;font-weight:600">' + esc(s.n) + '</span><span class="xs muted">Appt ' + s.appt + '</span></span></div>'; }).join('') + '</div>' +
-      (st.next ? '<div class="card row" style="padding:10px 12px;border-radius:12px;gap:10px;border-color:' + MP_V[sel.v][1] + '55"><span class="dot" style="background:' + MP_V[sel.v][1] + '"></span><span class="small" style="flex:1"><b>' + MP_V[sel.v][0] + '</b>' + (st.etaH ? ' · ETA ' + tr3('через ', 'in ', '') + '<span data-meta="' + sel.u + '">' + hm(st.etaH) + '</span>' : '') + '</span></div>' : '') +
-      '<div class="col" style="gap:6px"><div class="row" style="justify-content:space-between"><span class="label">Где был</span><span class="xs muted">' + (S.mp.replay ? tr3(S.mp.replay + ' ч назад', S.mp.replay + 'h ago', S.mp.replay + ' soat oldin') : tr3('сейчас', 'now', 'hozir')) + '</span></div><input type="range" id="mpReplay" min="0" max="12" step="1" value="' + S.mp.replay + '" style="width:100%;accent-color:#3DDC97" aria-label="Где был"></div>' +
-      '<button class="btn" style="height:40px;font-size:13px" data-act="mppick">' + (S.mp.pick ? 'Скрыть виды траков' : 'Вид трака на карте') + '</button>' +
-      (S.mp.pick ? '<div style="display:grid;grid-template-columns:repeat(7,minmax(0,1fr));gap:6px"><button class="card" data-mps="std" title="Обычный" style="padding:6px 0;border-radius:10px;display:flex;justify-content:center;align-items:center;' + (cur === 'std' ? 'border-color:var(--mint)' : '') + '">' + truckSvg('std', 22) + '</button>' + TK_BODY.map((b, bi) => TK_COL.map((c, ci) => { const k = bi + '-' + ci; return '<button class="card" data-mps="' + k + '" title="' + b[1] + '" style="padding:4px 0;border-radius:10px;display:flex;justify-content:center;align-items:center;' + (cur === k ? 'border-color:var(--mint)' : '') + '">' + truckSvg(k, 26) + '</button>'; }).join('')).join('') + '</div><div class="xs muted">Вид сохраняется на этом устройстве (бета).</div>' : '') +
-      '</div>';
-  }
-  const top = '<div class="row" style="justify-content:space-between;gap:10px;flex-wrap:wrap"><span class="row" style="gap:10px"><h1 class="title" style="font-size:24px">Слежка</h1><span class="chip c-dev">бета · демо</span></span><span class="row" style="gap:6px">' + [[1,'Реально'],[60,'×60']].map((x) => '<button class="seg' + (S.mp.mult === x[0] ? ' on' : '') + '" data-mpm="' + x[0] + '" style="height:32px;padding:0 10px;font-size:12px">' + x[1] + '</button>').join('') + '</span></div>' +
-    '<div class="xs muted" style="line-height:1.5">12 траков с примерными данными. Живые траки, маршруты и скорость появятся после подключения ELD и сервера.</div>';
-  const mapBox = '<div id="mapSlot" style="position:relative;width:100%;height:' + (isWide() ? 'calc(100vh - 170px)' : '56vh') + ';min-height:360px;border-radius:18px;overflow:hidden;border:1px solid var(--line);background:#0B1220"></div>';
-  if (isWide()) return top + '<div style="display:grid;grid-template-columns:minmax(0,1fr) 340px;gap:14px;align-items:start">' + mapBox + '<div class="col" style="gap:10px;max-height:calc(100vh - 170px);overflow:auto;padding-right:2px">' + (panel || filt + list) + '</div></div>';
-  return (!screenWide() ? '<div class="card row" style="padding:10px 14px;border-radius:14px;gap:10px"><span style="font-size:18px">💻</span><span class="xs muted" style="flex:1;line-height:1.4">Карта удобнее в Расширенном окне на компьютере.</span></div>' : '') + top + mapBox + (panel || filt + list);
-}
 /* map engine: Leaflet when it loads, otherwise a simple drawn map; the map element is kept between renders */
 let LMAP = null, LMAP_EL = null, LMK = {}, LLINES = [], LTRAIL = null, LSTOPS = [], LLOAD = 0;
 function mpLoadLib(cb) {
@@ -1367,71 +1320,6 @@ function mpLoadLib(cb) {
   const fail = () => { if (LLOAD !== 1) return; LLOAD = 2; S.mp.fail = true; if (S.view === 'map') render(); };
   s.onload = () => { if (!window.L) return fail(); LLOAD = 3; (mpLoadLib.q || []).forEach((f) => f()); mpLoadLib.q = []; };
   s.onerror = fail; setTimeout(fail, 8000); document.head.appendChild(s);
-}
-function mpIcon(k, hd) { return window.L.divIcon({ className: 'mzTk', iconSize: [44, 44], iconAnchor: [22, 22], html: '<div style="width:44px;height:44px;display:flex;align-items:center;justify-content:center;transform:rotate(' + Math.round(hd) + 'deg)">' + truckSvg(mpStyle(k.u), mpStyle(k.u) === 'std' ? 26 : 30) + '</div><div style="position:absolute;left:50%;top:40px;transform:translateX(-50%);font:600 10px Inter,system-ui;color:#EEF3FA;background:#0B1220cc;padding:1px 5px;border-radius:6px;white-space:nowrap">' + k.u + '</div>' }); }
-function mpMount() {
-  const slot = document.getElementById('mapSlot'); if (!slot) return;
-  if (S.mp.fail) { mpDrawFallback(slot); return; }
-  slot.innerHTML = '<div style="position:absolute;inset:0;display:flex;align-items:center;justify-content:center;color:var(--muted);font-size:13px">' + (S.lang === 'en' ? 'Loading map…' : (S.lang === 'uz' ? 'Xarita yuklanmoqda…' : 'Загружаю карту…')) + '</div>';
-  mpLoadLib(() => {
-    const sl = document.getElementById('mapSlot'); if (!sl || S.view !== 'map') return;
-    try {
-      const L = window.L;
-      if (!LMAP) {
-        LMAP_EL = document.createElement('div'); LMAP_EL.style.cssText = 'position:absolute;inset:0;background:#0B1220';
-        sl.innerHTML = ''; sl.appendChild(LMAP_EL);
-        LMAP = L.map(LMAP_EL, { zoomControl: true, attributionControl: true, worldCopyJump: true }).setView([38.5, -97], 4);
-        L.tileLayer('https://{s}.basemaps.cartocdn.com/dark_all/{z}/{x}/{y}{r}.png', { maxZoom: 18, subdomains: 'abcd', attribution: '&copy; OpenStreetMap &copy; CARTO' }).addTo(LMAP);
-        MP.forEach((k) => {
-          LLINES.push(L.polyline(k.pts, { color: '#5B9DFF', weight: 2, opacity: 0.25 }).addTo(LMAP));
-          const st = mpState(k);
-          LMK[k.u] = L.marker(st.ll, { icon: mpIcon(k, st.hd), riseOnHover: true }).addTo(LMAP).on('click', () => { S.mp.sel = k.u; S.mp.pick = false; render(); });
-        });
-        LMAP.fitBounds(L.latLngBounds(MP.map((k) => k.pts).flat()), { padding: [30, 30] });
-      } else { sl.innerHTML = ''; sl.appendChild(LMAP_EL); }
-      setTimeout(() => { try { LMAP.invalidateSize(); } catch (x) {} }, 30);
-      mpDecor();
-    } catch (err) { console.error('map', err); S.mp.fail = true; mpDrawFallback(sl); }
-  });
-}
-function mpDecor() {
-  const L = window.L; if (!LMAP || !L) return;
-  LSTOPS.forEach((m) => LMAP.removeLayer(m)); LSTOPS = [];
-  if (LTRAIL) { LMAP.removeLayer(LTRAIL); LTRAIL = null; }
-  MP.forEach((k, i) => { LLINES[i].setStyle({ color: k.u === S.mp.sel ? '#3DDC97' : '#5B9DFF', weight: k.u === S.mp.sel ? 4 : 2, opacity: k.u === S.mp.sel ? 0.9 : (S.mp.sel ? 0.12 : 0.28) }); LMK[k.u].setIcon(mpIcon(k, mpState(k).hd)); });
-  const k = MP.filter((x) => x.u === S.mp.sel)[0];
-  if (k) {
-    k.stops.forEach((s, i) => LSTOPS.push(L.circleMarker(s.ll, { radius: 7, color: '#0B1220', weight: 2, fillColor: '#F5B83D', fillOpacity: 1 }).bindTooltip((i + 1) + '. ' + s.n).addTo(LMAP)));
-    const now = mpDist(k), from = mpDist(k, 12), pts = [];
-    for (let d = from; d <= now; d += Math.max(1, (now - from) / 40)) pts.push(mpAt(k, d).ll);
-    if (pts.length > 1) LTRAIL = L.polyline(pts, { color: '#EEF3FA', weight: 3, opacity: 0.7, dashArray: '4 6' }).addTo(LMAP);
-    if (S.mp.replay) { const g = mpAt(k, mpDist(k, S.mp.replay)); LSTOPS.push(L.circleMarker(g.ll, { radius: 9, color: '#EEF3FA', weight: 3, fillColor: '#3DDC97', fillOpacity: 0.4 }).addTo(LMAP)); }
-    LMAP.panTo(mpState(k).ll);
-  }
-}
-function mpDrawFallback(slot) {
-  const all = MP.map((k) => k.pts).flat(), la = all.map((p) => p[0]), lo = all.map((p) => p[1]);
-  const minA = Math.min.apply(null, la) - 1, maxA = Math.max.apply(null, la) + 1, minO = Math.min.apply(null, lo) - 1.5, maxO = Math.max.apply(null, lo) + 1.5;
-  const W = 1000, H = 560, X = (o) => (o - minO) / (maxO - minO) * W, Y = (a) => H - (a - minA) / (maxA - minA) * H;
-  let svg = '<svg viewBox="0 0 ' + W + ' ' + H + '" preserveAspectRatio="xMidYMid meet" style="position:absolute;inset:0;width:100%;height:100%"><defs><pattern id="mzg" width="50" height="50" patternUnits="userSpaceOnUse"><path d="M50 0H0V50" fill="none" stroke="#1A2438" stroke-width="1"/></pattern></defs><rect width="' + W + '" height="' + H + '" fill="url(#mzg)"/>';
-  MP.forEach((k) => { svg += '<polyline points="' + k.pts.map((p) => X(p[1]).toFixed(1) + ',' + Y(p[0]).toFixed(1)).join(' ') + '" fill="none" stroke="' + (k.u === S.mp.sel ? '#3DDC97' : '#5B9DFF') + '" stroke-width="' + (k.u === S.mp.sel ? 4 : 2) + '" opacity="' + (k.u === S.mp.sel ? 0.9 : 0.3) + '" stroke-linecap="round"/>'; });
-  Object.keys(CITY).forEach((c) => { svg += '<circle cx="' + X(CITY[c][1]).toFixed(1) + '" cy="' + Y(CITY[c][0]).toFixed(1) + '" r="2" fill="#33415C"/>'; });
-  svg += '</svg>';
-  let html = svg;
-  MP.forEach((k) => { const st = mpState(k); html += '<button data-mtk="' + k.u + '" data-mpos="' + k.u + '" style="position:absolute;left:' + (X(st.ll[1]) / W * 100) + '%;top:' + (Y(st.ll[0]) / H * 100) + '%;transform:translate(-50%,-50%);background:none;border:0;padding:0;cursor:pointer"><span style="display:block;transform:rotate(' + Math.round(st.hd) + 'deg)">' + truckSvg(mpStyle(k.u), 24) + '</span><span style="position:absolute;left:50%;top:100%;transform:translateX(-50%);font:600 10px Inter,system-ui;color:#EEF3FA;background:#0B1220cc;padding:1px 4px;border-radius:5px">' + k.u + '</span></button>'; });
-  html += '<div style="position:absolute;left:10px;bottom:8px;font-size:11px;color:var(--muted)">' + (S.lang === 'en' ? 'Simple map: the map service did not load' : (S.lang === 'uz' ? 'Oddiy xarita: xarita xizmati yuklanmadi' : 'Простая карта: сервис карт не загрузился')) + '</div>';
-  slot.innerHTML = html;
-  slot.dataset.fb = '1';
-}
-function mpTick() {
-  if (S.view !== 'map') return;
-  MP.forEach((k) => {
-    const st = mpState(k);
-    if (LMAP && LMK[k.u] && !S.mp.fail) { LMK[k.u].setLatLng(st.ll); const el = LMK[k.u].getElement && LMK[k.u].getElement(); const r = el && el.firstChild; if (r && r.style) r.style.transform = 'rotate(' + Math.round(st.hd) + 'deg)'; }
-    document.querySelectorAll('[data-mleft="' + k.u + '"]').forEach((el) => { el.textContent = st.next ? Math.round(st.left) + ' mi' : '—'; });
-    document.querySelectorAll('[data-meta="' + k.u + '"]').forEach((el) => { if (st.etaH) el.textContent = hm(st.etaH); });
-  });
-  const slot = document.getElementById('mapSlot'); if (slot && slot.dataset.fb) mpDrawFallback(slot);
 }
 setInterval(() => { try { mpTick(); } catch (e) {} }, 2000);
 
@@ -1509,14 +1397,14 @@ function vAi() {
     '<textarea id="aiText" rows="3" maxlength="1500" placeholder="Например: какие траки сегодня могут опоздать?" style="width:100%;padding:12px 14px;border-radius:14px;border:1px solid var(--line);background:#0B1220;color:var(--text);font:inherit;font-size:15px;resize:vertical">' + esc(a.q) + '</textarea>' +
     '<div class="wrap" style="gap:6px">' + AI_EX.map((x, i) => '<button class="chip c-gray" style="height:auto;min-height:30px;padding:6px 10px;cursor:pointer;text-align:left;white-space:normal" data-aiex="' + i + '">' + x + '</button>').join('') + '</div>' +
     '<button class="btn primary" style="height:50px;font-size:16px' + (a.q.trim().length > 1 ? '' : ';opacity:.45') + '" data-act="aisend">Спросить</button>' +
-    '<div class="xs muted" style="line-height:1.5;margin-top:-4px">' + (canSendData() ? 'Вопрос уйдёт боту сразу, окно закроется.' : 'Откроется чат с ботом. Свой вопрос уже скопирован: вставьте его и отправьте.') + '</div>';
+    '<div class="xs muted" style="line-height:1.5;margin-top:-4px">' + (canSendData() ? 'Вопрос уйдёт боту сразу, окно закроется.' : 'Откроется чат с готовым вопросом: останется нажать «Отправить».') + '</div>';
 }
 function aiSend(p) {
   const a = S.ai, q = p === 'ask' ? a.q.trim() : '';
   if (p === 'ask' && q.length < 2) { toast('Напишите вопрос'); return; }
   if (S.access === 'survey') { S.lockSheet = 'survey'; render(); return; }
   if (canSendData()) { try { tg.sendData(JSON.stringify({ v:1, k:'ai', p, h:a.h, q, lang:S.lang })); return; } catch (x) {} }
-  if (p === 'ask') { copyText(q); sendToBot('ai-ask', '/ai ' + q); return; }
+  if (p === 'ask') { sendText(q); return; }
   sendToBot('ai-' + p + '-' + a.h, '/ai');
 }
 function aiClick(d) {
@@ -1564,12 +1452,446 @@ function ltAfterRender() {
   [['ltTruck','t'],['ltEta','e']].forEach((x) => { const el = document.getElementById(x[0]); if (el) el.addEventListener('input', (e) => { S.lt[x[1]] = e.target.value; const b = document.querySelector('[data-act="ltsend"]'); if (b) b.style.opacity = S.lt.t.trim() ? '' : '.45'; }); });
 }
 
-const VIEWS = { ai:vAi, support:vSupport, answers:vAnswers, map:vMap, setup:vSetup, ub:vUb, home:vHome, shift:vShift, updates:vUpdates, eta:vEta, groups:vGroups, features:vFeatures, help:vHelp, settings:vSettings, plans:vPlans, agents:vAgents, work:vWork, tz:vTz, board:vBoard, drivers:vDrivers };
+/* ================= v2026-11-22b: load board (Amazon / Street), add load, custom plan, live map polish, global search ================= */
+Object.assign(I, { plus2:'<path d="M12 5v14M5 12h14"/>', box:'<path d="M3 7l9-4 9 4v10l-9 4-9-4z"/><path d="M3 7l9 4 9-4M12 11v10"/>', target:'<circle cx="12" cy="12" r="8"/><circle cx="12" cy="12" r="3"/><path d="M12 2v3M12 19v3M2 12h3M19 12h3"/>' });
+
+/* one way to hand text to the bot from the window: the chat opens with the message ready, the text is also copied */
+function sendText(text) {
+  const t = String(text || '').slice(0, 1500);
+  copyText(t);
+  if (tg && S.bot && tg.openTelegramLink) {
+    try { if (tg.HapticFeedback) tg.HapticFeedback.notificationOccurred('success'); } catch (x) {}
+    toast('Откроется чат: сообщение готово, нажмите «Отправить»');
+    setTimeout(() => tg.openTelegramLink('https://t.me/' + S.bot + '?text=' + encodeURIComponent(t)), 350);
+    return;
+  }
+  toast('Отправьте боту: ' + t.slice(0, 70));
+}
+
+/* ---------- loads: Amazon rows (demo until the Relay extension) + Street rows (from the bot, param ld) ---------- */
+const LST = { ns:['Not started','c-plan'], dp:['Dispatched','c-disp'], pu:['At pickup','c-dev'], tr:['In transit','c-done'], dl:['At delivery','c-dev'], dn:['Delivered','c-gray'], cx:['Cancelled','c-gray'] };
+const LST_ORDER = ['ns','dp','pu','tr','dl','dn'];
+const AMZ_ST = { upcoming:'ns', dispatched:'dp', transit:'tr', delivered:'dn' };
+let STREET = [
+  { dbid:0, no:'TQL-88412', broker:'TQL', truck:'2080', driver:'John S.', pu:'Dallas, TX', del:'Atlanta, GA', put:'2026-11-22T08:00', dlt:'2026-11-23T14:00', st:'tr', risk:0, rate:2450 },
+  { dbid:0, no:'CH-55120', broker:'C.H. Robinson', truck:'2133', driver:'Carlos M.', pu:'Denver, CO', del:'Salt Lake City, UT', put:'2026-11-22T06:30', dlt:'2026-11-22T19:00', st:'dp', risk:1, rate:1650 },
+  { dbid:0, no:'EC-7731', broker:'Echo', truck:'', driver:'', pu:'Reno, NV', del:'Boise, ID', put:'2026-11-24T09:00', dlt:'2026-11-25T10:00', st:'ns', risk:0, rate:1800 },
+  { dbid:0, no:'CY-30418', broker:'Coyote', truck:'2141', driver:'Timur S.', pu:'Kansas City, MO', del:'Indianapolis, IN', put:'2026-11-21T07:00', dlt:'2026-11-21T20:00', st:'dn', risk:0, rate:1320 }
+];
+let STREET_REAL = false;
+try {
+  const ld = new URLSearchParams(location.search).get('ld');
+  if (ld !== null) {
+    STREET_REAL = true;
+    STREET = ld ? ld.split('|').map((x) => { const f = x.split('~'); return { dbid:+f[0], no:f[1], broker:f[2], truck:f[3], driver:f[4], pu:f[5], del:f[6], put:f[7], dlt:f[8], st:LST[f[9]] ? f[9] : 'ns', risk:+f[10] || 0, rate:+f[11] || 0 }; }).filter((l) => l.dbid) : [];
+  }
+} catch (e) {}
+S.src = 'all'; S.addL = null; S.lsel = '';
+function fdt(s) { const m = (s || '').match(/^\d{4}-(\d{2})-(\d{2})T(\d{2}:\d{2})$/); return m ? m[1] + '/' + m[2] + ' ' + m[3] : (s || '—'); }
+function boardRows() {
+  const amz = LOADS.map((l) => ({ key:'a' + l.id, src:'amazon', no:l.id, who:l.driver + (l.truckNo && l.truckNo !== '—' ? ' · UNIT ' + l.truckNo : ''), driver:l.driver, truck:l.truckNo, st:AMZ_ST[l.st] || 'ns', risk:(l.v === 'late' || l.v === 'tight') && l.st !== 'delivered', stop:l.stop, appt:l.appt, eta:l.eta, verdict:l.verdict, v:l.v, raw:l }));
+  const str = STREET.map((l, i) => ({ key:'s' + (l.dbid || 'd' + i), src:'street', no:l.no || ('#' + l.dbid), who:[l.broker, l.truck ? 'UNIT ' + l.truck : '', l.driver].filter(Boolean).join(' · '), driver:l.driver, truck:l.truck, st:l.st, risk:!!l.risk, stop:(LST_ORDER.indexOf(l.st) < 3 ? l.pu : l.del), appt:fdt(LST_ORDER.indexOf(l.st) < 3 ? l.put : l.dlt), eta:l.rate ? '$' + l.rate : '—', verdict:l.risk ? 'Под риском' : (l.st === 'dn' ? 'Доставлен' : '—'), v:l.risk ? 'late' : 'none', raw:l }));
+  return amz.concat(str);
+}
+function lTab(r, t) { return t === 'all' || (t === 'risk' ? r.risk && r.st !== 'dn' && r.st !== 'cx' : (t === 'transit' ? ['pu','tr','dl'].indexOf(r.st) >= 0 : r.st === t)); }
+function vBoard() {
+  const q = S.q.toLowerCase(), all = boardRows();
+  const bySrc = all.filter((r) => S.src === 'all' || r.src === S.src);
+  const rows = bySrc.filter((r) => lTab(r, S.tab) && (!q || (r.no + ' ' + r.who + ' ' + r.stop).toLowerCase().indexOf(q) >= 0));
+  const sel = all.filter((r) => r.key === S.lsel)[0] || rows[0] || all[0];
+  const tabs = [['all','Все'],['risk','At risk'],['ns','Not started'],['dp','Dispatched'],['transit','In transit'],['dn','Delivered']];
+  const srcBtn = (k, label, n, sub) => '<button class="seg' + (S.src === k ? ' on' : '') + '" data-src="' + k + '" style="height:44px;padding:0 14px;font-size:13px;display:flex;flex-direction:column;justify-content:center;gap:1px;line-height:1.1"><span><b>' + label + '</b> · ' + n + '</span>' + (sub ? '<span style="font-size:10px;opacity:.75">' + sub + '</span>' : '') + '</button>';
+  const sum = STREET.filter((l) => l.st !== 'cx').reduce((s, l) => s + (l.rate || 0), 0);
+  const kpi = [['В пути', bySrc.filter((r) => ['pu','tr','dl'].indexOf(r.st) >= 0).length, 'var(--mint-t)'], ['At risk', bySrc.filter((r) => lTab(r, 'risk')).length, 'var(--red)'], ['Not started', bySrc.filter((r) => r.st === 'ns').length, 'var(--blue)'], ['Delivered', bySrc.filter((r) => r.st === 'dn').length, 'var(--text)'], ['Street, ставки', '$' + sum.toLocaleString('en-US'), 'var(--amber)']];
+  let detail = '';
+  if (sel && sel.src === 'amazon') {
+    const l = sel.raw;
+    detail = '<div class="card col" style="flex:1 1 300px;min-width:0;padding:18px;gap:14px"><div class="row" style="justify-content:space-between;align-items:flex-start"><div><h2 style="font-size:22px">Load ' + l.id + '</h2><div class="small muted">' + esc(l.driver) + ' · трак ' + l.truckNo + '</div></div><span class="col" style="align-items:flex-end;gap:6px"><span class="chip c-disp">Amazon</span><span class="chip ' + LST[sel.st][1] + '">' + LST[sel.st][0] + '</span></span></div>' +
+      '<div class="grid2"><div style="background:var(--bg);border:1px solid var(--line2);border-radius:14px;padding:10px 12px"><div class="xs muted">Грузовик</div><b style="font-size:14px;color:' + TC(l.truck) + '">' + l.truck + '</b><div class="xs muted">' + esc(l.truckSub) + '</div></div><div style="background:var(--bg);border:1px solid var(--line2);border-radius:14px;padding:10px 12px"><div class="xs muted">Вердикт ETA</div><b style="font-size:14px;color:' + VC[l.v] + '">' + l.verdict + '</b><div class="xs muted">' + l.eta + '</div></div></div>' +
+      '<div class="col" style="gap:8px"><div class="label" style="font-size:11px">Стопы</div>' + stopsHtml(l.stops) + '</div>' +
+      '<div class="grid2"><button class="btn primary" style="height:44px;font-size:14px" data-lockgo="updates">Подготовить апдейт</button><button class="btn" style="height:44px;font-size:14px" data-ltt="' + esc(l.truckNo) + '">✉️ Текст брокеру</button></div>' +
+      '<div class="xs muted" style="line-height:1.45">Amazon грузы придут сами из Relay через расширение для Chrome (последний этап, только чтение). Сейчас это пример.</div></div>';
+  } else if (sel) {
+    const l = sel.raw, idx = LST_ORDER.indexOf(l.st);
+    detail = '<div class="card col" style="flex:1 1 300px;min-width:0;padding:18px;gap:14px"><div class="row" style="justify-content:space-between;align-items:flex-start;gap:10px"><div style="min-width:0"><h2 style="font-size:22px;word-break:break-word">' + esc(sel.no) + '</h2><div class="small muted">' + esc(l.broker || 'Брокер не указан') + (l.rate ? ' · $' + l.rate : '') + '</div></div><span class="col" style="align-items:flex-end;gap:6px"><span class="chip c-plan">Street</span><span class="chip ' + LST[l.st][1] + '">' + LST[l.st][0] + '</span>' + (l.risk ? '<span class="chip c-dev" style="color:var(--red)">At risk</span>' : '') + '</span></div>' +
+      '<div class="small" style="line-height:1.5">' + (l.truck ? '<b>UNIT ' + esc(l.truck) + '</b>' + (l.driver ? ' · ' + esc(l.driver) : '') : '<span class="muted">Трак не назначен</span>') + '</div>' +
+      '<div class="col" style="gap:8px"><div class="row" style="gap:10px;align-items:flex-start"><span class="chip c-gray" style="min-width:42px;justify-content:center">PU</span><span class="col"><b style="font-size:14px">' + esc(l.pu || '—') + '</b><span class="xs muted">' + fdt(l.put) + '</span></span></div><div class="row" style="gap:10px;align-items:flex-start"><span class="chip c-gray" style="min-width:42px;justify-content:center">DEL</span><span class="col"><b style="font-size:14px">' + esc(l.del || '—') + '</b><span class="xs muted">' + fdt(l.dlt) + '</span></span></div></div>' +
+      '<div class="col" style="gap:8px"><div class="label" style="font-size:11px">Статус</div><div style="display:grid;grid-template-columns:repeat(3,minmax(0,1fr));gap:6px">' + LST_ORDER.map((c, i) => '<button class="seg' + (c === l.st ? ' on' : '') + '" data-lst="' + c + '" style="height:38px;font-size:11px;padding:0 4px' + (i < idx ? ';opacity:.55' : '') + '">' + LST[c][0] + '</button>').join('') + '</div>' +
+      '<div class="xs muted" style="line-height:1.45">Бот сам двигает статус по словам водителя в группе трака: «at shipper», «loaded», «delivered» и на русском, узбекском, турецком.</div></div>' +
+      '<div class="grid2"><button class="btn" style="height:42px;font-size:13px" data-ltt="' + esc(l.truck || '') + '">✉️ Текст брокеру</button><button class="btn" style="height:42px;font-size:13px;color:var(--red)" data-lst="cx">Отменить груз</button></div></div>';
+  }
+  return '<div class="row" style="flex-wrap:wrap;gap:12px 16px;align-items:flex-end"><div style="flex:1 1 240px">' + (isWide() ? '' : '<button class="back" data-go="home" aria-label="Назад" style="margin-bottom:10px">' + ic('back', 20, '#EAF0FA', 2) + '</button>') + '<h1 class="title" style="font-size:28px">Доска грузов</h1><div class="small muted">' + (STREET_REAL ? 'Street грузы ваши, Amazon пока пример.' : 'Пример данных. Добавьте свой груз кнопкой справа.') + '</div></div>' +
+    '<label class="card row" style="flex:0 1 260px;min-width:180px;height:44px;border-radius:12px;padding:0 12px;gap:8px">' + ic('search', 16, 'var(--muted)', 2) + '<input id="q" aria-label="Поиск по грузам" value="' + esc(S.q) + '" placeholder="Груз, водитель, юнит" style="flex:1;min-width:0;background:transparent;border:0;outline:none;font-size:14px"></label>' +
+    '<button class="btn primary" style="height:44px;padding:0 16px;font-size:14px" data-act="addload">' + ic('plus2', 16, 'currentColor', 2.4) + '&nbsp;Добавить груз</button></div>' +
+    '<div class="row" style="gap:8px;flex-wrap:wrap">' + srcBtn('all', 'Все', all.length, '') + srcBtn('amazon', 'Amazon', all.filter((r) => r.src === 'amazon').length, 'авто из Relay · бета') + srcBtn('street', 'Street', all.filter((r) => r.src === 'street').length, 'вручную + ИИ') + '</div>' +
+    '<div class="kpis">' + kpi.map((k) => '<div class="card" style="padding:14px 16px;border-radius:16px"><h2 style="font-size:24px;color:' + k[2] + '">' + k[1] + '</h2><div class="small muted">' + k[0] + '</div></div>').join('') + '</div>' +
+    '<div class="wrap" role="tablist">' + tabs.map((t) => '<button role="tab" aria-selected="' + (S.tab === t[0]) + '" class="pill' + (S.tab === t[0] ? ' on' : '') + '" data-tab="' + t[0] + '">' + t[1] + ' · ' + bySrc.filter((r) => lTab(r, t[0])).length + '</button>').join('') + '</div>' +
+    '<div class="board"><div class="card" style="flex:999 1 760px;min-width:0;overflow:hidden"><div class="tbl"><div style="min-width:760px"><div class="trow thead" style="cursor:default;grid-template-columns:1.4fr .7fr 1fr 1.5fr 1fr"><span>Груз</span><span>Источник</span><span>Статус</span><span>Следующий стоп</span><span>ETA / ставка</span></div>' +
+      (rows.length ? rows.map((r) => '<button class="trow' + (sel && sel.key === r.key ? ' on' : '') + '" data-lsel="' + r.key + '" style="grid-template-columns:1.4fr .7fr 1fr 1.5fr 1fr"><span class="col" style="min-width:0"><b style="font-size:14px">' + esc(r.no) + '</b><span class="xs muted" style="white-space:nowrap;overflow:hidden;text-overflow:ellipsis">' + esc(r.who) + '</span></span><span><span class="chip ' + (r.src === 'amazon' ? 'c-disp' : 'c-plan') + '">' + (r.src === 'amazon' ? 'Amazon' : 'Street') + '</span></span><span class="col" style="gap:4px;align-items:flex-start"><span class="chip ' + LST[r.st][1] + '">' + LST[r.st][0] + '</span>' + (r.risk && r.st !== 'dn' ? '<span class="xs" style="color:var(--red);font-weight:600">At risk</span>' : '') + '</span><span class="col" style="min-width:0"><span style="font-size:13px;font-weight:600;white-space:nowrap;overflow:hidden;text-overflow:ellipsis">' + esc(r.stop || '—') + '</span><span class="xs muted">' + esc(r.appt || '') + '</span></span><span class="col"><span style="font-size:13px;font-weight:600">' + esc(r.eta) + '</span><span class="xs" style="font-weight:600;color:' + VC[r.v] + '">' + esc(r.verdict) + '</span></span></button>').join('') : '<div class="small muted" style="padding:28px;text-align:center">Нет грузов с таким статусом</div>') +
+    '</div></div></div>' + detail + '</div>';
+}
+function addLoadSheet() {
+  const a = S.addL; if (!a) return '';
+  const f = a.f, inp = (k, ph, w) => '<input data-alf="' + k + '" placeholder="' + ph + '" value="' + esc(f[k] || '') + '" style="height:44px;padding:0 12px;border-radius:12px;border:1px solid var(--line);background:#0B1220;color:var(--text);font:inherit;font-size:14px;min-width:0;' + (w ? 'grid-column:span 2' : '') + '">';
+  const ok = a.mode === 'paste' ? a.text.trim().length > 10 : (f.pu || '').trim() && (f.del || '').trim();
+  return '<div style="position:fixed;inset:0;background:#0009;z-index:70;display:flex;align-items:flex-end;justify-content:center" data-act="addclose"><div class="card col" style="width:min(560px,100%);max-height:92vh;overflow:auto;padding:18px;border-radius:22px 22px 0 0;gap:12px;background:#0E1626" data-stop="1" role="dialog" aria-label="Добавить груз">' +
+    '<div class="row" style="justify-content:space-between"><h2 style="font-size:20px">Добавить груз</h2><button class="back" data-act="addclose" aria-label="Закрыть">' + ic('x', 18) + '</button></div>' +
+    '<div class="grid2"><button class="card col" style="padding:12px;border-radius:14px;gap:2px;text-align:left;border-color:var(--mint)"><b style="font-size:14px">Street</b><span class="xs muted">Вы добавляете, бот следит</span></button><div class="card col" style="padding:12px;border-radius:14px;gap:2px;opacity:.55"><b style="font-size:14px">Amazon</b><span class="xs muted">Придут сами из Relay (расширение, позже)</span></div></div>' +
+    '<div class="grid2"><button class="seg' + (a.mode === 'paste' ? ' on' : '') + '" data-alm="paste" style="height:40px;font-size:13px">✨ Вставить текст</button><button class="seg' + (a.mode === 'form' ? ' on' : '') + '" data-alm="form" style="height:40px;font-size:13px">Заполнить вручную</button></div>' +
+    (a.mode === 'paste' ? '<textarea id="alText" rows="7" maxlength="6000" placeholder="Вставьте rate confirmation или письмо брокера целиком" style="width:100%;padding:12px 14px;border-radius:14px;border:1px solid var(--line);background:#0B1220;color:var(--text);font:inherit;font-size:14px;resize:vertical">' + esc(a.text) + '</textarea><div class="xs muted" style="line-height:1.45">ИИ найдёт номер груза, брокера, трак, погрузку, выгрузку, время и ставку. Ничего не выдумывает: чего нет в тексте, оставит пустым.</div>'
+      : '<div style="display:grid;grid-template-columns:1fr 1fr;gap:8px">' + inp('no', 'Load #') + inp('broker', 'Брокер') + inp('truck', 'Трак (юнит)') + inp('rate', 'Ставка $') + inp('pu', 'Погрузка: город, штат', 1) + inp('put', 'Дата и время погрузки 11/22 08:00', 1) + inp('del', 'Выгрузка: город, штат', 1) + inp('dlt', 'Дата и время выгрузки 11/23 14:00', 1) + '</div>') +
+    '<button class="btn primary" style="height:48px;font-size:15px' + (ok ? '' : ';opacity:.45') + '" data-act="addsend">Добавить на доску</button>' +
+    '<div class="xs muted" style="line-height:1.45">' + (canSendData() ? 'Груз уйдёт боту сразу, окно закроется.' : 'Откроется чат с готовым сообщением: останется нажать «Отправить». Бот ответит карточкой груза.') + '</div></div></div>';
+}
+function addSend() {
+  const a = S.addL, f = a.f;
+  let text = '';
+  if (a.mode === 'paste') text = a.text.trim();
+  else text = [f.no || '', f.broker || '', f.truck || '', ((f.pu || '') + ' ' + (f.put || '')).trim(), ((f.del || '') + ' ' + (f.dlt || '')).trim(), f.rate || ''].join(' | ');
+  if (text.replace(/[|\s]/g, '').length < 6) { toast('Заполните погрузку и выгрузку'); return; }
+  if (S.access === 'survey') { S.lockSheet = 'survey'; render(); return; }
+  if (canSendData()) { try { tg.sendData(JSON.stringify({ v:1, k:'load', tx:text.slice(0, 6000) })); return; } catch (x) {} }
+  S.addL = null; render();
+  sendText('/load ' + text);
+}
+
+/* ---------- custom plan: the client picks drivers, updates, mode and extras; price = costs + 60%, ends in 9 ---------- */
+const CP_COSTS = { base:6.0, driver:0.35, update:0.002, shift:0.75 };
+const CP_EXTRAS = [['ai','AI ассистент','Вопросы о работе, передача смены, логистика',1.5,0.08],['auto','Автоответчик водителям','Отвечает на простые вопросы водителей',0,0.12],['map','Слежка на карте','Траки, маршруты и скорость (после ELD)',0,0.10],['ub','Update Board и напоминания','Дела из сообщений и напоминания',0,0.03],['broker','Тексты брокеру (ИИ)','Сообщение, email или звонок при опоздании',0.6,0],['reports','Отчёты за смену','Итог смены каждый день',0.4,0.02],['prio','Поддержка в приоритете','Владелец отвечает первым',5,0]];
+S.cp = { n:20, u:6, m:'full', f:127 };
+try { const q = new URLSearchParams(location.search); S.cpu = +q.get('cpu') || 0; S.cpf = q.get('cpf') ? parseInt(q.get('cpf'), 16) : 127; S.cpp = q.get('cpp') || ''; S.cpr = q.get('cpr') || ''; } catch (e) {}
+if (S.plan === 'custom') { PLANS.push(['custom', 'Свой', S.lim, S.cpu || 6]); S.cp = { n:S.lim || 20, u:S.cpu || 6, m:S.pm || 'full', f:S.cpf }; }
+function nicePrice(x) { if (x <= 9) return 9; if (x < 1000) return Math.ceil((x + 1) / 10) * 10 - 1; return Math.ceil((x + 1) / 100) * 100 - 1; }
+function cpPrice(c) {
+  const k = c.m === 'shift' ? CP_COSTS.shift : 1;
+  let cost = CP_COSTS.base + CP_COSTS.driver * c.n * k + CP_COSTS.update * c.n * c.u * 30;
+  CP_EXTRAS.forEach((e, i) => { if (c.f & (1 << i)) cost += e[3] + e[4] * c.n * k; });
+  cost = Math.round(cost * 100) / 100;
+  return nicePrice(cost * 1.6);
+}
+function vCustom() {
+  const c = S.cp, price = cpPrice(c);
+  return mzHead('Свой тариф', 'Выберите только то, что нужно вам. Цена считается сразу.', 'plans') +
+    (S.cpr ? '<div class="card row" style="padding:12px 14px;border-radius:14px;gap:10px;border-color:var(--blue-bd)"><span style="font-size:18px">📝</span><span class="small" style="flex:1">' + tr3('Заявка на свой тариф за $' + S.cpr + '/мес ждёт подтверждения.', 'Custom plan request for $' + S.cpr + '/month is waiting for confirmation.', "$" + S.cpr + "/oy maxsus tarif so'rovi tasdiqni kutmoqda.") + '</span></div>' : '') +
+    '<div class="' + (isWide() ? 'row' : 'col') + '" style="gap:14px;align-items:flex-start">' +
+    '<div class="col" style="gap:14px;flex:1;min-width:0;width:100%">' +
+      '<div class="card col" style="padding:16px;border-radius:18px;gap:10px"><div class="row" style="justify-content:space-between"><span class="label">Водителей</span><b style="font-size:26px;font-variant-numeric:tabular-nums" id="cpN">' + c.n + '</b></div><input type="range" id="cpRange" min="5" max="150" step="5" value="' + c.n + '" style="width:100%;accent-color:#3DDC97" aria-label="Водителей"><div class="wrap" style="gap:6px">' + [10, 20, 30, 40, 60, 80, 120].map((n) => '<button class="chip' + (c.n === n ? ' c-done' : ' c-gray') + '" style="height:30px;cursor:pointer" data-cpn="' + n + '">' + n + '</button>').join('') + '</div></div>' +
+      '<div class="card col" style="padding:16px;border-radius:18px;gap:10px"><span class="label">Апдейтов в день</span><div style="display:grid;grid-template-columns:repeat(5,minmax(0,1fr));gap:6px">' + [3, 4, 5, 6, 7, 8, 9, 10, 11, 12].map((u) => '<button class="seg' + (c.u === u ? ' on' : '') + '" data-cpu="' + u + '" style="height:38px;font-size:13px">' + u + '</button>').join('') + '</div></div>' +
+      '<div class="card col" style="padding:16px;border-radius:18px;gap:10px"><span class="label">Режим</span><div class="grid2"><button class="seg' + (c.m === 'shift' ? ' on' : '') + '" data-cpm="shift" style="height:44px;font-size:13px">Только смена · дешевле</button><button class="seg' + (c.m === 'full' ? ' on' : '') + '" data-cpm="full" style="height:44px;font-size:13px">24/7</button></div></div>' +
+      '<div class="card col" style="padding:6px 16px;border-radius:18px">' + CP_EXTRAS.map((e, i) => { const on = !!(c.f & (1 << i)); return '<button class="row" data-cpx="' + i + '" style="justify-content:space-between;gap:12px;width:100%;padding:12px 0;background:none;border:0;border-bottom:' + (i < CP_EXTRAS.length - 1 ? '1px solid var(--line)' : '0') + ';color:var(--text);font:inherit;text-align:left"><span class="col" style="gap:2px;min-width:0"><b style="font-size:14px">' + e[1] + '</b><span class="xs muted">' + e[2] + '</span></span><span style="width:44px;height:26px;border-radius:13px;flex:none;position:relative;background:' + (on ? 'var(--mint)' : '#2A3550') + ';transition:background .2s"><span style="position:absolute;top:3px;left:' + (on ? 21 : 3) + 'px;width:20px;height:20px;border-radius:10px;background:#fff;transition:left .2s"></span></span></button>'; }).join('') + '</div>' +
+    '</div>' +
+    '<div class="card col" style="padding:18px;border-radius:20px;gap:10px;' + (isWide() ? 'position:sticky;top:16px;width:300px;flex:none' : 'width:100%') + ';background:radial-gradient(120% 120% at 100% 0%,#12302A,#0E1626);border-color:var(--mint-bd)"><span class="label">Ваша цена</span><div class="row" style="align-items:baseline;gap:6px"><b style="font-size:44px;letter-spacing:-.02em;font-variant-numeric:tabular-nums" id="cpPrice">$' + price + '</b><span class="muted">/ мес</span></div>' +
+      '<div class="xs muted" style="line-height:1.5">' + tr3(c.n + ' водителей · ' + c.u + ' апдейтов в день · ' + (c.m === 'full' ? '24/7' : 'смена'), c.n + ' drivers · ' + c.u + ' updates a day · ' + (c.m === 'full' ? '24/7' : 'shift'), c.n + ' haydovchi · kuniga ' + c.u + ' apdeyt · ' + (c.m === 'full' ? '24/7' : 'smena')) + '</div>' +
+      '<button class="btn primary" style="height:48px;font-size:15px" data-act="cpsend">Отправить заявку</button><div class="xs muted" style="line-height:1.45">Владелец подтвердит, и тариф включится сам. Оплата пока не подключена (бета).</div></div></div>';
+}
+function cpSend() {
+  if (S.access === 'survey') { S.lockSheet = 'survey'; render(); return; }
+  const c = S.cp; sendToBot('cp-' + c.n + '-' + c.u + '-' + (c.m === 'full' ? 'f' : 's') + '-' + c.f.toString(16), '/plan');
+}
+function customCard() {
+  return '<button class="card row" data-go="custom" style="text-align:left;padding:16px;border-radius:18px;gap:14px;border-style:dashed"><span class="icon" style="width:44px;height:44px;border-radius:13px;background:var(--mint-bg);color:var(--mint-t);flex:none">' + ic('sliders', 22, 'currentColor', 2) + '</span><span class="col" style="flex:1;gap:3px;min-width:0"><b style="font-size:16px">Собрать свой тариф</b><span class="xs muted">Сколько водителей и апдейтов, какие функции нужны. Цена сразу.</span></span>' + ic('chev', 18, 'var(--muted)', 2) + '</button>';
+}
+
+/* ---------- global search: driver, unit, load ---------- */
+S.gs = null;
+function gsResults(q) {
+  q = (q || '').trim().toLowerCase(); if (!q) return [];
+  const out = [];
+  MP.forEach((k) => { if ((k.u + ' ' + k.d).toLowerCase().indexOf(q) >= 0) out.push(['truck', 'UNIT ' + k.u + ' · ' + k.d, (mpState(k).next ? mpState(k).next.n : 'Доставил'), 'gsmap', k.u]); });
+  boardRows().forEach((r) => { if ((r.no + ' ' + r.who + ' ' + (r.truck || '')).toLowerCase().indexOf(q) >= 0) out.push(['box', r.no + ' · ' + (r.src === 'amazon' ? 'Amazon' : 'Street'), r.who + ' · ' + LST[r.st][0], 'gsload', r.key]); });
+  (S.tk || []).forEach((t) => { if (((t.who || '') + ' ' + (t.note || '')).toLowerCase().indexOf(q) >= 0) out.push(['bell', 'Update Board · ' + t.who, t.note || '', 'gsub', '']); });
+  return out.slice(0, 12);
+}
+function gsList(q) {
+  const r = gsResults(q);
+  if (!q.trim()) return '<div class="xs muted" style="padding:10px 4px">Имя водителя, юнит (2080) или номер груза.</div>';
+  if (!r.length) return '<div class="small muted" style="padding:14px 4px">Ничего не нашлось</div>';
+  return r.map((x) => '<button class="row" data-' + x[3] + '="' + esc(x[4]) + '" style="width:100%;gap:12px;padding:10px;border-radius:12px;background:none;border:0;color:var(--text);font:inherit;text-align:left"><span class="icon" style="width:34px;height:34px;border-radius:10px;background:var(--raised);color:var(--sub);flex:none">' + ic(x[0], 17, 'currentColor', 2) + '</span><span class="col" style="flex:1;min-width:0;gap:1px"><b style="font-size:14px">' + esc(x[1]) + '</b><span class="xs muted" style="white-space:nowrap;overflow:hidden;text-overflow:ellipsis">' + esc(x[2]) + '</span></span>' + ic('chev', 16, 'var(--muted)', 2) + '</button>').join('');
+}
+function gsOverlay() {
+  if (!S.gs) return '';
+  return '<div style="position:fixed;inset:0;background:#000a;z-index:80;display:flex;justify-content:center;align-items:flex-start;padding:' + (isWide() ? '80px' : '16px') + ' 16px 16px" data-act="gsclose"><div class="card col" data-stop="1" role="dialog" aria-label="Поиск" style="width:min(560px,100%);max-height:80vh;padding:12px;border-radius:18px;gap:8px;background:#0E1626">' +
+    '<label class="row" style="gap:10px;height:48px;padding:0 12px;border-radius:12px;background:#0B1220;border:1px solid var(--line)">' + ic('search', 18, 'var(--muted)', 2) + '<input id="gsQ" value="' + esc(S.gs.q) + '" placeholder="Водитель, юнит или груз" aria-label="Поиск" style="flex:1;min-width:0;background:transparent;border:0;outline:none;font-size:16px;color:var(--text)"><span class="xs muted">Esc</span></label>' +
+    '<div id="gsRes" class="col" style="overflow:auto;gap:2px">' + gsList(S.gs.q) + '</div></div></div>';
+}
+function gsButton() {
+  return '<button class="card row" data-act="gsopen" style="height:42px;min-height:42px;flex:none;padding:0 12px;border-radius:12px;gap:8px;color:var(--muted);font-size:13px;text-align:left">' + ic('search', 16, 'var(--muted)', 2) + '<span style="flex:1;white-space:nowrap;overflow:hidden;text-overflow:ellipsis">' + (isWide() ? 'Поиск' : 'Поиск: водитель, юнит, груз') + '</span>' + (isWide() ? '<span class="xs" style="border:1px solid var(--line);border-radius:6px;padding:1px 6px">/</span>' : '') + '</button>';
+}
+
+function b2Click(d) {
+  if (d.stop && !d.act) return true;
+  if (d.src) { S.src = d.src; S.lsel = ''; render(); return true; }
+  if (d.lsel) { S.lsel = d.lsel; render(); return true; }
+  if (d.lst) {
+    const r = boardRows().filter((x) => x.key === S.lsel)[0] || boardRows().filter((x) => x.src === 'street')[0];
+    if (!r || r.src !== 'street') return true;
+    r.raw.st = d.lst; if (d.lst === 'dn' || d.lst === 'cx') r.raw.risk = 0; render();
+    if (r.raw.dbid) sendToBot('ls-' + r.raw.dbid + '-' + d.lst, '/loads');
+    else toast('Пример: у настоящего груза статус сохранится в боте');
+    return true;
+  }
+  if (d.ltt !== undefined) { S.lt = { t:d.ltt, r:'tr', e:'', f:'m' }; go('ai'); setTimeout(() => { const c = document.getElementById('lateCard'); if (c && c.scrollIntoView) c.scrollIntoView({ block:'center' }); }, 60); return true; }
+  if (d.act === 'addload') { S.addL = { mode:'paste', text:'', f:{} }; render(); return true; }
+  if (d.act === 'addclose') { S.addL = null; render(); return true; }
+  if (d.alm) { S.addL.mode = d.alm; render(); return true; }
+  if (d.act === 'addsend') { addSend(); return true; }
+  if (d.cpn) { S.cp.n = +d.cpn; render(); return true; }
+  if (d.cpu) { S.cp.u = +d.cpu; render(); return true; }
+  if (d.cpm) { S.cp.m = d.cpm; render(); return true; }
+  if (d.cpx !== undefined) { S.cp.f ^= (1 << +d.cpx); render(); return true; }
+  if (d.act === 'cpsend') { cpSend(); return true; }
+  if (d.act === 'gsopen') { S.gs = { q:'' }; render(); setTimeout(() => { const i = document.getElementById('gsQ'); if (i) i.focus(); }, 30); return true; }
+  if (d.act === 'gsclose') { S.gs = null; render(); return true; }
+  if (d.gsmap) { S.gs = null; S.mp.sel = d.gsmap; S.mp.pick = false; go('map'); return true; }
+  if (d.gsload) { S.gs = null; S.lsel = d.gsload; S.src = 'all'; S.tab = 'all'; go('board'); return true; }
+  if (d.gsub !== undefined) { S.gs = null; go('ub'); return true; }
+  return false;
+}
+function b2AfterRender() {
+  const al = document.getElementById('alText');
+  if (al) al.addEventListener('input', (e) => { S.addL.text = e.target.value; const b = document.querySelector('[data-act="addsend"]'); if (b) b.style.opacity = S.addL.text.trim().length > 10 ? '' : '.45'; });
+  document.querySelectorAll('[data-alf]').forEach((el) => el.addEventListener('input', (e) => { S.addL.f[el.dataset.alf] = e.target.value; const b = document.querySelector('[data-act="addsend"]'); if (b) b.style.opacity = (S.addL.f.pu || '').trim() && (S.addL.f.del || '').trim() ? '' : '.45'; }));
+  const cr = document.getElementById('cpRange');
+  if (cr) cr.addEventListener('input', (e) => { S.cp.n = +e.target.value; const n = document.getElementById('cpN'), p = document.getElementById('cpPrice'); if (n) n.textContent = S.cp.n; if (p) p.textContent = '$' + cpPrice(S.cp); });
+  if (cr) cr.addEventListener('change', () => render());
+  const gq = document.getElementById('gsQ');
+  if (gq) gq.addEventListener('input', (e) => { S.gs.q = e.target.value; const r = document.getElementById('gsRes'); if (r) { r.innerHTML = gsList(S.gs.q); if (S.lang !== 'ru') translateDom(r); } });
+  const mq = document.getElementById('mpQ');
+  if (mq) mq.addEventListener('input', (e) => { S.mp.q = e.target.value; const l = document.getElementById('mpList'); if (l) { l.innerHTML = mpListHtml(); if (S.lang !== 'ru') translateDom(l); } });
+}
+document.addEventListener('keydown', (e) => {
+  if (e.key === 'Escape' && (S.gs || S.addL)) { S.gs = null; S.addL = null; render(); }
+  else if ((e.key === '/' || (e.key === 'k' && (e.metaKey || e.ctrlKey))) && !S.gs && !/INPUT|TEXTAREA/.test((document.activeElement || {}).tagName || '')) { e.preventDefault(); S.gs = { q:'' }; render(); setTimeout(() => { const i = document.getElementById('gsQ'); if (i) i.focus(); }, 30); }
+});
+
+/* ---------------- live map v2: route driven / ahead, numbered stops, verdict colours, follow, search, US outline fallback ---------------- */
+S.mp.q = ''; S.mp.follow = true;
+const US_OUT = [[48.99,-123.0],[48.99,-95.15],[49.38,-95.15],[48.0,-89.6],[46.5,-84.5],[45.8,-82.5],[43.0,-82.4],[41.7,-83.5],[42.5,-79.0],[43.6,-76.2],[45.0,-74.7],[45.0,-71.5],[47.4,-69.2],[44.8,-66.9],[43.0,-70.7],[41.5,-71.0],[40.6,-73.9],[39.0,-74.8],[38.0,-75.3],[36.9,-76.0],[35.2,-75.5],[33.8,-78.0],[32.0,-80.8],[30.7,-81.4],[28.0,-80.5],[25.2,-80.4],[25.1,-81.1],[26.7,-82.2],[29.0,-82.8],[30.1,-84.0],[29.7,-85.4],[30.4,-88.0],[29.2,-89.2],[29.6,-92.0],[29.7,-94.0],[28.0,-97.0],[25.9,-97.2],[26.4,-99.1],[29.4,-101.0],[29.8,-102.4],[29.0,-103.2],[31.0,-104.6],[31.8,-106.5],[31.33,-108.2],[31.33,-111.1],[32.5,-114.8],[32.7,-117.1],[34.0,-118.5],[34.5,-120.6],[36.3,-121.9],[37.8,-122.5],[40.4,-124.4],[42.0,-124.3],[46.2,-124.0],[48.4,-124.7]];
+function mpRing(k) { return MP_V[k.v][1]; }
+function mpListHtml() {
+  const q = (S.mp.q || '').trim().toLowerCase();
+  const rows = mpVisible().filter((k) => !q || (k.u + ' ' + k.d + ' ' + k.load).toLowerCase().indexOf(q) >= 0);
+  if (!rows.length) return '<div class="small muted" style="padding:14px 4px">Ничего не нашлось</div>';
+  return rows.map((k) => { const st = mpState(k), pct = Math.round(st.dist / k.tot * 100); return '<button class="card col" data-mtk="' + k.u + '" style="padding:10px 12px;border-radius:14px;gap:8px;text-align:left;' + (S.mp.sel === k.u ? 'border-color:var(--mint)' : '') + '"><span class="row" style="gap:10px;width:100%"><span style="width:28px;display:flex;justify-content:center;flex:none">' + truckSvg(mpStyle(k.u), 22) + '</span><span class="col" style="flex:1;min-width:0;gap:1px"><b style="font-size:14px">UNIT ' + k.u + ' · ' + esc(k.d) + '</b><span class="xs muted" style="white-space:nowrap;overflow:hidden;text-overflow:ellipsis">' + (st.next ? esc(st.next.n) : 'Доставил') + '</span></span><span class="col" style="align-items:flex-end;gap:1px;flex:none"><b class="xs" data-mspd="' + k.u + '">' + (st.st === 'roll' ? k.mph + ' mph' : MP_ST[st.st]) + '</b><span class="xs" style="color:' + mpRing(k) + '">' + MP_V[k.v][0] + '</span></span></span><span style="display:block;height:4px;border-radius:2px;background:#1A2438;overflow:hidden;width:100%"><span style="display:block;height:100%;width:' + pct + '%;background:' + mpRing(k) + '"></span></span></button>'; }).join('');
+}
+function vMap() {
+  const sel = MP.filter((k) => k.u === S.mp.sel)[0];
+  const counts = { roll: MP.filter((k) => mpState(k).st === 'roll').length, risk: MP.filter((k) => k.v !== 'ok').length };
+  const filt = '<div class="wrap" style="gap:6px">' + [['all','Все ' + MP.length],['roll','Едут ' + counts.roll],['stop','Стоят ' + (MP.length - counts.roll)],['risk','Риск ' + counts.risk]].map((x) => '<button class="chip' + (S.mp.f === x[0] ? ' c-done' : ' c-gray') + '" style="height:30px;cursor:pointer" data-mpf="' + x[0] + '">' + x[1] + '</button>').join('') + '</div>';
+  const search = '<label class="card row" style="height:42px;padding:0 12px;border-radius:12px;gap:8px">' + ic('search', 16, 'var(--muted)', 2) + '<input id="mpQ" value="' + esc(S.mp.q) + '" placeholder="Юнит, водитель или груз" aria-label="Поиск трака" style="flex:1;min-width:0;background:transparent;border:0;outline:none;font-size:14px;color:var(--text)"></label>';
+  const list = search + filt + '<div id="mpList" class="col" style="gap:8px">' + mpListHtml() + '</div>';
+  let panel = '';
+  if (sel) {
+    const st = mpState(sel), cur = mpStyle(sel.u), pct = Math.round(st.dist / sel.tot * 100);
+    panel = '<div class="card col" style="padding:14px;border-radius:18px;gap:12px">' +
+      '<div class="row" style="justify-content:space-between;gap:10px"><button class="back" data-mtk="" aria-label="Назад">' + ic('back', 18, '#EAF0FA', 2) + '</button><span class="col" style="flex:1;min-width:0;gap:1px"><b style="font-size:17px">UNIT ' + sel.u + ' · ' + esc(sel.d) + '</b><span class="xs muted">Load ' + sel.load + ' · ' + (st.st === 'roll' ? '<span data-mspd2="' + sel.u + '">' + sel.mph + ' mph</span>' : MP_ST[st.st]) + '</span></span><span class="chip" style="background:' + mpRing(sel) + '22;color:' + mpRing(sel) + ';border:1px solid ' + mpRing(sel) + '55">' + MP_V[sel.v][0] + '</span></div>' +
+      '<div class="col" style="gap:6px"><div class="row xs muted" style="justify-content:space-between"><span>' + esc(sel.stops.length ? 'Маршрут' : '') + '</span><span><span data-mleft="' + sel.u + '">' + (st.next ? Math.round(st.left) + ' mi' : '—') + '</span> ' + tr3('до стопа', 'to the stop', 'stopgacha') + '</span></div><span style="display:block;height:8px;border-radius:4px;background:#1A2438;overflow:hidden"><span style="display:block;height:100%;width:' + pct + '%;background:linear-gradient(90deg,#2BB57A,' + mpRing(sel) + ')"></span></span></div>' +
+      '<div style="display:grid;grid-template-columns:repeat(3,minmax(0,1fr));gap:8px">' + [['ETA', st.etaH ? '<span data-meta="' + sel.u + '">' + hm(st.etaH) + '</span>' : '—'], ['Часы', sel.hos], ['Пройдено', pct + '%']].map((x) => '<div class="card col" style="padding:10px;border-radius:12px;gap:2px;background:var(--raised)"><span class="xs muted">' + x[0] + '</span><b style="font-size:14px">' + x[1] + '</b></div>').join('') + '</div>' +
+      '<div class="col" style="gap:8px"><span class="label">Стопы</span>' + sel.stops.map((s, i) => { const done = s.at <= st.dist + 0.5, nxt = st.next === s; return '<div class="row" style="gap:10px;align-items:flex-start"><span style="width:24px;height:24px;border-radius:50%;flex:none;display:flex;align-items:center;justify-content:center;font-size:12px;font-weight:700;background:' + (done ? 'var(--mint)' : (nxt ? '#F5B83D' : 'var(--raised)')) + ';color:' + (done || nxt ? '#0B1220' : 'var(--sub)') + '">' + (done ? '✓' : i + 1) + '</span><span class="col" style="gap:1px;flex:1;min-width:0"><span style="font-size:13px;font-weight:600">' + esc(s.n) + '</span><span class="xs muted">Appt ' + s.appt + (nxt ? ' · ' + tr3('следующий', 'next', 'keyingi') : '') + '</span></span></div>'; }).join('') + '</div>' +
+      '<div class="col" style="gap:6px"><div class="row" style="justify-content:space-between"><span class="label">Где был</span><span class="xs muted">' + (S.mp.replay ? tr3(S.mp.replay + ' ч назад', S.mp.replay + 'h ago', S.mp.replay + ' soat oldin') : tr3('сейчас', 'now', 'hozir')) + '</span></div><input type="range" id="mpReplay" min="0" max="12" step="1" value="' + S.mp.replay + '" style="width:100%;accent-color:#3DDC97" aria-label="Где был"></div>' +
+      '<div class="grid2"><button class="btn" style="height:40px;font-size:13px" data-ltt="' + sel.u + '">✉️ Текст брокеру</button><button class="btn" style="height:40px;font-size:13px" data-act="mppick">' + (S.mp.pick ? 'Скрыть виды' : 'Вид трака') + '</button></div>' +
+      (S.mp.pick ? '<div style="display:grid;grid-template-columns:repeat(7,minmax(0,1fr));gap:6px"><button class="card" data-mps="std" title="Обычный" style="padding:6px 0;border-radius:10px;display:flex;justify-content:center;align-items:center;' + (cur === 'std' ? 'border-color:var(--mint)' : '') + '">' + truckSvg('std', 22) + '</button>' + TK_BODY.map((b, bi) => TK_COL.map((c, ci) => { const k = bi + '-' + ci; return '<button class="card" data-mps="' + k + '" title="' + b[1] + '" style="padding:4px 0;border-radius:10px;display:flex;justify-content:center;align-items:center;' + (cur === k ? 'border-color:var(--mint)' : '') + '">' + truckSvg(k, 26) + '</button>'; }).join('')).join('') + '</div><div class="xs muted">Вид сохраняется на этом устройстве (бета).</div>' : '') +
+      '</div>';
+  }
+  const top = '<div class="row" style="justify-content:space-between;gap:10px;flex-wrap:wrap"><span class="row" style="gap:10px"><h1 class="title" style="font-size:24px">Слежка</h1><span class="chip c-dev">бета · демо</span></span><span class="row" style="gap:6px">' + [[1,'Реально'],[60,'×60']].map((x) => '<button class="seg' + (S.mp.mult === x[0] ? ' on' : '') + '" data-mpm="' + x[0] + '" style="height:32px;padding:0 10px;font-size:12px">' + x[1] + '</button>').join('') + '</span></div>' +
+    '<div class="xs muted" style="line-height:1.5">12 траков с примерными данными. Живые траки, маршруты и скорость появятся после подключения ELD и сервера.</div>';
+  const overlay = '<div style="position:absolute;right:10px;top:10px;z-index:500;display:flex;flex-direction:column;gap:6px"><button class="btn" data-act="mpfit" title="Все траки" aria-label="Все траки" style="height:36px;width:36px;padding:0;background:#0E1626ee">' + ic('target', 18, 'currentColor', 2) + '</button>' + (sel ? '<button class="btn' + (S.mp.follow ? ' primary' : '') + '" data-act="mpfollow" style="height:36px;padding:0 10px;font-size:12px;background:' + (S.mp.follow ? '' : '#0E1626ee') + '">' + (S.mp.follow ? 'Слежу' : 'Следить') + '</button>' : '') + '</div>' +
+    '<div style="position:absolute;left:10px;bottom:10px;z-index:500;display:flex;gap:10px;padding:6px 10px;border-radius:10px;background:#0B1220dd;font-size:11px;color:var(--sub)">' + ['ok','tight','late'].map((v) => '<span class="row" style="gap:5px"><span style="width:8px;height:8px;border-radius:4px;background:' + MP_V[v][1] + '"></span>' + MP_V[v][0] + '</span>').join('') + '</div>';
+  const mapBox = '<div style="position:relative;width:100%;height:' + (isWide() ? 'calc(100vh - 170px)' : '56vh') + ';min-height:360px;border-radius:18px;overflow:hidden;border:1px solid var(--line);background:#0B1220"><div id="mapSlot" style="position:absolute;inset:0"></div>' + overlay + '</div>';
+  if (isWide()) return top + '<div style="display:grid;grid-template-columns:minmax(0,1fr) 360px;gap:14px;align-items:start">' + mapBox + '<div class="col" style="gap:10px;max-height:calc(100vh - 170px);overflow:auto;padding-right:2px">' + (panel || list) + '</div></div>';
+  return (!screenWide() ? '<div class="card row" style="padding:10px 14px;border-radius:14px;gap:10px"><span style="font-size:18px">💻</span><span class="xs muted" style="flex:1;line-height:1.4">Карта удобнее в Расширенном окне на компьютере.</span></div>' : '') + top + mapBox + (panel || list);
+}
+function mpIcon(k, hd) {
+  const sel = S.mp.sel === k.u, std = mpStyle(k.u) === 'std', st = mpState(k);
+  const glyph = std ? '<svg width="30" height="30" viewBox="0 0 30 30"><circle cx="15" cy="15" r="12" fill="#0E1626" stroke="' + mpRing(k) + '" stroke-width="3"/><path d="M15 6.5l6.5 14-6.5-3.8-6.5 3.8z" fill="' + mpRing(k) + '"/></svg>' : truckSvg(mpStyle(k.u), 30);
+  return window.L.divIcon({ className: 'mzTk', iconSize: [48, 48], iconAnchor: [24, 24], html:
+    (sel ? '<div class="mzPulse" style="position:absolute;left:4px;top:4px;width:40px;height:40px;border-radius:20px;border:2px solid ' + mpRing(k) + ';opacity:.6"></div>' : '') +
+    '<div data-rot="1" style="width:48px;height:48px;display:flex;align-items:center;justify-content:center;transform:rotate(' + Math.round(hd) + 'deg)">' + glyph + '</div>' +
+    '<div style="position:absolute;left:50%;top:44px;transform:translateX(-50%);font:600 10px Inter,system-ui;color:#EEF3FA;background:#0B1220e6;border:1px solid ' + mpRing(k) + '66;padding:1px 6px;border-radius:7px;white-space:nowrap">' + k.u + (st.st === 'roll' ? ' · ' + k.mph : '') + '</div>' });
+}
+function mpStopIcon(n, state) {
+  const bg = state === 'done' ? '#3DDC97' : (state === 'next' ? '#F5B83D' : '#33415C');
+  return window.L.divIcon({ className: 'mzSt', iconSize: [26, 26], iconAnchor: [13, 13], html: '<div style="width:26px;height:26px;border-radius:13px;background:' + bg + ';border:2px solid #0B1220;display:flex;align-items:center;justify-content:center;font:700 12px Inter,system-ui;color:#0B1220;box-shadow:0 2px 8px #0008">' + (state === 'done' ? '✓' : n) + '</div>' });
+}
+let LDONE = null, LAHEAD = null;
+function mpDecor() {
+  const L = window.L; if (!LMAP || !L) return;
+  LSTOPS.forEach((m) => LMAP.removeLayer(m)); LSTOPS = [];
+  [LTRAIL, LDONE, LAHEAD].forEach((x) => { if (x) LMAP.removeLayer(x); }); LTRAIL = LDONE = LAHEAD = null;
+  MP.forEach((k, i) => { LLINES[i].setStyle({ color: '#5B9DFF', weight: 2, opacity: S.mp.sel ? (k.u === S.mp.sel ? 0 : 0.1) : 0.3 }); LMK[k.u].setIcon(mpIcon(k, mpState(k).hd)); });
+  const k = MP.filter((x) => x.u === S.mp.sel)[0];
+  if (!k) return;
+  const st = mpState(k), done = [], ahead = [st.ll];
+  for (let d = 0; d < st.dist; d += Math.max(2, st.dist / 60)) done.push(mpAt(k, d).ll);
+  done.push(st.ll);
+  k.cum.forEach((c, i) => { if (c > st.dist) ahead.push(k.pts[i]); });
+  LDONE = L.polyline(done, { color: '#3DDC97', weight: 5, opacity: 0.95 }).addTo(LMAP);
+  LAHEAD = L.polyline(ahead, { color: '#EEF3FA', weight: 4, opacity: 0.6, dashArray: '2 9', lineCap: 'round' }).addTo(LMAP);
+  k.stops.forEach((s, i) => { const state = s.at <= st.dist + 0.5 ? 'done' : (st.next === s ? 'next' : 'later'); LSTOPS.push(L.marker(s.ll, { icon: mpStopIcon(i + 1, state), zIndexOffset: -100 }).bindTooltip(s.n + ' · ' + s.appt).addTo(LMAP)); });
+  if (S.mp.replay) { const g = mpAt(k, mpDist(k, S.mp.replay)); LSTOPS.push(L.circleMarker(g.ll, { radius: 9, color: '#EEF3FA', weight: 3, fillColor: '#3DDC97', fillOpacity: 0.4 }).addTo(LMAP)); }
+  if (S.mp.follow) LMAP.setView(st.ll, Math.max(LMAP.getZoom ? LMAP.getZoom() : 6, 6));
+}
+function mpFit() {
+  if (LMAP && window.L && !S.mp.fail) { LMAP.fitBounds(window.L.latLngBounds(MP.map((k) => k.pts).flat()), { padding: [30, 30] }); return; }
+  S.mp.sel = ''; render();
+}
+function mpDrawFallback(slot) {
+  const minA = 24, maxA = 50, minO = -125.5, maxO = -66;
+  const W = 1000, H = 600, X = (o) => (o - minO) / (maxO - minO) * W, Y = (a) => H - (a - minA) / (maxA - minA) * H;
+  const pts = (arr) => arr.map((p) => X(p[1]).toFixed(1) + ',' + Y(p[0]).toFixed(1)).join(' ');
+  let svg = '<svg viewBox="0 0 ' + W + ' ' + H + '" preserveAspectRatio="none" style="position:absolute;inset:0;width:100%;height:100%"><defs><pattern id="mzg" width="40" height="40" patternUnits="userSpaceOnUse"><path d="M40 0H0V40" fill="none" stroke="#141D30" stroke-width="1"/></pattern></defs><rect width="' + W + '" height="' + H + '" fill="url(#mzg)"/>' +
+    '<polygon points="' + pts(US_OUT) + '" fill="#111B2E" stroke="#2A3A58" stroke-width="2" stroke-linejoin="round"/>';
+  MP.forEach((k) => {
+    if (k.u === S.mp.sel) return;
+    svg += '<polyline points="' + pts(k.pts) + '" fill="none" stroke="#5B9DFF" stroke-width="2" opacity="' + (S.mp.sel ? 0.12 : 0.35) + '" stroke-linecap="round"/>';
+  });
+  const k = MP.filter((x) => x.u === S.mp.sel)[0];
+  if (k) {
+    const st = mpState(k), done = [], ahead = [st.ll];
+    for (let d = 0; d < st.dist; d += Math.max(2, st.dist / 60)) done.push(mpAt(k, d).ll);
+    done.push(st.ll); k.cum.forEach((c, i) => { if (c > st.dist) ahead.push(k.pts[i]); });
+    svg += '<polyline points="' + pts(done) + '" fill="none" stroke="#3DDC97" stroke-width="5" stroke-linecap="round"/><polyline points="' + pts(ahead) + '" fill="none" stroke="#EEF3FA" stroke-width="3.5" opacity=".65" stroke-dasharray="2 9" stroke-linecap="round"/>';
+    k.stops.forEach((s, i) => { const state = s.at <= st.dist + 0.5 ? 'done' : (st.next === s ? 'next' : 'later'); svg += '<circle cx="' + X(s.ll[1]).toFixed(1) + '" cy="' + Y(s.ll[0]).toFixed(1) + '" r="11" fill="' + (state === 'done' ? '#3DDC97' : (state === 'next' ? '#F5B83D' : '#33415C')) + '" stroke="#0B1220" stroke-width="2.5"/><text x="' + X(s.ll[1]).toFixed(1) + '" y="' + (Y(s.ll[0]) + 4).toFixed(1) + '" text-anchor="middle" font-size="12" font-weight="700" fill="#0B1220" font-family="Inter,system-ui">' + (state === 'done' ? '✓' : i + 1) + '</text>'; });
+  }
+  svg += '</svg>';
+  let html = svg;
+  MP.forEach((k) => { const st = mpState(k), std = mpStyle(k.u) === 'std'; html += '<button data-mtk="' + k.u + '" style="position:absolute;left:' + (X(st.ll[1]) / W * 100) + '%;top:' + (Y(st.ll[0]) / H * 100) + '%;transform:translate(-50%,-50%);background:none;border:0;padding:0;cursor:pointer;z-index:' + (k.u === S.mp.sel ? 3 : 2) + '" aria-label="UNIT ' + k.u + '"><span style="display:block;transform:rotate(' + Math.round(st.hd) + 'deg)">' + (std ? '<svg width="26" height="26" viewBox="0 0 30 30"><circle cx="15" cy="15" r="12" fill="#0E1626" stroke="' + mpRing(k) + '" stroke-width="3"/><path d="M15 6.5l6.5 14-6.5-3.8-6.5 3.8z" fill="' + mpRing(k) + '"/></svg>' : truckSvg(mpStyle(k.u), 26)) + '</span><span style="position:absolute;left:50%;top:100%;transform:translateX(-50%);font:600 10px Inter,system-ui;color:#EEF3FA;background:#0B1220e6;border:1px solid ' + mpRing(k) + '66;padding:1px 5px;border-radius:6px;white-space:nowrap">' + k.u + '</span></button>'; });
+  html += '<div style="position:absolute;left:10px;top:10px;font-size:11px;color:var(--muted);background:#0B1220cc;padding:3px 8px;border-radius:8px">' + (S.lang === 'en' ? 'Simple map: the map service did not load' : (S.lang === 'uz' ? 'Oddiy xarita: xarita xizmati yuklanmadi' : 'Простая карта: сервис карт не загрузился')) + '</div>';
+  slot.innerHTML = html;
+  slot.dataset.fb = '1';
+}
+function mpClick(d) {
+  if (d.act === 'mpfit') { S.mp.follow = false; mpFit(); return true; }
+  if (d.act === 'mpfollow') { S.mp.follow = !S.mp.follow; render(); return true; }
+  return false;
+}
+
+function mpMount() {
+  const slot = document.getElementById('mapSlot'); if (!slot) return;
+  if (S.mp.fail) { mpDrawFallback(slot); return; }
+  slot.innerHTML = '<div style="position:absolute;inset:0;display:flex;align-items:center;justify-content:center;color:var(--muted);font-size:13px">' + (S.lang === 'en' ? 'Loading map…' : (S.lang === 'uz' ? 'Xarita yuklanmoqda…' : 'Загружаю карту…')) + '</div>';
+  mpLoadLib(() => {
+    const sl = document.getElementById('mapSlot'); if (!sl || S.view !== 'map') return;
+    try {
+      const L = window.L;
+      if (!LMAP) {
+        LMAP_EL = document.createElement('div'); LMAP_EL.style.cssText = 'position:absolute;inset:0;background:#0B1220';
+        sl.innerHTML = ''; sl.appendChild(LMAP_EL);
+        LMAP = L.map(LMAP_EL, { zoomControl: true, attributionControl: true, worldCopyJump: true }).setView([38.5, -97], 4);
+        L.tileLayer('https://{s}.basemaps.cartocdn.com/dark_all/{z}/{x}/{y}{r}.png', { maxZoom: 18, subdomains: 'abcd', attribution: '&copy; OpenStreetMap &copy; CARTO' }).addTo(LMAP);
+        MP.forEach((k) => {
+          LLINES.push(L.polyline(k.pts, { color: '#5B9DFF', weight: 2, opacity: 0.25 }).addTo(LMAP));
+          const st = mpState(k);
+          LMK[k.u] = L.marker(st.ll, { icon: mpIcon(k, st.hd), riseOnHover: true }).addTo(LMAP).on('click', () => { S.mp.sel = k.u; S.mp.pick = false; render(); });
+        });
+        LMAP.fitBounds(L.latLngBounds(MP.map((k) => k.pts).flat()), { padding: [30, 30] });
+      } else { sl.innerHTML = ''; sl.appendChild(LMAP_EL); }
+      setTimeout(() => { try { LMAP.invalidateSize(); } catch (x) {} }, 30);
+      mpDecor();
+    } catch (err) { console.error('map', err); S.mp.fail = true; mpDrawFallback(sl); }
+  });
+}
+function mpTick() {
+  if (S.view !== 'map') return;
+  MP.forEach((k) => {
+    const st = mpState(k);
+    if (LMAP && LMK[k.u] && !S.mp.fail) { LMK[k.u].setLatLng(st.ll); const el = LMK[k.u].getElement && LMK[k.u].getElement(); const r = el && el.querySelector && el.querySelector('[data-rot]'); if (r) r.style.transform = 'rotate(' + Math.round(st.hd) + 'deg)'; }
+    document.querySelectorAll('[data-mleft="' + k.u + '"]').forEach((el) => { el.textContent = st.next ? Math.round(st.left) + ' mi' : '—'; });
+    document.querySelectorAll('[data-meta="' + k.u + '"]').forEach((el) => { if (st.etaH) el.textContent = hm(st.etaH); });
+  });
+  const k = MP.filter((x) => x.u === S.mp.sel)[0];
+  if (k && LMAP && LDONE && LAHEAD && !S.mp.fail) {
+    const st = mpState(k), done = [], ahead = [st.ll];
+    for (let d = 0; d < st.dist; d += Math.max(2, st.dist / 60)) done.push(mpAt(k, d).ll);
+    done.push(st.ll); k.cum.forEach((c, i) => { if (c > st.dist) ahead.push(k.pts[i]); });
+    LDONE.setLatLngs(done); LAHEAD.setLatLngs(ahead);
+    if (S.mp.follow) LMAP.panTo(st.ll);
+  }
+  const slot = document.getElementById('mapSlot'); if (slot && slot.dataset.fb) mpDrawFallback(slot);
+}
+
+const VIEWS = { custom:vCustom, ai:vAi, support:vSupport, answers:vAnswers, map:vMap, setup:vSetup, ub:vUb, home:vHome, shift:vShift, updates:vUpdates, eta:vEta, groups:vGroups, features:vFeatures, help:vHelp, settings:vSettings, plans:vPlans, agents:vAgents, work:vWork, tz:vTz, board:vBoard, drivers:vDrivers };
 const TABS = [['home','Главная','home'],['updates','Апдейты','send'],['big','Большой экран','monitor'],['features','Функции','grid'],['settings','Настройки','sliders']];
-const NAV = [['home','Главная','home'],['ub','Update Board','bell'],['ai','AI ассистент','spark'],['map','Слежка','map'],['board','Доска грузов','truck'],['drivers','Водители','wheel'],['updates','Апдейты','send'],['eta','Расчёт ETA','pin'],['groups','Группы','users'],['features','Все функции','grid'],['help','Инструкция','help'],['plans','Тарифы','doc'],['support','Поддержка','life'],['settings','Настройки','sliders']];
+const NAV = [['home','Главная','home'],['ub','Update Board','bell'],['map','Слежка','map'],['board','Доска грузов','truck'],['drivers','Водители','wheel'],['updates','Апдейты','send'],['eta','Расчёт ETA','pin'],['groups','Группы','users'],['features','Все функции','grid'],['help','Инструкция','help'],['settings','Настройки','sliders']];
 const TAB_OF = { ai:'home', support:'settings', answers:'settings', map:'home', ub:'home', shift:'home', eta:'home', board:'home', drivers:'home', groups:'home', help:'settings', plans:'settings', agents:'settings', work:'settings', tz:'settings' };
 
 const EN = {
+"Поиск":"Search",
+"Street грузы ваши, Amazon пока пример.":"Street loads are yours, Amazon is a sample for now.",
+"Пример данных. Добавьте свой груз кнопкой справа.":"Sample data. Add your load with the button on the right.",
+"Добавить груз":"Add load",
+"авто из Relay · бета":"auto from Relay · beta",
+"вручную + ИИ":"manual + AI",
+"Street, ставки":"Street, rates",
+"Груз":"Load",
+"Источник":"Source",
+"ETA / ставка":"ETA / rate",
+"✉️ Текст брокеру":"✉️ Text for the broker",
+"Amazon грузы придут сами из Relay через расширение для Chrome (последний этап, только чтение). Сейчас это пример.":"Amazon loads will come by themselves from Relay through the Chrome extension (the last stage, read-only). This is a sample for now.",
+"Груз, водитель, юнит":"Load, driver, unit",
+"Бот сам двигает статус по словам водителя в группе трака: «at shipper», «loaded», «delivered» и на русском, узбекском, турецком.":"The bot moves the status by itself from the driver's words in the truck group: \"at shipper\", \"loaded\", \"delivered\", also in Russian, Uzbek and Turkish.",
+"Отменить груз":"Cancel load",
+"Под риском":"At risk",
+"Трак не назначен":"No truck assigned",
+"Брокер не указан":"No broker given",
+"Статус":"Status",
+"Вы добавляете, бот следит":"You add, the bot watches",
+"Придут сами из Relay (расширение, позже)":"Will come from Relay by themselves (extension, later)",
+"✨ Вставить текст":"✨ Paste text",
+"Заполнить вручную":"Fill in manually",
+"ИИ найдёт номер груза, брокера, трак, погрузку, выгрузку, время и ставку. Ничего не выдумывает: чего нет в тексте, оставит пустым.":"The AI finds the load number, broker, truck, pickup, delivery, times and rate. It invents nothing: what is not in the text stays empty.",
+"Добавить на доску":"Add to the board",
+"Откроется чат с готовым сообщением: останется нажать «Отправить». Бот ответит карточкой груза.":"The chat opens with the message ready: just tap Send. The bot replies with the load card.",
+"Груз уйдёт боту сразу, окно закроется.":"The load goes to the bot right away, the window closes.",
+"Вставьте rate confirmation или письмо брокера целиком":"Paste the whole rate confirmation or broker email",
+"Откроется чат: сообщение готово, нажмите «Отправить»":"The chat opens: the message is ready, tap Send",
+"Брокер":"Broker",
+"Трак (юнит)":"Truck (unit)",
+"Ставка $":"Rate $",
+"Погрузка: город, штат":"Pickup: city, state",
+"Дата и время погрузки 11/22 08:00":"Pickup date and time 11/22 08:00",
+"Выгрузка: город, штат":"Delivery: city, state",
+"Дата и время выгрузки 11/23 14:00":"Delivery date and time 11/23 14:00",
+"Заполните погрузку и выгрузку":"Fill in pickup and delivery",
+"Пример: у настоящего груза статус сохранится в боте":"Sample: for a real load the status is saved in the bot",
+"Собрать свой тариф":"Build your own plan",
+"Сколько водителей и апдейтов, какие функции нужны. Цена сразу.":"How many drivers and updates, which features you need. Price right away.",
+"Свой тариф":"Custom plan",
+"Выберите только то, что нужно вам. Цена считается сразу.":"Pick only what you need. The price is calculated right away.",
+"Водителей":"Drivers",
+"Апдейтов в день":"Updates a day",
+"Только смена · дешевле":"Shift only · cheaper",
+"Вопросы о работе, передача смены, логистика":"Work questions, shift handoff, logistics",
+"Автоответчик водителям":"Auto-reply to drivers",
+"Отвечает на простые вопросы водителей":"Answers simple driver questions",
+"Слежка на карте":"Tracking map",
+"Траки, маршруты и скорость (после ELD)":"Trucks, routes and speed (after ELD)",
+"Update Board и напоминания":"Update Board and reminders",
+"Дела из сообщений и напоминания":"Tasks from messages and reminders",
+"Тексты брокеру (ИИ)":"Broker texts (AI)",
+"Сообщение, email или звонок при опоздании":"Message, email or call when late",
+"Отчёты за смену":"Shift reports",
+"Итог смены каждый день":"Shift summary every day",
+"Поддержка в приоритете":"Priority support",
+"Владелец отвечает первым":"The owner answers first",
+"Ваша цена":"Your price",
+"/ мес":"/ month",
+"Отправить заявку":"Send request",
+"Владелец подтвердит, и тариф включится сам. Оплата пока не подключена (бета).":"The owner confirms and the plan turns on by itself. Payment is not connected yet (beta).",
+"Все траки":"All trucks",
+"Поиск трака":"Truck search",
+"Юнит, водитель или груз":"Unit, driver or load",
+"Слежу":"Following",
+"Следить":"Follow",
+"Маршрут":"Route",
+"Пройдено":"Done",
+"Вид трака":"Truck look",
+"Скрыть виды":"Hide looks",
+"Водитель, юнит или груз":"Driver, unit or load",
+"Поиск: водитель, юнит, груз":"Search: driver, unit, load",
+"Имя водителя, юнит (2080) или номер груза.":"Driver name, unit (2080) or load number.",
+"Ничего не нашлось":"Nothing found",
+"Простая карта: сервис карт не загрузился":"Simple map: the map service did not load",
 "Водитель опаздывает: текст брокеру":"Driver is late: text for the broker",
 "ИИ напишет вежливо и понятно, на английском, и даст перевод для вас. Возьмёт факты из группы трака.":"The AI writes it politely and clearly in English. It takes the facts from the truck group.",
 "Новый ETA 17:20":"New ETA 17:20",
@@ -1612,7 +1934,7 @@ const EN = {
 "Какие документы нужны после доставки Amazon?":"Which documents are needed after an Amazon delivery?",
 "Спросить":"Ask",
 "Вопрос уйдёт боту сразу, окно закроется.":"The question goes to the bot right away, the window closes.",
-"Откроется чат с ботом. Свой вопрос уже скопирован: вставьте его и отправьте.":"The bot chat opens. Your question is already copied: paste it and send.",
+"Откроется чат с готовым вопросом: останется нажать «Отправить».":"The bot chat opens. Your question is already copied: paste it and send.",
 "Напишите вопрос":"Write a question",
 "Передача смены, кто ждёт ответа, что срочно":"Shift handoff, who is waiting, what is urgent",
 "Спросите: «дай передачу смены за 8 часов» или «кто ждёт ответа». Можно просто писать боту в чат.":"Ask: \"give me the shift handoff for 8 hours\" or \"who is waiting\". You can just write to the bot in the chat.",
@@ -1656,7 +1978,7 @@ const EN = {
 "Другое":"Other",
 "Сообщение":"Message",
 "Отправить":"Send",
-"Откроется чат с ботом. Текст уже скопирован: вставьте его и отправьте.":"The bot chat opens. The text is already copied: paste it and send.",
+"Откроется чат с готовым сообщением: останется нажать «Отправить».":"The bot chat opens. The text is already copied: paste it and send.",
 "Сообщение уйдёт боту сразу, окно закроется.":"The message goes to the bot right away, the window closes.",
 "Мои обращения":"My requests",
 "Пока нет обращений.":"No requests yet.",
@@ -1773,7 +2095,7 @@ const EN = {
 "Окно и бот: русский, английский и узбекский. Водителей бот понимает и на турецком и отвечает им на их языке.":"The window and the bot: Russian, English and Uzbek. The bot also understands drivers in Turkish and answers them in their language.","Да, командой /tr: русский текст превращается в короткое английское сообщение водителю, английский переводится на русский. Например: /tr пришли фото BOL":"Yes, with /tr: Russian text becomes a short English message for the driver, English is translated to Russian. Example: /tr пришли фото BOL","Тарифы отличаются числом водителей и апдейтов в день. Оплата заработает после запуска сервера.":"Plans differ by number of drivers and updates a day. Payment works after the server launch.","Русский, английский, узбекский":"Russian, English, Uzbek","Окно, бот и ответы":"Window, bot and answers","Турецкий для водителей":"Turkish for drivers","Бот понимает водителей на турецком и отвечает им по-турецки":"The bot understands drivers in Turkish and answers them in Turkish","Язык окна и бота":"Window and bot language","Окно переключается сразу.":"The window switches right away.","Язык сообщений бота":"Bot messages language","Сменить и в боте":"Change in the bot too","Водителям бот отвечает на их языке, в том числе на турецком.":"The bot answers drivers in their language, Turkish included.","Русский":"Russian","Английский":"English","Узбекский":"Uzbek",
 "Кнопка «Разобрать фото» в /proof":"The “Read the photos” button in /proof","Перерыв 30 мин после 8 ч, отдых 10 ч. Остаток часов из ELD в плане":"30-min break after 8 h, 10-h rest. Hours left from the ELD planned","Пояс по штату готов. Цепочка стопов после подключения борда":"Zone by state is ready. The stop chain after the board is connected","Команда /eta":"The /eta command","Командой или формой в окне, ответ в чате":"By command or the window form, answer in the chat","Другие темы бот вежливо отклоняет, отвечает по вашей базе знаний":"Other topics are politely declined, answers use your knowledge base","Команда /tr: русский → английский для водителя и обратно":"The /tr command: Russian → English for the driver and back","Агенты 24/7":"Agents 24/7","Водитель ждёт ответа, молчит, тревога, стоянка, нет GPS, автоответ":"Driver waiting, silent, alarm, long stop, no GPS, auto-reply","Какой груз и на сколько. После подключения борда":"Which load and by how much. After the board is connected","Сам в конце смены или командой /report":"By itself at shift end or with /report","Утренняя сводка":"Morning summary","Каждое утро в 09:00 в режиме 24/7":"Every morning at 09:00 in 24/7 mode","Фото, сообщения и письмо брокеру при простое":"Photos, messages and a detention email to the broker","Настройки, расписание, тарифы, агенты, рабочее время":"Settings, schedule, plans, agents, working time","Рабочее время и часовой пояс":"Working time and time zone","Смена или 24/7, дни недели, разовые выходные":"Shift or 24/7, weekdays, one-off days off","Экран готов. Данные грузов после подключения борда":"The screen is ready. Load data after the board is connected","Группы и настройки уже отдельно. Свой ELD и шифрование ключей на сервере":"Groups and settings are already separate. Own ELD and key encryption on the server","Тарифы и смена тарифа готовы. Оферта и пробная неделя в плане":"Plans and plan changes are ready. Offer and trial week planned",
 "Расчёт ETA":"ETA calculation","От GPS трака до стопа: пробки, часы водителя, погода":"From truck GPS to the stop: traffic, driver hours, weather","Посчитать ETA":"Calculate ETA","Номер трака, например 2080":"Truck number, for example 2080","Адрес стопа, например PDX9, Troutdale, OR":"Stop address, for example PDX9, Troutdale, OR","Appointment по времени стопа, например 21.11 16:20":"Appointment in stop time, for example 21.11 16:20","Штат в адресе (OR, TX...) нужен, чтобы знать часовой пояс стопа. Appointment можно не писать.":"The state in the address (OR, TX...) tells the stop time zone. The appointment is optional.","Посчитать в чате с ботом":"Calculate in the bot chat","Ответ придёт в чат с ботом.":"The answer comes to the bot chat.","Ответ придёт в чат с ботом. Пока /eta работает только у владельца бота: GPS берётся из его Samsara. У вас заработает после подключения вашего ELD на сервере (в плане).":"The answer comes to the bot chat. For now /eta works only for the bot owner: GPS comes from the owner's Samsara. It works for you after your ELD is connected on the server (planned).","Пример разбора: Load 1042":"Sample breakdown: Load 1042","Напишите номер трака и адрес стопа":"Write the truck number and the stop address","Команда скопирована: вставьте её в чат и отправьте":"Command copied: paste it in the chat and send","Окно и бот переключаются на этот язык":"The window and the bot switch to this language","Написать в поддержку":"Write to support","Все команды бота":"All bot commands",
-"Modenzo AI · версия окна 2026-11-22 03:20":"Modenzo AI · window version 2026-11-22 03:20",
+"Modenzo AI · версия окна 2026-11-22 05:10":"Modenzo AI · window version 2026-11-22 05:10",
 "Это пример. Настоящие черновики приходят в чат с ботом с теми же кнопками: «Отправить», «Изменить», «Пропустить».":"This is an example. Real drafts come to the bot chat with the same buttons: “Send”, “Edit”, “Skip”.","Сохранить текст":"Save text","Отмена":"Cancel","Текст изменён вами":"Text edited by you","Текст сохранён. Нажмите «Отправить»":"Text saved. Tap “Send”",
 "Активация":"Activation","Опрос":"Survey","7 коротких вопросов в чате с ботом":"7 short questions in the bot chat","Выбрать и оплатить":"Pick and pay","Ключ на проверке":"Key being checked","Бот добавлен хотя бы в одну группу":"The bot is in at least one group","Настройки уже можно менять. Апдейты включатся после всех шагов.":"You can change settings already. Updates turn on after all steps.","Отправить ключ заново":"Send the key again","Ключ ELD на проверке":"ELD key being checked","Ключ получен и проверяется. Как только он заработает, апдейты можно будет включить. Если ключ неверный, отправьте новый.":"The key is received and being checked. Once it works you can turn updates on. If the key is wrong, send a new one.","Почему некоторые кнопки с замком?":"Why do some buttons have a lock?","Пока активация не закончена, часть функций закрыта, чтобы ничего не сломать. Шаги: опрос, тариф, ELD, хотя бы одна группа водителя. Нажмите на кнопку с замком: окно подскажет, какой шаг остался, и даст кнопку, чтобы его сделать. Например, ELD подключается командой /eld":"Until activation is finished some features are closed so nothing breaks. Steps: survey, plan, ELD, at least one driver group. Tap a locked button: the window tells you which step is left and gives a button to do it. For example, the ELD is connected with /eld","Ключ, чтобы бот видел, где траки":"A key so the bot sees where trucks are","Пока активация не закончена, окно работает только для просмотра.":"Until activation is finished the window is view-only.","Сначала пройдите опрос":"Finish the survey first","Это 7 коротких вопросов в чате с ботом: борд, грузы, ELD, коллеги, часовой пояс, смена, число водителей. После него функции включатся. Смотреть окно можно и сейчас.":"It is 7 short questions in the bot chat: board, freight, ELD, teammates, time zone, shift, number of drivers. Then features turn on. You can look around the window already.","Выбрать тариф":"Pick a plan","Выберите и оплатите тариф":"Pick and pay for a plan","Функции включатся после оплаты. Смотреть окно, тарифы и инструкцию можно и сейчас.":"Features turn on after payment. You can look at the window, plans and guide already.","Подключите ELD":"Connect your ELD","Подключить ELD":"Connect ELD","Без ELD бот не видит, где траки, и апдейты будут без местоположения. Бот спросит, какой у вас ELD, и проверит ключ. Это пара минут.":"Without an ELD the bot cannot see where trucks are and updates have no location. The bot asks which ELD you have and checks the key. It takes a couple of minutes.","Добавьте бота в группу водителя":"Add the bot to a driver group","Апдейты идут в группы водителей. Добавьте бота хотя бы в одну группу, и он сам проверит, видит ли сообщения.":"Updates go to driver groups. Add the bot to at least one group and it checks by itself whether it can read messages.","Как добавить":"How to add","Пройти опрос":"Take survey","Группы водителей":"Driver groups","Тариф":"Plan","Понятно":"Got it",
 "Окно переключается на этот язык. Язык ответов бота: /start":"The window switches to this language. The bot's reply language: /start","Окно переключается на этот язык":"The window switches to this language",
@@ -1882,6 +2204,81 @@ const EN = {
 'Telegram не дал включить полный экран на этом устройстве':'Telegram did not allow full screen on this device','Отдых 10 ч, до 04:00':'10 h rest, until 04:00','после отдыха 11 ч':'11 h after rest','У шиппера · 40 мин':'At shipper · 40 min'
 };
 const UZ = {
+"Поиск":"Qidiruv",
+"Street грузы ваши, Amazon пока пример.":"Street yuklar sizniki, Amazon hozircha namuna.",
+"Пример данных. Добавьте свой груз кнопкой справа.":"Namunaviy ma'lumot. O'z yukingizni o'ngdagi tugma bilan qo'shing.",
+"Добавить груз":"Yuk qo'shish",
+"авто из Relay · бета":"Relay dan avto · beta",
+"вручную + ИИ":"qo'lda + AI",
+"Street, ставки":"Street, stavkalar",
+"Груз":"Yuk",
+"Источник":"Manba",
+"ETA / ставка":"ETA / stavka",
+"✉️ Текст брокеру":"✉️ Brokerga matn",
+"Amazon грузы придут сами из Relay через расширение для Chrome (последний этап, только чтение). Сейчас это пример.":"Amazon yuklar Relay dan Chrome kengaytmasi orqali o'zi keladi (oxirgi bosqich, faqat o'qish). Hozir bu namuna.",
+"Груз, водитель, юнит":"Yuk, haydovchi, yunit",
+"Бот сам двигает статус по словам водителя в группе трака: «at shipper», «loaded», «delivered» и на русском, узбекском, турецком.":"Bot holatni trak guruhidagi haydovchi so'zlariga qarab o'zi o'zgartiradi: «at shipper», «loaded», «delivered», rus, o'zbek va turk tilida ham.",
+"Отменить груз":"Yukni bekor qilish",
+"Под риском":"Xavf ostida",
+"Трак не назначен":"Trak tayinlanmagan",
+"Брокер не указан":"Broker ko'rsatilmagan",
+"Вы добавляете, бот следит":"Siz qo'shasiz, bot kuzatadi",
+"Придут сами из Relay (расширение, позже)":"Relay dan o'zi keladi (kengaytma, keyinroq)",
+"✨ Вставить текст":"✨ Matn qo'yish",
+"Заполнить вручную":"Qo'lda to'ldirish",
+"ИИ найдёт номер груза, брокера, трак, погрузку, выгрузку, время и ставку. Ничего не выдумывает: чего нет в тексте, оставит пустым.":"AI yuk raqami, broker, trak, yuklash, tushirish, vaqt va stavkani topadi. Hech narsa o'ylab topmaydi: matnda yo'q narsa bo'sh qoladi.",
+"Добавить на доску":"Doskaga qo'shish",
+"Откроется чат с готовым сообщением: останется нажать «Отправить». Бот ответит карточкой груза.":"Tayyor xabar bilan chat ochiladi: «Yuborish» ni bosish qoladi. Bot yuk kartasi bilan javob beradi.",
+"Груз уйдёт боту сразу, окно закроется.":"Yuk botga darhol ketadi, oyna yopiladi.",
+"Вставьте rate confirmation или письмо брокера целиком":"Rate confirmation yoki broker xatini to'liq qo'ying",
+"Откроется чат: сообщение готово, нажмите «Отправить»":"Chat ochiladi: xabar tayyor, «Yuborish» ni bosing",
+"Брокер":"Broker",
+"Трак (юнит)":"Trak (yunit)",
+"Ставка $":"Stavka $",
+"Погрузка: город, штат":"Yuklash: shahar, shtat",
+"Дата и время погрузки 11/22 08:00":"Yuklash sanasi va vaqti 11/22 08:00",
+"Выгрузка: город, штат":"Tushirish: shahar, shtat",
+"Дата и время выгрузки 11/23 14:00":"Tushirish sanasi va vaqti 11/23 14:00",
+"Заполните погрузку и выгрузку":"Yuklash va tushirishni to'ldiring",
+"Пример: у настоящего груза статус сохранится в боте":"Namuna: haqiqiy yukda holat botda saqlanadi",
+"Собрать свой тариф":"O'z tarifingizni yig'ing",
+"Сколько водителей и апдейтов, какие функции нужны. Цена сразу.":"Nechta haydovchi va apdeyt, qaysi funksiyalar kerak. Narx darhol.",
+"Свой тариф":"Maxsus tarif",
+"Выберите только то, что нужно вам. Цена считается сразу.":"Faqat keraklisini tanlang. Narx darhol hisoblanadi.",
+"Водителей":"Haydovchilar",
+"Апдейтов в день":"Kuniga apdeytlar",
+"Только смена · дешевле":"Faqat smena · arzonroq",
+"Вопросы о работе, передача смены, логистика":"Ish savollari, smena topshirish, logistika",
+"Автоответчик водителям":"Haydovchilarga avtojavob",
+"Отвечает на простые вопросы водителей":"Haydovchilarning oddiy savollariga javob beradi",
+"Слежка на карте":"Xaritada kuzatuv",
+"Траки, маршруты и скорость (после ELD)":"Traklar, marshrutlar va tezlik (ELD dan keyin)",
+"Update Board и напоминания":"Update Board va eslatmalar",
+"Дела из сообщений и напоминания":"Xabarlardan ishlar va eslatmalar",
+"Тексты брокеру (ИИ)":"Brokerga matnlar (AI)",
+"Сообщение, email или звонок при опоздании":"Kechikkanda xabar, email yoki qo'ng'iroq",
+"Отчёты за смену":"Smena hisobotlari",
+"Итог смены каждый день":"Har kuni smena yakuni",
+"Поддержка в приоритете":"Ustuvor yordam",
+"Владелец отвечает первым":"Egasi birinchi javob beradi",
+"Ваша цена":"Sizning narxingiz",
+"/ мес":"/ oy",
+"Отправить заявку":"So'rov yuborish",
+"Владелец подтвердит, и тариф включится сам. Оплата пока не подключена (бета).":"Egasi tasdiqlaydi va tarif o'zi yoqiladi. To'lov hali ulanmagan (beta).",
+"Все траки":"Barcha traklar",
+"Поиск трака":"Trak qidiruvi",
+"Юнит, водитель или груз":"Yunit, haydovchi yoki yuk",
+"Слежу":"Kuzatyapman",
+"Следить":"Kuzatish",
+"Маршрут":"Marshrut",
+"Пройдено":"O'tildi",
+"Вид трака":"Trak ko'rinishi",
+"Скрыть виды":"Ko'rinishlarni yashirish",
+"Водитель, юнит или груз":"Haydovchi, yunit yoki yuk",
+"Поиск: водитель, юнит, груз":"Qidiruv: haydovchi, yunit, yuk",
+"Имя водителя, юнит (2080) или номер груза.":"Haydovchi ismi, yunit (2080) yoki yuk raqami.",
+"Ничего не нашлось":"Hech narsa topilmadi",
+"Простая карта: сервис карт не загрузился":"Oddiy xarita: xarita xizmati yuklanmadi",
 "Водитель опаздывает: текст брокеру":"Haydovchi kechikmoqda: brokerga matn",
 "ИИ напишет вежливо и понятно, на английском, и даст перевод для вас. Возьмёт факты из группы трака.":"AI xushmuomala va tushunarli qilib ingliz tilida yozadi va siz uchun tarjima beradi. Faktlarni trak guruhidan oladi.",
 "Новый ETA 17:20":"Yangi ETA 17:20",
@@ -1924,7 +2321,7 @@ const UZ = {
 "Какие документы нужны после доставки Amazon?":"Amazon yetkazib berishdan keyin qanday hujjatlar kerak?",
 "Спросить":"So'rash",
 "Вопрос уйдёт боту сразу, окно закроется.":"Savol botga darhol ketadi, oyna yopiladi.",
-"Откроется чат с ботом. Свой вопрос уже скопирован: вставьте его и отправьте.":"Bot chati ochiladi. Savolingiz nusxalangan: uni qo'ying va yuboring.",
+"Откроется чат с готовым вопросом: останется нажать «Отправить».":"Bot chati ochiladi. Savolingiz nusxalangan: uni qo'ying va yuboring.",
 "Напишите вопрос":"Savol yozing",
 "Передача смены, кто ждёт ответа, что срочно":"Smena topshirish, kim javob kutyapti, nima shoshilinch",
 "Спросите: «дай передачу смены за 8 часов» или «кто ждёт ответа». Можно просто писать боту в чат.":"So'rang: «8 soatlik smena topshirishini ber» yoki «kim javob kutyapti». Botga chatda shunchaki yozish mumkin.",
@@ -1965,7 +2362,7 @@ const UZ = {
 "Ошибка в боте":"Botdagi xato",
 "Другое":"Boshqa",
 "Сообщение":"Xabar",
-"Откроется чат с ботом. Текст уже скопирован: вставьте его и отправьте.":"Bot chati ochiladi. Matn nusxalangan: uni qo'ying va yuboring.",
+"Откроется чат с готовым сообщением: останется нажать «Отправить».":"Bot chati ochiladi. Matn nusxalangan: uni qo'ying va yuboring.",
 "Сообщение уйдёт боту сразу, окно закроется.":"Xabar botga darhol ketadi, oyna yopiladi.",
 "Мои обращения":"Murojaatlarim",
 "Пока нет обращений.":"Hozircha murojaat yo'q.",
@@ -2475,7 +2872,7 @@ const UZ = {
 "готовится":"tayyorlanmoqda",
 "Тарифы отличаются только числом водителей. Оплата заработает после запуска сервера.":"Tariflar haydovchilar va kunlik apdeytlar soni bilan farq qiladi. To'lov server ishga tushgandan keyin ishlaydi.",
 "Или командой в чате, например: /plan pro":"Yoki chatda buyruq bilan, masalan: /plan pro",
-"Modenzo AI · версия окна 2026-11-22 03:20":"Modenzo AI · oyna versiyasi 2026-11-22 03:20",
+"Modenzo AI · версия окна 2026-11-22 05:10":"Modenzo AI · oyna versiyasi 2026-11-22 05:10",
 "Все функции и агенты на любом тарифе. Отличаются число водителей, апдейтов в день и режим.":"Barcha funksiyalar va agentlar har qanday tarifda. Haydovchilar, kunlik apdeytlar soni va rejim bilan farq qiladi.",
 "Смена":"Smena",
 "дешевле":"arzonroq",
@@ -2647,6 +3044,7 @@ const UZ = {
 "Узбекский":"O'zbekcha"
 };
 const UZ_RULES = [
+[/^(.+) · (Dispatched|Not started|In transit|At pickup|At delivery|Delivered|Cancelled)$/, (m, a, b) => a + ' · ' + b],[/^Update Board · (.+)$/, 'Update Board · $1'],
 [/^Все (\d+)$/, 'Hammasi $1'],[/^Едут (\d+)$/, "Yo'lda $1"],[/^Стоят (\d+)$/, 'Turibdi $1'],[/^Риск (\d+)$/, 'Xavf $1'],
 [/^№(\d+) · (.+)$/, (m, n, t) => '№' + n + ' · ' + (UZ[t] || t)],[/^(Лайт|Старт|Про|Макс) · (\d+\/\d+)$/, (m, a, b) => (UZ[a] || a) + ' · ' + b],
 [/^Слежка · (\d+) траков$/, 'Kuzatuv · $1 ta trak'],
@@ -2714,6 +3112,7 @@ const UZ_RULES = [
 [/^\+(\d+) мин$/, '+$1 daq'],
 ];
 const EN_RULES = [
+[/^(.+) · (Dispatched|Not started|In transit|At pickup|At delivery|Delivered|Cancelled)$/, (m, a, b) => a + ' · ' + b],[/^Update Board · (.+)$/, 'Update Board · $1'],
 [/^Все (\d+)$/, 'All $1'],[/^Едут (\d+)$/, 'Rolling $1'],[/^Стоят (\d+)$/, 'Stopped $1'],[/^Риск (\d+)$/, 'At risk $1'],
 [/^№(\d+) · (.+)$/, (m, n, t) => '#' + n + ' · ' + (EN[t] || t)],[/^(Лайт|Старт|Про|Макс) · (\d+\/\d+)$/, (m, a, b) => (EN[a] || a) + ' · ' + b],
 [/^Слежка · (\d+) траков$/, 'Tracking · $1 trucks'],
@@ -2834,7 +3233,7 @@ function renderInner() {
   app.className = 'app' + (isWide() ? ' wide' : '') + (locked() ? ' locked' : '') + (updLocked() ? ' lockupd' : '');
   document.documentElement.lang = S.lang;
   const active = TAB_OF[S.view] || S.view;
-  const side = '<aside class="side"><div class="row" style="gap:10px;padding:0 6px">' + LOGO + '<div><h2 style="font-size:18px">Modenzo AI</h2><div class="xs muted">Расширенный экран</div></div></div><nav class="col" style="gap:4px" aria-label="Разделы">' +
+  const side = '<aside class="side"><div class="row" style="gap:10px;padding:0 6px">' + LOGO + '<div><h2 style="font-size:18px">Modenzo AI</h2><div class="xs muted">Расширенный экран</div></div></div>' + gsButton() + '<nav class="col" style="gap:4px" aria-label="Разделы">' +
     NAV.map((n) => '<button class="navbtn' + (S.view === n[0] ? ' on' : '') + '" data-go="' + n[0] + '">' + ic(n[2], 18) + n[1] + '</button>').join('') + '</nav>' +
     '<div class="col" style="margin-top:auto;gap:8px">' + sideExtra() + windowBar(true) + '<div class="card col" style="padding:12px;border-radius:16px;gap:4px;border-color:' + (S.son ? 'var(--mint-bd)' : 'var(--amber-bd)') + '"><span class="xs" style="font-weight:600;color:' + (S.son ? 'var(--mint-t)' : 'var(--amber)') + '">' + (S.son ? 'Апдейты включены' : 'Апдейты выключены') + '</span><span class="small sub">' + (S.son ? 'Следующий: ' + nextSlot() + ' (' + tzLabel() + ')' : S.slots.slice().sort().join(', ')) + '</span></div><div class="xs" style="color:var(--faint);padding:0 6px">Демо · данные примерные</div></div></aside>';
   const tabbar = '<nav class="tabbar" aria-label="Разделы">' + TABS.map((t) => t[0] === 'big' ? '<button class="tab center" data-act="big" aria-label="Большой экран"><span class="fab">' + ic('monitor', 26, 'currentColor', 2) + '</span>' + t[1] + '</button>' : '<button class="tab' + (active === t[0] ? ' on' : '') + '" data-go="' + t[0] + '">' + ic(t[2], 22, 'currentColor', 1.8) + t[1] + '</button>').join('') + '</nav>';
@@ -2846,7 +3245,7 @@ function renderInner() {
     console.error('view ' + S.view, err);
     body = '<div class="card pad col" style="gap:10px;border-radius:18px;border-color:var(--amber-bd)"><b>Этот экран не открылся</b><div class="small sub" style="line-height:1.5">Пришлите скриншот разработчику: ' + esc(S.view + ': ' + (err && err.message || err)) + '</div><button class="btn" data-go="home">На главную</button></div>';
   }
-  app.innerHTML = side + '<div class="main"><div class="content">' + (S.view !== 'setup' && (S.view === 'home' || S.view === 'settings' || locked()) ? activationCard() : '') + (S.view === 'home' ? previewRibbon() + phoneTip() : '') + body + '</div>' + (S.view === 'setup' ? '' : tabbar) + '</div>' + sheet + lockSheetHtml() + tourCard();
+  app.innerHTML = side + '<div class="main"><div class="content">' + (S.view !== 'setup' && (S.view === 'home' || S.view === 'settings' || locked()) ? activationCard() : '') + (S.view === 'home' ? (isWide() ? '' : gsButton()) + previewRibbon() + phoneTip() : '') + body + '</div>' + (S.view === 'setup' ? '' : tabbar) + '</div>' + sheet + lockSheetHtml() + tourCard() + addLoadSheet() + gsOverlay();
   if (S.lang !== 'ru') translateDom(app);
   [['etaTruck','truck'],['etaAddr','addr'],['etaAppt','appt']].forEach((x) => { const el = document.getElementById(x[0]); if (el) el.addEventListener('input', (e) => { S.etaF[x[1]] = e.target.value; const mono = el.parentNode.querySelector('.mono'); if (mono) mono.textContent = etaCommand(); }); });
   [['tkWho','who'],['tkTime','time'],['tkNote','note']].forEach((x) => { const el = document.getElementById(x[0]); if (el) el.addEventListener('input', (e) => { S.tkForm[x[1]] = e.target.value; const mono = el.parentNode.querySelector('.mono'); if (mono) mono.textContent = tkCommand(); }); });
@@ -2859,6 +3258,7 @@ function renderInner() {
   newAfterRender();
   aiAfterRender();
   ltAfterRender();
+  b2AfterRender();
   if (tg && tg.BackButton) { try { if (S.view !== 'home') tg.BackButton.show(); else tg.BackButton.hide(); } catch (e) {} }
 }
 
@@ -2894,6 +3294,7 @@ function suClick(d) {
   render(); window.scrollTo(0, 0);
 }
 function onClick(e) {
+  if (e.target && e.target.dataset && (e.target.dataset.act === 'addclose' || e.target.dataset.act === 'gsclose') && e.target.tagName === 'DIV') { S.addL = null; S.gs = null; render(); return; }
   if (e.target.classList && e.target.classList.contains('sheet-bg')) { S.sheet = false; S.lockSheet = ''; render(); return; }
   const t = e.target && e.target.nodeType === 3 ? e.target.parentElement : e.target;
   const b = t && t.closest ? t.closest('button') : null;
@@ -2903,6 +3304,8 @@ function onClick(e) {
   if (d.setup) { S.lockSheet = ''; render(); sendToBot('setup-' + d.setup, ({ eld:'/eld', support:'/support', help:'/help' })[d.setup] || '/start'); return; }
   if (d.go && S.lockSheet) S.lockSheet = '';
   if (d.su || d.sub || d.sua || d.sue || d.sutz || d.sutzall || d.sum || d.sust || d.sulen || d.sud || d.sugo) { suClick(d); return; }
+  if (b2Click(d)) return;
+  if (mpClick(d)) return;
   if (ltClick(d)) return;
   if (aiClick(d)) return;
   if (newClick(d)) return;
@@ -2945,18 +3348,12 @@ function onClick(e) {
   }
   if (d.act === 'tkadd') {
     if (!S.tkForm.who.trim() || !S.tkForm.time.trim()) { toast(tr3('Напишите трак и время', 'Write the truck and the time', 'Trak va vaqtni yozing')); return; }
-    const cmd = tkCommand();
-    try { navigator.clipboard.writeText(cmd).then(() => {}, () => {}); } catch (x) {}
-    if (tg && S.bot && tg.openTelegramLink) { toast('Команда скопирована: вставьте её в чат и отправьте'); setTimeout(() => tg.openTelegramLink('https://t.me/' + S.bot), 600); }
-    else toast('Отправьте боту команду: ' + cmd);
+    sendText(tkCommand());
     return;
   }
   if (d.act === 'etarun') {
     if (!S.etaF.truck.trim() || !S.etaF.addr.trim()) { toast('Напишите номер трака и адрес стопа'); return; }
-    const cmd = etaCommand();
-    try { navigator.clipboard.writeText(cmd).then(() => {}, () => {}); } catch (x) {}
-    if (tg && S.bot && tg.openTelegramLink) { toast('Команда скопирована: вставьте её в чат и отправьте'); setTimeout(() => tg.openTelegramLink('https://t.me/' + S.bot), 600); }
-    else toast('Отправьте боту команду: ' + cmd);
+    sendText(etaCommand());
     return;
   }
   if (d.pm) { S.pm = d.pm; render(); return; }
@@ -2986,7 +3383,7 @@ function onClick(e) {
   else if (d.notif) S.notif[d.notif] = !S.notif[d.notif];
   else if (d.tab) S.tab = d.tab;
   else if (d.sel) S.sel = d.sel;
-    else if (d.act === 'opennew') { S.tab = 'upcoming'; S.sel = '1231'; S.showNew = false; }
+    else if (d.act === 'opennew') { S.tab = 'ns'; S.sel = '1231'; S.showNew = false; }
   else if (d.act === 'hidenew') S.showNew = false;
   else if (d.act === 'separate') { openSeparate(); return; }
   else if (d.act === 'big') { bigScreen(); return; }
