@@ -357,6 +357,7 @@ const S = {
   etaF:{ truck:'', addr:'', appt:'' },
   updText:'Update Load# 1042\nRolling near Barstow, CA, 62 mph\nNext stop (3 of 4): PDX9 Troutdale, OR\nAppt Fri 16:20 PST\nMiles left 612 · drive 9h 40m (+30m break)\nTraffic +25 min in next 40 mi\nETA 17:05 PST · probably late 45 min', updEditing:false, updDraft:'', updEdited:false,
   tk:[], ub:[], tkOps:{ d:{}, i:{}, x:{} }, tkF:'all', tkForm:{ who:'', time:'', note:'' }, tkSel:'', tkAt:0, tkReal:false,
+  su:{ step:0, board:'', amazon:'', eld:'', eldName:'', team:'', tz:'', tzAll:false, mode:'full', start:8, len:8, drivers:'' },
   botLang:'ru', access:'active', fromBot:false, act:{ s:1, p:1, e:1, g:1 }, lockSheet:''
 };
 /* язык: ссылка ?lang=, потом сохранённый выбор, потом язык Telegram */
@@ -407,6 +408,7 @@ try {
   const ag = (q.get('ag') || '').match(/^([01]{6})-(\d+)-(\d+)-(\d+)-([osa])$/);
   if (ag) { ['waiting','silent','risk','stopped','gps','late'].forEach((k, i) => { S.ag.on[k] = ag[1][i] === '1'; }); S.ag.waiting = +ag[2]; S.ag.silent = +ag[3]; S.ag.stopped = +ag[4]; S.ag.ar = ag[5]; }
 } catch (e) {}
+try { const z = Intl.DateTimeFormat().resolvedOptions().timeZone; const r = TZS.filter((t) => t[0] === S.tzc)[0] || TZS.filter((t) => t[1] === z)[0]; S.su.tz = r ? r[0] : 'us-c'; } catch (e) { S.su.tz = 'us-c'; }
 if (!S.pe && S.plan !== 'owner') { const d = new Date(Date.now() + 30 * 864e5); S.pe = '' + d.getFullYear() + String(d.getMonth() + 1).padStart(2, '0') + String(d.getDate()).padStart(2, '0'); }
 function syncAct() { S.act = { s: S.access === 'survey' ? 0 : 1, p: S.access === 'unpaid' ? 0 : 1, e: 1, g: 1 }; }
 function locked() { return !S.act.s || !S.act.p; }
@@ -423,14 +425,14 @@ function blockedBy(d) {
   return '';
 }
 const STEPS = [
-  ['survey','Опрос','7 коротких вопросов в чате с ботом'],
+  ['survey','Опрос','7 коротких вопросов прямо в окне'],
   ['paid','Тариф','Выбрать и оплатить'],
   ['eld','ELD','Ключ, чтобы бот видел, где траки'],
   ['groups','Группы водителей','Бот добавлен хотя бы в одну группу']
 ];
 function stepState(k) { if (k === 'survey') return S.act.s ? 'ok' : 'todo'; if (k === 'paid') return S.act.p ? 'ok' : 'todo'; if (k === 'eld') return S.act.e === 1 ? 'ok' : (S.act.e === 2 ? 'wait' : 'todo'); return S.act.g ? 'ok' : 'todo'; }
 const LOCKS = {
-  survey: ['Сначала пройдите опрос','Это 7 коротких вопросов в чате с ботом: борд, грузы, ELD, коллеги, часовой пояс, смена, число водителей. После него функции включатся. Смотреть окно можно и сейчас.','Пройти опрос','setup:survey'],
+  survey: ['Сначала пройдите опрос','Это 7 коротких вопросов прямо здесь, в окне: борд, грузы, ELD, коллеги, часовой пояс, смена, число водителей. После него функции включатся. Смотреть окно можно и сейчас.','Пройти опрос','go:setup'],
   paid: ['Выберите и оплатите тариф','Функции включатся после оплаты. Смотреть окно, тарифы и инструкцию можно и сейчас.','Выбрать тариф','go:plans'],
   eld: ['Подключите ELD','Без ELD бот не видит, где траки, и апдейты будут без местоположения. Бот спросит, какой у вас ELD, и проверит ключ. Это пара минут.','Подключить ELD','setup:eld'],
   eldwait: ['Ключ ELD на проверке','Ключ получен и проверяется. Как только он заработает, апдейты можно будет включить. Если ключ неверный, отправьте новый.','Отправить ключ заново','setup:eld'],
@@ -861,7 +863,7 @@ function vSettings() {
     '<div class="col" style="gap:10px"><div class="label">Подключения и команда</div><div class="listcard list"><button data-go="groups" class="row" style="justify-content:space-between;width:100%;background:none;border:0;border-bottom:1px solid var(--line2);font-size:15px;text-align:left"><span>Группы водителей</span><span class="row small muted" style="gap:6px">' + (S.plan === 'owner' ? S.used : S.used + ' из ' + S.lim) + ' ' + ic('chev', 16, 'var(--muted)', 2) + '</span></button><div class="row" style="justify-content:space-between"><span>ELD · Samsara</span><span class="small" style="color:var(--mint-t)">Подключено (пример)</span></div><div class="row" style="justify-content:space-between"><span>Борд (Google Sheets)</span><span class="small muted">Update Board</span></div><div class="row" style="justify-content:space-between"><span>Тиммейты</span><span class="small muted">3 человека</span></div><div class="row" style="justify-content:space-between"><span>Amazon Relay</span><span class="chip c-plan">План</span></div></div></div>' +
     '<div class="col" style="gap:10px"><div class="label">Уведомления мне</div><div class="listcard list">' + nl.map((t) => '<div class="row"><span class="col" style="flex:1"><span>' + t[1] + '</span><span class="xs muted">' + t[2] + '</span></span><button class="toggle' + (S.notif[t[0]] ? ' on' : '') + '" data-notif="' + t[0] + '" aria-label="' + t[1] + '"><span></span></button></div>').join('') + '</div></div>' +
     '<div class="col" style="gap:10px"><div class="label">Тариф и оплата</div>' + planCard(true) + '<div class="listcard list">' + [['Пробная неделя','появится позже'],['Оплата','Click · Payme · другие'],['Оферта','готовится']].map((r) => '<div class="row" style="justify-content:space-between"><span>' + r[0] + '</span><span class="small muted">' + r[1] + '</span></div>').join('') + '</div><div class="xs muted">Тарифы отличаются числом водителей и апдейтов в день. Оплата заработает после запуска сервера.</div><div class="xs muted">Или командой в чате, например: /plan pro</div></div>' +
-    '<div class="xs" style="text-align:center;color:var(--faint)">Modenzo AI · версия окна 2026-11-21 02:50</div>';
+    '<div class="xs" style="text-align:center;color:var(--faint)">Modenzo AI · версия окна 2026-11-21 04:10</div>';
 }
 
 function inTab(l, t) { return t === 'all' || (t === 'risk' ? (l.v === 'late' || l.v === 'tight') && l.st !== 'delivered' : l.st === t); }
@@ -1063,19 +1065,177 @@ function tkHomeCard() {
 setInterval(() => { try { if (S.view === 'ub' || S.view === 'home') document.querySelectorAll('[data-due]').forEach((el) => { if (el.textContent) el.textContent = tkLeft(+el.dataset.due); }); } catch (e) {} }, 30000);
 try { if (!tkParse(new URLSearchParams(location.search))) tkDemo(); } catch (e) { tkDemo(); }
 
-const VIEWS = { ub:vUb, home:vHome, shift:vShift, updates:vUpdates, eta:vEta, groups:vGroups, features:vFeatures, help:vHelp, settings:vSettings, plans:vPlans, agents:vAgents, work:vWork, tz:vTz, board:vBoard, drivers:vDrivers };
+/* ---------------- Setup wizard: the whole first survey inside the window ---------------- */
+const SU_ELDS = [['samsara','Samsara',1],['motive','Motive',1],['geotab','Geotab',1],['omnitracs','Omnitracs',0],['peoplenet','PeopleNet',0],['verizon','Verizon Connect',0],['platformscience','Platform Science',0],['trimble','Trimble',0],['isaac','Isaac Instruments',0]];
+const SU_STEPS = ['board','freight','eld','team','tz','mode','drivers'];
+function suPlan(n) { for (const p of PLANS) if (p[2] >= n) return p; return PLANS[PLANS.length - 1]; }
+function suTile(sel, data, title, sub, icon) {
+  return '<button class="card row" ' + data + ' style="text-align:left;padding:16px 18px;border-radius:18px;gap:14px;' + (sel ? 'border-color:var(--mint);background:#0E2019' : '') + '">' +
+    (icon ? '<span class="icon" style="width:44px;height:44px;border-radius:13px;background:var(--raised);font-size:22px;flex:none">' + icon + '</span>' : '') +
+    '<span class="col" style="flex:1;min-width:0;gap:2px"><b style="font-size:16px">' + title + '</b>' + (sub ? '<span class="xs muted" style="line-height:1.4">' + sub + '</span>' : '') + '</span>' +
+    '<span style="width:24px;height:24px;border-radius:12px;flex:none;border:2px solid ' + (sel ? 'var(--mint)' : '#33415C') + ';background:' + (sel ? 'var(--mint)' : 'transparent') + ';display:flex;align-items:center;justify-content:center">' + (sel ? ic('check', 14, '#06241A', 3) : '') + '</span></button>';
+}
+function suCanNext() {
+  const f = S.su, st = SU_STEPS[f.step - 1];
+  if (st === 'board') return !!f.board;
+  if (st === 'freight') return !!f.amazon;
+  if (st === 'eld') return !!f.eld && (f.eld !== 'other' || f.eldName.trim().length > 1);
+  if (st === 'drivers') return !!f.drivers;
+  return true;
+}
+function vSetup() {
+  const f = S.su, n = SU_STEPS.length;
+  if (f.step === 0) {
+    return '<div class="col" style="gap:18px;padding-top:8px">' +
+      '<div class="card col" style="padding:24px 20px;border-radius:22px;gap:14px;align-items:center;text-align:center;background:radial-gradient(90% 80% at 50% 0%,#12302A,#0E1626)">' + LOGO.replace('width="32" height="32"', 'width="72" height="72"') +
+        '<h1 class="title" style="font-size:26px">Настроим Modenzo за минуту</h1><div class="small muted" style="line-height:1.5;max-width:360px">7 коротких вопросов. Ответы можно поменять потом в «Настройках».</div>' +
+        '<div class="wrap" style="justify-content:center;gap:8px">' + ['Борд','Грузы','ELD','Команда','Пояс','Смена','Водители'].map((x, i) => '<span class="chip c-gray">' + (i + 1) + '. ' + x + '</span>').join('') + '</div>' +
+        '<button class="btn primary" style="height:52px;width:100%;font-size:16px" data-su="next">Начать</button></div>' +
+      '<div class="xs muted" style="text-align:center;line-height:1.5">Ключ ELD вы отправите в чат после опроса: бот проверит его и сразу удалит сообщение.</div></div>';
+  }
+  if (f.step > n) return vSetupReview();
+  const st = SU_STEPS[f.step - 1];
+  const head = '<div class="col" style="gap:10px"><div class="row" style="justify-content:space-between"><button class="back" data-su="back" aria-label="Назад">' + ic('back', 20, '#EAF0FA', 2) + '</button><span class="xs muted">' + tr3('Шаг ' + f.step + ' из ' + n, 'Step ' + f.step + ' of ' + n, f.step + '-qadam, jami ' + n) + '</span></div>' +
+    '<div style="height:6px;border-radius:3px;background:#1A2438;overflow:hidden"><div style="height:100%;width:' + (f.step / n * 100) + '%;background:var(--mint);border-radius:3px"></div></div></div>';
+  let body = '';
+  if (st === 'board') body = '<h2 class="title" style="font-size:22px">Где ваш борд с грузами?</h2>' +
+    suTile(f.board === 'sheets', 'data-sub="sheets"', 'Google Sheets', 'Таблица в Google', '📗') + suTile(f.board === 'excel', 'data-sub="excel"', 'Excel файл', '', '📊') + suTile(f.board === 'other', 'data-sub="other"', 'Другая система', 'Пришлёте скриншот в чат', '🧩');
+  else if (st === 'freight') body = '<h2 class="title" style="font-size:22px">Какие грузы возите?</h2>' +
+    suTile(f.amazon === 'amazon', 'data-sua="amazon"', 'Amazon', 'Relay, блоки и туры', '📦') + suTile(f.amazon === 'street', 'data-sua="street"', 'Street', 'Брокеры и прямые клиенты', '🛣') + suTile(f.amazon === 'both', 'data-sua="both"', 'И то, и другое', '', '🔀');
+  else if (st === 'eld') body = '<h2 class="title" style="font-size:22px">Какой у вас ELD?</h2><div class="xs muted" style="line-height:1.5;margin-top:-6px">Программа, где видно GPS и часы водителя. Не знаете — спросите у владельца компании.</div>' +
+    '<div style="display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:10px">' + SU_ELDS.map((e) => '<button class="card" data-sue="' + e[0] + '" style="padding:14px;border-radius:16px;text-align:left;' + (f.eld === e[0] ? 'border-color:var(--mint);background:#0E2019' : '') + '"><b style="font-size:15px">' + e[1] + '</b><div class="xs" style="margin-top:3px;color:' + (e[2] ? 'var(--mint-t)' : 'var(--muted)') + '">' + (e[2] ? 'проверка ключа сразу' : 'проверка за день') + '</div></button>').join('') + '</div>' +
+    suTile(f.eld === 'other', 'data-sue="other"', 'Другой ELD', 'Напишите название', '➕') +
+    (f.eld === 'other' ? '<input id="suEldName" placeholder="Название, например Omnitracs" value="' + esc(f.eldName) + '" style="width:100%;height:46px;padding:0 14px;border-radius:12px;border:1px solid var(--line);background:#0B1220;color:var(--text);font:inherit;font-size:15px">' : '') +
+    suTile(f.eld === 'none', 'data-sue="none"', 'ELD нет', 'Бот работает без GPS: чаты и борд', '🚫');
+  else if (st === 'team') body = '<h2 class="title" style="font-size:22px">Кто ещё в вашей команде?</h2><div class="xs muted" style="line-height:1.5;margin-top:-6px">@username диспетчеров и тимлидов, через пробел или с новой строки. Так бот отличит ваших людей от водителей. Можно пропустить.</div>' +
+    '<textarea id="suTeam" rows="4" placeholder="@alex_dispatch @bek_lead" style="width:100%;padding:12px 14px;border-radius:14px;border:1px solid var(--line);background:#0B1220;color:var(--text);font:inherit;font-size:15px;resize:vertical">' + esc(f.team) + '</textarea>';
+  else if (st === 'tz') { const quick = ['us-e','us-c','us-m','us-p','uz','ru-msk','tr','eu'];
+    body = '<h2 class="title" style="font-size:22px">Ваш часовой пояс</h2><div class="xs muted" style="line-height:1.5;margin-top:-6px">По нему бот ставит апдейты, смену и даты.</div>' +
+      quick.map((c) => { const r = tzRow(c); return r ? suTile(f.tz === c, 'data-sutz="' + c + '"', tzName(r), '', '') : ''; }).join('') +
+      '<button class="btn" style="height:44px" data-sutzall="1">' + (f.tzAll ? 'Скрыть другие' : 'Другие пояса') + '</button>' +
+      (f.tzAll ? TZS.filter((r) => quick.indexOf(r[0]) < 0).map((r) => suTile(f.tz === r[0], 'data-sutz="' + r[0] + '"', tzName(r), '', '')).join('') : ''); }
+  else if (st === 'mode') body = '<h2 class="title" style="font-size:22px">Когда бот может писать водителям?</h2>' +
+    suTile(f.mode === 'full', 'data-sum="full"', 'Круглосуточно (24/7)', 'Бот работает и ночью', '🌙') + suTile(f.mode === 'shift', 'data-sum="shift"', 'Только в мою смену', 'Дешевле. Вне смены бот только анализирует', '🕗') +
+    (f.mode === 'shift' ? '<div class="label" style="margin-top:6px">Начало смены</div><div style="display:grid;grid-template-columns:repeat(6,minmax(0,1fr));gap:6px">' + Array.from({ length: 24 }, (_, h) => '<button class="seg' + (f.start === h ? ' on' : '') + '" data-sust="' + h + '" style="height:38px;font-size:13px">' + String(h).padStart(2, '0') + '</button>').join('') + '</div>' +
+      '<div class="label" style="margin-top:6px">Длина смены</div><div style="display:grid;grid-template-columns:repeat(3,1fr);gap:8px">' + [8, 10, 12].map((h) => '<button class="seg' + (f.len === h ? ' on' : '') + '" data-sulen="' + h + '">' + h + ' ч</button>').join('') + '</div>' : '');
+  else if (st === 'drivers') { const p = f.drivers ? suPlan(+f.drivers) : null;
+    body = '<h2 class="title" style="font-size:22px">Сколько у вас водителей?</h2>' +
+      '<div style="display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:10px">' + [['10','1–10'],['20','11–20'],['40','21–40'],['80','41–80'],['81','80+']].map((x) => '<button class="card" data-sud="' + x[0] + '" style="padding:18px 14px;border-radius:16px;text-align:center;' + (f.drivers === x[0] ? 'border-color:var(--mint);background:#0E2019' : '') + '"><b style="font-size:20px">' + x[1] + '</b></button>').join('') + '</div>' +
+      (p ? '<div class="card col" style="padding:16px;border-radius:18px;gap:6px;border-color:var(--mint-bd);background:#0E2019"><span class="xs muted">Подходит тариф</span><b style="font-size:20px">' + trName(p[1]) + ' · ' + (f.mode === 'shift' ? 'Смена' : '24/7') + '</b><span class="xs muted">' + tr3('до ' + p[2] + ' водителей · до ' + p[3] + ' апдейтов в день', 'up to ' + p[2] + ' drivers · up to ' + p[3] + ' updates a day', p[2] + ' tagacha haydovchi · kuniga ' + p[3] + ' tagacha apdeyt') + '</span></div>' : ''); }
+  return '<div class="col" style="gap:14px">' + head + body +
+    '<button class="btn primary" style="height:50px;font-size:16px;margin-top:4px' + (suCanNext() ? '' : ';opacity:.45') + '" data-su="next">' + (f.step === n ? 'Проверить ответы' : 'Дальше') + '</button>' +
+    (st === 'team' ? '<button class="btn" style="height:44px" data-su="skip">Пропустить</button>' : '') + '</div>';
+}
+function vSetupReview() {
+  const f = S.su, p = suPlan(+f.drivers || 10);
+  const eld = f.eld === 'other' ? (f.eldName || 'Другой ELD') : (f.eld === 'none' ? 'ELD нет' : (SU_ELDS.filter((e) => e[0] === f.eld)[0] || ['', f.eld])[1]);
+  const row = (k, v, step) => '<button class="row" data-sugo="' + step + '" style="justify-content:space-between;padding:13px 0;background:transparent;border:0;border-bottom:1px solid var(--line);color:var(--text);font:inherit;width:100%;text-align:left;gap:10px"><span class="small muted">' + k + '</span><span class="small" style="text-align:right;min-width:0">' + v + ' ' + ic('chev', 14, 'var(--muted)') + '</span></button>';
+  const board = { sheets: 'Google Sheets', excel: 'Excel файл', other: 'Другая система' }[f.board], fr = { amazon: 'Amazon', street: 'Street', both: 'Amazon и Street' }[f.amazon];
+  const team = (f.team.match(/@?[A-Za-z0-9_]{4,}/g) || []).length;
+  return '<div class="col" style="gap:14px"><div class="row" style="justify-content:space-between"><button class="back" data-su="back" aria-label="Назад">' + ic('back', 20, '#EAF0FA', 2) + '</button><span class="xs muted">' + tr3('Проверка', 'Review', 'Tekshirish') + '</span></div>' +
+    '<h2 class="title" style="font-size:24px">Всё верно?</h2>' +
+    '<div class="card" style="padding:4px 18px;border-radius:18px">' + row('Борд', board, 1) + row('Грузы', fr, 2) + row('ELD', esc(eld), 3) + row('Команда', team ? tr3(team + ' чел.', team + ' people', team + ' kishi') : '—', 4) + row('Часовой пояс', tzName(tzRow(f.tz)), 5) + row('Режим', f.mode === 'full' ? '24/7' : tr3('Смена ', 'Shift ', 'Smena ') + String(f.start).padStart(2, '0') + ':00 · ' + f.len + tr3(' ч', ' h', ' soat'), 6) + row('Тариф', trName(p[1]) + ' · ' + tr3('до ' + p[2] + ' водителей', 'up to ' + p[2] + ' drivers', p[2] + ' tagacha haydovchi'), 7) + '</div>' +
+    (f.eld && f.eld !== 'none' ? '<div class="card row" style="padding:14px 16px;border-radius:16px;gap:12px;background:#0F1626"><span style="font-size:22px">🔑</span><span class="xs muted" style="line-height:1.5">Следующий шаг в чате: отправьте ключ ELD одним сообщением. Бот проверит его и сразу удалит сообщение.</span></div>' : '') +
+    '<button class="btn primary" style="height:54px;font-size:17px" data-su="send">Готово</button></div>';
+}
+function suPayload() {
+  const f = S.su;
+  return { v: 1, b: f.board, a: f.amazon, e: f.eld, en: f.eld === 'other' ? f.eldName.trim().slice(0, 60) : '', t: f.team.trim().slice(0, 800), z: f.tz, m: f.mode, s: f.start, l: f.len, d: +f.drivers || 10, lang: S.lang };
+}
+function suDeepLink() {
+  const f = S.su;
+  // compact form for a t.me start link (64 characters max): team names are asked in the chat then
+  return 'sv-' + f.board[0] + f.amazon[0] + '-' + (f.eld === 'other' ? 'other' : f.eld) + '-' + f.tz + '-' + (f.mode === 'full' ? 'f' : 's' + f.start + 'x' + f.len) + '-' + (+f.drivers || 10);
+}
+function suSend() {
+  const data = JSON.stringify(suPayload());
+  try { if (tg && tg.HapticFeedback) tg.HapticFeedback.notificationOccurred('success'); } catch (x) {}
+  // a window opened from the chat's keyboard button can hand the answers straight to the bot (and closes itself)
+  if (tg && tg.sendData && !tg.initData && tg.platform && tg.platform !== 'unknown') { try { tg.sendData(data); return; } catch (x) {} }
+  sendToBot(suDeepLink(), '/start ' + suDeepLink());
+}
+
+function phoneTip() {
+  const phone = tg && (tg.platform === 'ios' || tg.platform === 'android');
+  let hide = false; try { hide = localStorage.getItem('mz_tip') === '1'; } catch (x) {}
+  if (!phone || hide) return '';
+  return '<div class="card row" style="padding:14px 16px;border-radius:16px;gap:12px;align-items:flex-start;border-color:#2A3F66;background:#0F1A2E"><span class="icon" style="width:38px;height:38px;border-radius:11px;background:var(--blue-bg);color:var(--blue);flex:none">' + ic('monitor', 20, 'currentColor', 2) + '</span>' +
+    '<span class="col" style="flex:1;gap:6px;min-width:0"><b style="font-size:14px">На компьютере удобнее</b><span class="xs muted" style="line-height:1.45">Откройте бота в Telegram на компьютере: там Расширенное окно с доской грузов, Update Board и всеми водителями на одном экране.</span>' +
+    '<span class="row" style="gap:8px;flex-wrap:wrap"><button class="btn" style="height:34px;font-size:12px" data-act="copylink">Скопировать ссылку</button><button class="btn" style="height:34px;font-size:12px" data-act="hidetip">Скрыть</button></span></span></div>';
+}
+
+const VIEWS = { setup:vSetup, ub:vUb, home:vHome, shift:vShift, updates:vUpdates, eta:vEta, groups:vGroups, features:vFeatures, help:vHelp, settings:vSettings, plans:vPlans, agents:vAgents, work:vWork, tz:vTz, board:vBoard, drivers:vDrivers };
 const TABS = [['home','Главная','home'],['updates','Апдейты','send'],['big','Большой экран','monitor'],['features','Функции','grid'],['settings','Настройки','sliders']];
 const NAV = [['home','Главная','home'],['ub','Update Board','bell'],['board','Доска грузов','truck'],['drivers','Водители','wheel'],['updates','Апдейты','send'],['eta','Расчёт ETA','pin'],['groups','Группы','users'],['features','Все функции','grid'],['help','Инструкция','help'],['plans','Тарифы','doc'],['settings','Настройки','sliders']];
 const TAB_OF = { ub:'home', shift:'home', eta:'home', board:'home', drivers:'home', groups:'home', help:'settings', plans:'settings', agents:'settings', work:'settings', tz:'settings' };
 
 const EN = {
+"7 коротких вопросов прямо в окне":"7 short questions right in the window",
+"На компьютере удобнее":"Easier on a computer",
+"Откройте бота в Telegram на компьютере: там Расширенное окно с доской грузов, Update Board и всеми водителями на одном экране.":"Open the bot in Telegram on a computer: there the Expanded window shows the load board, Update Board and all drivers on one screen.",
+"Настроим Modenzo за минуту":"Set up Modenzo in a minute",
+"7 коротких вопросов. Ответы можно поменять потом в «Настройках».":"7 short questions. You can change the answers later in Settings.",
+"1. Борд":"1. Board",
+"2. Грузы":"2. Freight",
+"3. ELD":"3. ELD",
+"4. Команда":"4. Team",
+"5. Пояс":"5. Time zone",
+"6. Смена":"6. Shift",
+"7. Водители":"7. Drivers",
+"Начать":"Start",
+"Ключ ELD вы отправите в чат после опроса: бот проверит его и сразу удалит сообщение.":"You send the ELD key to the chat after the survey: the bot checks it and deletes the message right away.",
+"Где ваш борд с грузами?":"Where is your load board?",
+"Таблица в Google":"A Google spreadsheet",
+"Excel файл":"Excel file",
+"Другая система":"Another system",
+"Пришлёте скриншот в чат":"You send a screenshot to the chat",
+"Дальше":"Next",
+"Какие грузы возите?":"What freight do you haul?",
+"Relay, блоки и туры":"Relay, blocks and tours",
+"Брокеры и прямые клиенты":"Brokers and direct shippers",
+"И то, и другое":"Both",
+"Какой у вас ELD?":"Which ELD do you use?",
+"Программа, где видно GPS и часы водителя. Не знаете — спросите у владельца компании.":"The app that shows GPS and driver hours. Not sure? Ask the company owner.",
+"проверка ключа сразу":"key checked right away",
+"проверка за день":"checked within a day",
+"Другой ELD":"Another ELD",
+"Напишите название":"Write the name",
+"ELD нет":"No ELD",
+"Бот работает без GPS: чаты и борд":"The bot works without GPS: chats and board",
+"Название, например Omnitracs":"Name, for example Omnitracs",
+"Кто ещё в вашей команде?":"Who else is on your team?",
+"@username диспетчеров и тимлидов, через пробел или с новой строки. Так бот отличит ваших людей от водителей. Можно пропустить.":"@usernames of dispatchers and team leads, separated by spaces or new lines. This way the bot tells your people from drivers. You can skip this.",
+"По нему бот ставит апдейты, смену и даты.":"The bot uses it for updates, shift and dates.",
+"Другие пояса":"Other time zones",
+"Скрыть другие":"Hide others",
+"Когда бот может писать водителям?":"When may the bot write to drivers?",
+"Круглосуточно (24/7)":"Around the clock (24/7)",
+"Бот работает и ночью":"The bot works at night too",
+"Только в мою смену":"Only during my shift",
+"Дешевле. Вне смены бот только анализирует":"Cheaper. Outside the shift the bot only analyses",
+"Длина смены":"Shift length",
+"Сколько у вас водителей?":"How many drivers do you have?",
+"Подходит тариф":"Matching plan",
+"Проверить ответы":"Review answers",
+"Пропустить":"Skip",
+"Всё верно?":"All correct?",
+"Борд":"Board",
+"Грузы":"Freight",
+"Команда":"Team",
+"Amazon и Street":"Amazon and Street",
+"Следующий шаг в чате: отправьте ключ ELD одним сообщением. Бот проверит его и сразу удалит сообщение.":"Next step is in the chat: send the ELD key in one message. The bot checks it and deletes the message right away.",
+"Готово":"Done",
+"Скопировать ссылку":"Copy link",
+"Скрыть":"Hide",
+"Выберите вариант":"Pick an option",
+"Напишите название ELD":"Write the ELD name",
 "Update Board: дела по водителям":"Update Board: to-dos per driver","Бот находит «разбуди», «позвони», перерыв, документы, поломку и напоминает за 10 минут и в срок":"The bot finds \"wake me up\", \"call me\", breaks, documents, breakdowns and reminds you 10 minutes before and on time",
 "Дела по каждому водителю. Бот находит их в сообщениях и напоминает за 10 минут и в срок.":"To-dos for every driver. The bot finds them in messages and reminds you 10 minutes before and on time.","Пример данных. Ваши дела появятся, когда водители начнут писать в группах.":"Sample data. Your to-dos appear when drivers write in the groups.","Просрочено":"Late","В ближайший час":"Within an hour","Всего открыто":"Open","Сделано":"Done","Следующие 12 часов":"Next 12 hours","Важные":"Important","Сейчас и просрочено":"Now and late","Проблема: связаться с водителем":"Problem: contact the driver","срочное":"urgent","нашёл бот":"found by the bot","★ Важность":"★ Importance","Позвонить водителю":"Call the driver","важное":"important","Разбудить водителя":"Wake the driver up","Проверить документы":"Check the documents","обычное":"normal","Позже":"Later","Водитель снова на линии":"Driver back on line","Appointment: успевает ли":"Appointment: will he make it","Напоминание водителя":"Driver's reminder","сделано":"done","позвонить брокеру про detention":"call the broker about detention","добавили вы":"added by you","Дело":"To-do","Ждёт ответа":"Waiting for answer","Тревога":"Alarm","Новое дело":"New to-do","⏰ Разбудить":"⏰ Wake up","📞 Позвонить":"📞 Call","✔️ Проверить статус":"✔️ Check status","📄 Документы":"📄 Documents","Добавить в чате с ботом":"Add in the bot chat","Команда скопируется, вставьте её в чат с ботом. Бот напомнит за 10 минут и в срок.":"The command is copied, paste it into the bot chat. The bot reminds you 10 minutes before and on time.","Что бот находит сам":"What the bot finds by itself","⏰ «разбуди в 5», «wake me up at 5am» · 📞 «позвони в 15:00», «call me in 30 min» · 😴 «10 hour break», «отдыхаю до 14:00» · 📍 appointment · 📄 «пришлю BOL позже» · 🚨 поломка, авария, полиция. Понимает русский, английский, узбекский и турецкий. Время водителя считается по его часовому поясу. Дело закрывается само, когда водитель пишет «I'm up» или присылает фото.":"⏰ \"wake me up at 5am\" · 📞 \"call me in 30 min\", \"call me at 3pm\" · 😴 \"10 hour break\", \"sleeping till 6\" · 📍 appointment · 📄 \"will send BOL later\" · 🚨 breakdown, accident, police. Understands English, Russian, Uzbek and Turkish. Driver time is read in the driver's time zone. A to-do closes by itself when the driver writes \"I'm up\" or sends a photo.","Удалить":"Delete","Трак, например 2080":"Truck, for example 2080","Время водителя: 05:00, 5am или +30":"Driver time: 05:00, 5am or +30","Что сделать, например: разбудить":"What to do, for example: wake up","Отправьте в бот, чтобы он не напоминал о сделанном":"Send to the bot so it stops reminding about done ones","Сохранить в боте":"Save in the bot","Пусто":"Empty","Открытых дел нет":"No open to-dos","Здесь пусто":"Nothing here","Бот сам добавит дело, когда водитель попросит разбудить, позвонить, напишет про перерыв, документы или проблему.":"The bot adds a to-do by itself when a driver asks to wake him up or call, writes about a break, documents or a problem.",
 "Проверяем":"Testing","Все функции есть на любом тарифе.":"Every plan has all features.","— работает и проверено на живых данных.":"— works and was checked on live data.","— код готов и прошёл тесты, ждёт проверки в настоящих группах.":"— the code is ready and passed tests, waiting for a check in real groups.","и":"and","— ещё не работает.":"— not working yet.","Где грузовик сейчас. Пока только у владельца бота":"Where the truck is now. For now only for the bot owner","Samsara, Motive, Geotab: код готов, на настоящих ключах клиентов ещё не проверяли":"Samsara, Motive, Geotab: code ready, not yet tested with real client keys","GPS у каждого клиента из его ELD":"GPS for every client from their own ELD","После запуска сервера: Samsara, Motive, Geotab":"After the server launch: Samsara, Motive, Geotab","Командой или формой в окне. Пока только у владельца бота":"By command or the form in the window. For now only for the bot owner","Окно и бот":"Window and bot","Водитель ждёт ответа, молчит, тревога, автоответ. Стоянка и «нет GPS» пока только у владельца":"Driver waiting, silent, alarm, auto-reply. Long stop and \"no GPS\" for now only for the owner",
 "Окно и бот: русский, английский и узбекский. Водителей бот понимает и на турецком и отвечает им на их языке.":"The window and the bot: Russian, English and Uzbek. The bot also understands drivers in Turkish and answers them in their language.","Да, командой /tr: русский текст превращается в короткое английское сообщение водителю, английский переводится на русский. Например: /tr пришли фото BOL":"Yes, with /tr: Russian text becomes a short English message for the driver, English is translated to Russian. Example: /tr пришли фото BOL","Тарифы отличаются числом водителей и апдейтов в день. Оплата заработает после запуска сервера.":"Plans differ by number of drivers and updates a day. Payment works after the server launch.","Русский, английский, узбекский":"Russian, English, Uzbek","Окно, бот и ответы":"Window, bot and answers","Турецкий для водителей":"Turkish for drivers","Бот понимает водителей на турецком и отвечает им по-турецки":"The bot understands drivers in Turkish and answers them in Turkish","Язык окна и бота":"Window and bot language","Окно переключается сразу.":"The window switches right away.","Язык сообщений бота":"Bot messages language","Сменить и в боте":"Change in the bot too","Водителям бот отвечает на их языке, в том числе на турецком.":"The bot answers drivers in their language, Turkish included.","Русский":"Russian","Английский":"English","Узбекский":"Uzbek",
 "Кнопка «Разобрать фото» в /proof":"The “Read the photos” button in /proof","Перерыв 30 мин после 8 ч, отдых 10 ч. Остаток часов из ELD в плане":"30-min break after 8 h, 10-h rest. Hours left from the ELD planned","Пояс по штату готов. Цепочка стопов после подключения борда":"Zone by state is ready. The stop chain after the board is connected","Команда /eta":"The /eta command","Командой или формой в окне, ответ в чате":"By command or the window form, answer in the chat","Другие темы бот вежливо отклоняет, отвечает по вашей базе знаний":"Other topics are politely declined, answers use your knowledge base","Команда /tr: русский → английский для водителя и обратно":"The /tr command: Russian → English for the driver and back","Агенты 24/7":"Agents 24/7","Водитель ждёт ответа, молчит, тревога, стоянка, нет GPS, автоответ":"Driver waiting, silent, alarm, long stop, no GPS, auto-reply","Какой груз и на сколько. После подключения борда":"Which load and by how much. After the board is connected","Сам в конце смены или командой /report":"By itself at shift end or with /report","Утренняя сводка":"Morning summary","Каждое утро в 09:00 в режиме 24/7":"Every morning at 09:00 in 24/7 mode","Фото, сообщения и письмо брокеру при простое":"Photos, messages and a detention email to the broker","Настройки, расписание, тарифы, агенты, рабочее время":"Settings, schedule, plans, agents, working time","Рабочее время и часовой пояс":"Working time and time zone","Смена или 24/7, дни недели, разовые выходные":"Shift or 24/7, weekdays, one-off days off","Экран готов. Данные грузов после подключения борда":"The screen is ready. Load data after the board is connected","Группы и настройки уже отдельно. Свой ELD и шифрование ключей на сервере":"Groups and settings are already separate. Own ELD and key encryption on the server","Тарифы и смена тарифа готовы. Оферта и пробная неделя в плане":"Plans and plan changes are ready. Offer and trial week planned",
 "Расчёт ETA":"ETA calculation","От GPS трака до стопа: пробки, часы водителя, погода":"From truck GPS to the stop: traffic, driver hours, weather","Посчитать ETA":"Calculate ETA","Номер трака, например 2080":"Truck number, for example 2080","Адрес стопа, например PDX9, Troutdale, OR":"Stop address, for example PDX9, Troutdale, OR","Appointment по времени стопа, например 21.11 16:20":"Appointment in stop time, for example 21.11 16:20","Штат в адресе (OR, TX...) нужен, чтобы знать часовой пояс стопа. Appointment можно не писать.":"The state in the address (OR, TX...) tells the stop time zone. The appointment is optional.","Посчитать в чате с ботом":"Calculate in the bot chat","Ответ придёт в чат с ботом.":"The answer comes to the bot chat.","Ответ придёт в чат с ботом. Пока /eta работает только у владельца бота: GPS берётся из его Samsara. У вас заработает после подключения вашего ELD на сервере (в плане).":"The answer comes to the bot chat. For now /eta works only for the bot owner: GPS comes from the owner's Samsara. It works for you after your ELD is connected on the server (planned).","Пример разбора: Load 1042":"Sample breakdown: Load 1042","Напишите номер трака и адрес стопа":"Write the truck number and the stop address","Команда скопирована: вставьте её в чат и отправьте":"Command copied: paste it in the chat and send","Окно и бот переключаются на этот язык":"The window and the bot switch to this language","Написать в поддержку":"Write to support","Все команды бота":"All bot commands",
-"Modenzo AI · версия окна 2026-11-21 02:50":"Modenzo AI · window version 2026-11-20 19:20",
+"Modenzo AI · версия окна 2026-11-21 04:10":"Modenzo AI · window version 2026-11-21 04:10",
 "Это пример. Настоящие черновики приходят в чат с ботом с теми же кнопками: «Отправить», «Изменить», «Пропустить».":"This is an example. Real drafts come to the bot chat with the same buttons: “Send”, “Edit”, “Skip”.","Сохранить текст":"Save text","Отмена":"Cancel","Текст изменён вами":"Text edited by you","Текст сохранён. Нажмите «Отправить»":"Text saved. Tap “Send”",
 "Активация":"Activation","Опрос":"Survey","7 коротких вопросов в чате с ботом":"7 short questions in the bot chat","Выбрать и оплатить":"Pick and pay","Ключ на проверке":"Key being checked","Бот добавлен хотя бы в одну группу":"The bot is in at least one group","Настройки уже можно менять. Апдейты включатся после всех шагов.":"You can change settings already. Updates turn on after all steps.","Отправить ключ заново":"Send the key again","Ключ ELD на проверке":"ELD key being checked","Ключ получен и проверяется. Как только он заработает, апдейты можно будет включить. Если ключ неверный, отправьте новый.":"The key is received and being checked. Once it works you can turn updates on. If the key is wrong, send a new one.","Почему некоторые кнопки с замком?":"Why do some buttons have a lock?","Пока активация не закончена, часть функций закрыта, чтобы ничего не сломать. Шаги: опрос, тариф, ELD, хотя бы одна группа водителя. Нажмите на кнопку с замком: окно подскажет, какой шаг остался, и даст кнопку, чтобы его сделать. Например, ELD подключается командой /eld":"Until activation is finished some features are closed so nothing breaks. Steps: survey, plan, ELD, at least one driver group. Tap a locked button: the window tells you which step is left and gives a button to do it. For example, the ELD is connected with /eld","Ключ, чтобы бот видел, где траки":"A key so the bot sees where trucks are","Пока активация не закончена, окно работает только для просмотра.":"Until activation is finished the window is view-only.","Сначала пройдите опрос":"Finish the survey first","Это 7 коротких вопросов в чате с ботом: борд, грузы, ELD, коллеги, часовой пояс, смена, число водителей. После него функции включатся. Смотреть окно можно и сейчас.":"It is 7 short questions in the bot chat: board, freight, ELD, teammates, time zone, shift, number of drivers. Then features turn on. You can look around the window already.","Выбрать тариф":"Pick a plan","Выберите и оплатите тариф":"Pick and pay for a plan","Функции включатся после оплаты. Смотреть окно, тарифы и инструкцию можно и сейчас.":"Features turn on after payment. You can look at the window, plans and guide already.","Подключите ELD":"Connect your ELD","Подключить ELD":"Connect ELD","Без ELD бот не видит, где траки, и апдейты будут без местоположения. Бот спросит, какой у вас ELD, и проверит ключ. Это пара минут.":"Without an ELD the bot cannot see where trucks are and updates have no location. The bot asks which ELD you have and checks the key. It takes a couple of minutes.","Добавьте бота в группу водителя":"Add the bot to a driver group","Апдейты идут в группы водителей. Добавьте бота хотя бы в одну группу, и он сам проверит, видит ли сообщения.":"Updates go to driver groups. Add the bot to at least one group and it checks by itself whether it can read messages.","Как добавить":"How to add","Пройти опрос":"Take survey","Группы водителей":"Driver groups","Тариф":"Plan","Понятно":"Got it",
 "Окно переключается на этот язык. Язык ответов бота: /start":"The window switches to this language. The bot's reply language: /start","Окно переключается на этот язык":"The window switches to this language",
@@ -1184,6 +1344,63 @@ const EN = {
 'Telegram не дал включить полный экран на этом устройстве':'Telegram did not allow full screen on this device','Отдых 10 ч, до 04:00':'10 h rest, until 04:00','после отдыха 11 ч':'11 h after rest','У шиппера · 40 мин':'At shipper · 40 min'
 };
 const UZ = {
+"7 коротких вопросов прямо в окне":"Oynaning o'zida 7 ta qisqa savol",
+"На компьютере удобнее":"Kompyuterda qulayroq",
+"Откройте бота в Telegram на компьютере: там Расширенное окно с доской грузов, Update Board и всеми водителями на одном экране.":"Botni kompyuterdagi Telegramda oching: u yerda Kengaytirilgan oynada yuklar doskasi, Update Board va barcha haydovchilar bitta ekranda.",
+"Настроим Modenzo за минуту":"Modenzo'ni bir daqiqada sozlaymiz",
+"7 коротких вопросов. Ответы можно поменять потом в «Настройках».":"7 ta qisqa savol. Javoblarni keyin «Sozlamalar»da o'zgartirish mumkin.",
+"1. Борд":"1. Bord",
+"2. Грузы":"2. Yuklar",
+"3. ELD":"3. ELD",
+"4. Команда":"4. Jamoa",
+"5. Пояс":"5. Vaqt mintaqasi",
+"6. Смена":"6. Smena",
+"7. Водители":"7. Haydovchilar",
+"Начать":"Boshlash",
+"Ключ ELD вы отправите в чат после опроса: бот проверит его и сразу удалит сообщение.":"ELD kalitini so'rovnomadan keyin chatga yuborasiz: bot uni tekshiradi va xabarni darhol o'chiradi.",
+"Где ваш борд с грузами?":"Yuklar bordingiz qayerda?",
+"Таблица в Google":"Google jadvali",
+"Excel файл":"Excel fayl",
+"Другая система":"Boshqa tizim",
+"Пришлёте скриншот в чат":"Chatga skrinshot yuborasiz",
+"Дальше":"Keyingi",
+"Какие грузы возите?":"Qanday yuk tashiysiz?",
+"Relay, блоки и туры":"Relay, bloklar va turlar",
+"Брокеры и прямые клиенты":"Brokerlar va to'g'ridan-to'g'ri mijozlar",
+"И то, и другое":"Ikkalasi ham",
+"Какой у вас ELD?":"Sizda qaysi ELD?",
+"Программа, где видно GPS и часы водителя. Не знаете — спросите у владельца компании.":"GPS va haydovchi soatlari ko'rinadigan dastur. Bilmasangiz, kompaniya egasidan so'rang.",
+"проверка ключа сразу":"kalit darhol tekshiriladi",
+"проверка за день":"bir kunda tekshiriladi",
+"Другой ELD":"Boshqa ELD",
+"Напишите название":"Nomini yozing",
+"ELD нет":"ELD yo'q",
+"Бот работает без GPS: чаты и борд":"Bot GPS'siz ishlaydi: chatlar va bord",
+"Название, например Omnitracs":"Nomi, masalan Omnitracs",
+"Кто ещё в вашей команде?":"Jamoangizda yana kim bor?",
+"@username диспетчеров и тимлидов, через пробел или с новой строки. Так бот отличит ваших людей от водителей. Можно пропустить.":"Dispetcherlar va timlidlarning @username'lari, bo'sh joy yoki yangi qator bilan. Shunda bot sizning odamlaringizni haydovchilardan ajratadi. O'tkazib yuborish mumkin.",
+"По нему бот ставит апдейты, смену и даты.":"Bot apdeytlar, smena va sanalarni shunga qarab qo'yadi.",
+"Другие пояса":"Boshqa mintaqalar",
+"Скрыть другие":"Boshqalarini yashirish",
+"Когда бот может писать водителям?":"Bot haydovchilarga qachon yoza oladi?",
+"Круглосуточно (24/7)":"Kecha-kunduz (24/7)",
+"Бот работает и ночью":"Bot kechasi ham ishlaydi",
+"Только в мою смену":"Faqat mening smenamda",
+"Дешевле. Вне смены бот только анализирует":"Arzonroq. Smenadan tashqarida bot faqat tahlil qiladi",
+"Длина смены":"Smena davomiyligi",
+"Сколько у вас водителей?":"Nechta haydovchingiz bor?",
+"Подходит тариф":"Mos tarif",
+"Проверить ответы":"Javoblarni tekshirish",
+"Всё верно?":"Hammasi to'g'rimi?",
+"Борд":"Bord",
+"Грузы":"Yuklar",
+"Команда":"Jamoa",
+"Amazon и Street":"Amazon va Street",
+"Следующий шаг в чате: отправьте ключ ELD одним сообщением. Бот проверит его и сразу удалит сообщение.":"Keyingi qadam chatda: ELD kalitini bitta xabarda yuboring. Bot uni tekshiradi va xabarni darhol o'chiradi.",
+"Готово":"Tayyor",
+"Скопировать ссылку":"Havolani nusxalash",
+"Выберите вариант":"Variantni tanlang",
+"Напишите название ELD":"ELD nomini yozing",
 "Update Board: дела по водителям":"Update Board: haydovchilar bo'yicha ishlar",
 "Бот находит «разбуди», «позвони», перерыв, документы, поломку и напоминает за 10 минут и в срок":"Bot «uyg'ot», «qo'ng'iroq qil», tanaffus, hujjatlar, buzilishni topadi va 10 daqiqa oldin hamda vaqtida eslatadi",
 "Дела по каждому водителю. Бот находит их в сообщениях и напоминает за 10 минут и в срок.":"Har bir haydovchi bo'yicha ishlar. Bot ularni xabarlardan topadi va 10 daqiqa oldin hamda vaqtida eslatadi.",
@@ -1587,7 +1804,7 @@ const UZ = {
 "готовится":"tayyorlanmoqda",
 "Тарифы отличаются только числом водителей. Оплата заработает после запуска сервера.":"Tariflar haydovchilar va kunlik apdeytlar soni bilan farq qiladi. To'lov server ishga tushgandan keyin ishlaydi.",
 "Или командой в чате, например: /plan pro":"Yoki chatda buyruq bilan, masalan: /plan pro",
-"Modenzo AI · версия окна 2026-11-21 02:50":"Modenzo AI · oyna versiyasi 2026-11-20 19:20",
+"Modenzo AI · версия окна 2026-11-21 04:10":"Modenzo AI · oyna versiyasi 2026-11-21 04:10",
 "Все функции и агенты на любом тарифе. Отличаются число водителей, апдейтов в день и режим.":"Barcha funksiyalar va agentlar har qanday tarifda. Haydovchilar, kunlik apdeytlar soni va rejim bilan farq qiladi.",
 "Смена":"Smena",
 "дешевле":"arzonroq",
@@ -1952,10 +2169,12 @@ function renderInner() {
     console.error('view ' + S.view, err);
     body = '<div class="card pad col" style="gap:10px;border-radius:18px;border-color:var(--amber-bd)"><b>Этот экран не открылся</b><div class="small sub" style="line-height:1.5">Пришлите скриншот разработчику: ' + esc(S.view + ': ' + (err && err.message || err)) + '</div><button class="btn" data-go="home">На главную</button></div>';
   }
-  app.innerHTML = side + '<div class="main"><div class="content">' + (S.view === 'home' || S.view === 'settings' || locked() ? activationCard() : '') + body + '</div>' + tabbar + '</div>' + sheet + lockSheetHtml();
+  app.innerHTML = side + '<div class="main"><div class="content">' + (S.view !== 'setup' && (S.view === 'home' || S.view === 'settings' || locked()) ? activationCard() : '') + (S.view === 'home' ? phoneTip() : '') + body + '</div>' + (S.view === 'setup' ? '' : tabbar) + '</div>' + sheet + lockSheetHtml();
   if (S.lang !== 'ru') translateDom(app);
   [['etaTruck','truck'],['etaAddr','addr'],['etaAppt','appt']].forEach((x) => { const el = document.getElementById(x[0]); if (el) el.addEventListener('input', (e) => { S.etaF[x[1]] = e.target.value; const mono = el.parentNode.querySelector('.mono'); if (mono) mono.textContent = etaCommand(); }); });
   [['tkWho','who'],['tkTime','time'],['tkNote','note']].forEach((x) => { const el = document.getElementById(x[0]); if (el) el.addEventListener('input', (e) => { S.tkForm[x[1]] = e.target.value; const mono = el.parentNode.querySelector('.mono'); if (mono) mono.textContent = tkCommand(); }); });
+  const se = document.getElementById('suEldName'); if (se) se.addEventListener('input', (e) => { S.su.eldName = e.target.value; const nb = document.querySelector('[data-su="next"]'); if (nb) nb.style.opacity = suCanNext() ? '' : '.45'; });
+  const st = document.getElementById('suTeam'); if (st) st.addEventListener('input', (e) => { S.su.team = e.target.value; });
   const ta = document.getElementById('updta');
   if (ta) ta.addEventListener('input', (e) => { S.updDraft = e.target.value; });
   const q = document.getElementById('q');
@@ -1966,6 +2185,34 @@ function renderInner() {
 document.addEventListener('click', (e) => {
   try { onClick(e); } catch (err) { console.error('click', err); toast('Ошибка: ' + (err && err.message || err)); }
 });
+function suClick(d) {
+  const f = S.su, n = SU_STEPS.length;
+  if (d.su === 'back') { f.step = Math.max(0, f.step - 1); }
+  else if (d.su === 'next') {
+    if (f.step > 0 && f.step <= n && !suCanNext()) { toast(SU_STEPS[f.step - 1] === 'eld' && f.eld === 'other' ? 'Напишите название ELD' : 'Выберите вариант'); return; }
+    f.step = Math.min(n + 1, f.step + 1);
+  }
+  else if (d.su === 'skip') { f.team = ''; f.step++; }
+  else if (d.su === 'send') { suSend(); return; }
+  else if (d.sugo) { f.step = +d.sugo; }
+  else {
+    if (d.sub) f.board = d.sub;
+    if (d.sua) f.amazon = d.sua;
+    if (d.sue) f.eld = d.sue;
+    if (d.sutz) f.tz = d.sutz;
+    if (d.sutzall) { f.tzAll = !f.tzAll; render(); return; }
+    if (d.sum) f.mode = d.sum;
+    if (d.sust) { f.start = +d.sust; render(); return; }
+    if (d.sulen) { f.len = +d.sulen; render(); return; }
+    if (d.sud) f.drivers = d.sud;
+    try { if (tg && tg.HapticFeedback) tg.HapticFeedback.selectionChanged(); } catch (x) {}
+    const st = SU_STEPS[f.step - 1];
+    // one tap is enough on simple questions: go on by itself
+    if (d.sub || d.sua || (d.sue && d.sue !== 'other') || d.sud) { render(); setTimeout(() => { if (S.su.step === f.step && SU_STEPS[f.step - 1] === st) { f.step++; render(); window.scrollTo(0, 0); } }, 260); return; }
+    render(); if (d.sue === 'other') { const el = document.getElementById('suEldName'); if (el) el.focus(); } return;
+  }
+  render(); window.scrollTo(0, 0);
+}
 function onClick(e) {
   if (e.target.classList && e.target.classList.contains('sheet-bg')) { S.sheet = false; S.lockSheet = ''; render(); return; }
   const t = e.target && e.target.nodeType === 3 ? e.target.parentElement : e.target;
@@ -1975,6 +2222,8 @@ function onClick(e) {
   if (d.act === 'closelock') { S.lockSheet = ''; render(); return; }
   if (d.setup) { S.lockSheet = ''; render(); sendToBot('setup-' + d.setup, ({ eld:'/eld', support:'/support', help:'/help' })[d.setup] || '/start'); return; }
   if (d.go && S.lockSheet) S.lockSheet = '';
+  if (d.su || d.sub || d.sua || d.sue || d.sutz || d.sutzall || d.sum || d.sust || d.sulen || d.sud || d.sugo) { suClick(d); return; }
+  if (d.act === 'hidetip') { try { localStorage.setItem('mz_tip', '1'); } catch (x) {} render(); return; }
   const miss = blockedBy(d);
   if (miss) { S.lockSheet = miss; render(); return; }
   if (locked() && (d.upd || d.group || d.notif || d.slot || d.smode || d.son || d.lockgo || d.act === 'save' || d.act === 'launch' || d.act === 'stop')) {
@@ -2060,6 +2309,7 @@ function onClick(e) {
   else if (d.act === 'big') { bigScreen(); return; }
   else if (d.act === 'closesheet') { S.sheet = false; }
   else if (d.act === 'copylink') { const url = location.origin + location.pathname + '?view=board'; try { navigator.clipboard.writeText(url).then(() => toast('Ссылка скопирована: откройте её на компьютере'), () => toast(url)); } catch (x) { toast(url); } S.sheet = false; }
+  else if (d.act === 'unlock' && S.access === 'survey') { go('setup'); return; }
   else if (d.act === 'unlock') { toast(S.access === 'survey' ? 'Вернитесь в чат с ботом и нажмите /start' : 'Оплата появится позже, после запуска сервера'); return; }
   else if (d.access) { S.access = d.access; syncAct(); }
   else if (d.act === 'fs') { try { if (fsOn()) tg.exitFullscreen(); else tg.requestFullscreen(); } catch (x) {} return; }
@@ -2067,7 +2317,7 @@ function onClick(e) {
   else return;
   render();
 }
-if (tg && tg.BackButton) { try { tg.BackButton.onClick(() => go(S.view === 'tz' ? 'work' : (['help','plans','agents','work'].indexOf(S.view) >= 0 ? 'settings' : 'home'))); } catch (e) {} }
+if (tg && tg.BackButton) { try { tg.BackButton.onClick(() => { if (S.view === 'setup' && S.su.step > 0) { S.su.step--; render(); return; } go(S.view === 'tz' ? 'work' : (['help','plans','agents','work'].indexOf(S.view) >= 0 ? 'settings' : 'home')); }); } catch (e) {} }
 window.addEventListener('resize', () => render());
 if (tg && tg.onEvent) { try { tg.onEvent('fullscreenChanged', render); tg.onEvent('fullscreenFailed', () => { try { tg.showAlert && tg.showAlert('Telegram не дал включить полный экран на этом устройстве'); } catch (x) {} }); } catch (e) {} }
 try { const v = new URLSearchParams(location.search).get('view'); if (v && VIEWS[v]) S.view = v; } catch (e) {}
