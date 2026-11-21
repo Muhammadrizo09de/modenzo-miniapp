@@ -97,6 +97,7 @@ h1,h2,h3{margin:0;font-family:'Space Grotesk',Inter,sans-serif;letter-spacing:-0
   .navbtn.on{background:#172440;color:var(--text);font-weight:700}
   .navbtn svg{width:18px;height:18px;flex:none}
 }
+.mzSpin{width:18px;height:18px;border-radius:50%;border:2.5px solid #2A3A58;border-top-color:#3DDC97;animation:mzspin .8s linear infinite;flex:none}@keyframes mzspin{to{transform:rotate(360deg)}}
 </style>
 </head>
 <body>
@@ -472,6 +473,7 @@ function planCard(withBtn) {
     (withBtn ? '<div class="grid2"><button class="btn" data-go="plans" style="height:40px;font-size:13px">Сменить тариф</button><button class="btn" data-go="groups" style="height:40px;font-size:13px">Группы в тарифе</button></div>' : '') + '</div>';
 }
 function sendToBot(start, cmd) {
+  if (apiOn()) { apiAction({ start: start }); return; }
   if (tg && S.bot && tg.openTelegramLink) {
     try { if (tg.HapticFeedback) tg.HapticFeedback.notificationOccurred('success'); } catch (x) {}
     tg.openTelegramLink('https://t.me/' + S.bot + '?start=' + start);
@@ -865,7 +867,7 @@ function vSettings() {
     '<div class="col" style="gap:10px"><div class="label">Подключения и команда</div><div class="listcard list"><button data-go="groups" class="row" style="justify-content:space-between;width:100%;background:none;border:0;border-bottom:1px solid var(--line2);font-size:15px;text-align:left"><span>Группы водителей</span><span class="row small muted" style="gap:6px">' + (S.plan === 'owner' ? S.used : S.used + ' из ' + S.lim) + ' ' + ic('chev', 16, 'var(--muted)', 2) + '</span></button><div class="row" style="justify-content:space-between"><span>ELD · Samsara</span><span class="small" style="color:var(--mint-t)">Подключено (пример)</span></div><div class="row" style="justify-content:space-between"><span>Борд (Google Sheets)</span><span class="small muted">Update Board</span></div><div class="row" style="justify-content:space-between"><span>Тиммейты</span><span class="small muted">3 человека</span></div><div class="row" style="justify-content:space-between"><span>Amazon Relay</span><span class="chip c-plan">План</span></div></div></div>' +
     '<div class="col" style="gap:10px"><div class="label">Уведомления мне</div><div class="listcard list">' + nl.map((t) => '<div class="row"><span class="col" style="flex:1"><span>' + t[1] + '</span><span class="xs muted">' + t[2] + '</span></span><button class="toggle' + (S.notif[t[0]] ? ' on' : '') + '" data-notif="' + t[0] + '" aria-label="' + t[1] + '"><span></span></button></div>').join('') + '</div></div>' +
     '<div class="col" style="gap:10px"><div class="label">Тариф и оплата</div>' + planCard(true) + '<div class="listcard list">' + [['Пробная неделя','появится позже'],['Оплата','Click · Payme · другие'],['Оферта','готовится']].map((r) => '<div class="row" style="justify-content:space-between"><span>' + r[0] + '</span><span class="small muted">' + r[1] + '</span></div>').join('') + '</div><div class="xs muted">Тарифы отличаются числом водителей и апдейтов в день. Оплата заработает после запуска сервера.</div><div class="xs muted">Или командой в чате, например: /plan pro</div></div>' +
-    '<div class="xs" style="text-align:center;color:var(--faint)">Modenzo AI · версия окна 2026-11-22 07:00</div>';
+    '<div class="xs" style="text-align:center;color:var(--faint)">Modenzo AI · версия окна 2026-11-22 08:30</div>';
 }
 
 function inTab(l, t) { return t === 'all' || (t === 'risk' ? (l.v === 'late' || l.v === 'tight') && l.st !== 'delivered' : l.st === t); }
@@ -1133,6 +1135,7 @@ function suSend() {
   try { if (tg && tg.HapticFeedback) tg.HapticFeedback.notificationOccurred('success'); } catch (x) {}
   // a window opened from the chat's keyboard button can hand the answers straight to the bot (and closes itself)
   if (tg && tg.sendData && !tg.initData && tg.platform && tg.platform !== 'unknown') { try { tg.sendData(data); return; } catch (x) {} }
+  if (apiOn()) { apiAction({ data: suPayload() }, 'Сохранено'); return; }
   sendToBot(suDeepLink(), '/start ' + suDeepLink());
 }
 
@@ -1177,6 +1180,7 @@ try {
 function spTopic(c) { return (SP_TOPICS.filter((x) => x[0] === c)[0] || SP_TOPICS[5])[1]; }
 function vSupport() {
   const f = S.spF, unread = S.sp.filter((t) => t.st === 'r').length;
+  if (S.spRes) return mzHead('Центр поддержки', '', isWide() ? '' : 'settings') + '<div class="col" style="gap:10px">' + repliesHtml(S.spRes) + '</div><button class="btn primary" style="height:46px" data-act="spnew">Новое обращение</button>';
   return mzHead('Центр поддержки', 'Сначала отвечает ИИ за пару секунд. Сложные вопросы он сам передаёт владельцу.', isWide() ? '' : 'settings') +
     '<div class="card row" style="padding:14px 16px;border-radius:16px;gap:12px;background:radial-gradient(120% 140% at 0% 0%,#12302A,#0E1626);border-color:var(--mint-bd)"><span class="icon" style="width:42px;height:42px;border-radius:12px;background:var(--mint);color:var(--on-mint);flex:none">' + ic('spark', 22, 'currentColor', 2) + '</span><span class="col" style="gap:3px;flex:1;min-width:0"><b style="font-size:15px">ИИ-помощник на связи 24/7</b><span class="xs muted" style="line-height:1.45">Деньги, ошибки и всё, что ИИ не знает точно, сразу уходит человеку. Ответ придёт в чат с ботом и сюда.</span></span></div>' +
     (unread ? '<div class="card row" style="padding:12px 14px;border-radius:14px;gap:10px;border-color:var(--mint-bd)"><span style="font-size:20px">💬</span><b style="font-size:14px;flex:1">' + tr3('Новых ответов: ' + unread, 'New replies: ' + unread, 'Yangi javoblar: ' + unread) + '</b><span class="xs muted">' + tr3('в чате с ботом', 'in the bot chat', 'bot chatida') + '</span></div>' : '') +
@@ -1185,7 +1189,7 @@ function vSupport() {
     '<div class="label">Сообщение</div>' +
     '<textarea id="spText" rows="5" maxlength="1500" placeholder="Опишите, что случилось. Например: апдейт в группу UNIT 2080 не ушёл в 14:00" style="width:100%;padding:12px 14px;border-radius:14px;border:1px solid var(--line);background:#0B1220;color:var(--text);font:inherit;font-size:15px;resize:vertical">' + esc(f.tx) + '</textarea>' +
     '<button class="btn primary" style="height:50px;font-size:16px' + (f.tp && f.tx.trim().length > 3 ? '' : ';opacity:.45') + '" data-act="spsend">Отправить</button>' +
-    '<div class="xs muted" style="line-height:1.5;margin-top:-4px">' + (canSendData() ? 'Сообщение уйдёт боту сразу, окно закроется.' : 'Откроется чат с готовым сообщением: останется нажать «Отправить».') + '</div>' +
+    '<div class="xs muted" style="line-height:1.5;margin-top:-4px">' + (apiOn() ? 'Ответ появится здесь, в окне.' : canSendData() ? 'Сообщение уйдёт боту сразу, окно закроется.' : 'Откроется чат с готовым сообщением: останется нажать «Отправить».') + '</div>' +
     '<div class="label" style="margin-top:6px">Мои обращения</div>' +
     (S.sp.length ? '<div class="listcard list">' + S.sp.map((t) => { const st = SP_ST[t.st] || SP_ST.o; return '<div class="row" style="justify-content:space-between;gap:10px"><span class="col" style="gap:2px;min-width:0"><b style="font-size:14px">№' + t.id + ' · ' + spTopic(t.tp) + '</b><span class="xs muted">' + (t.st === 'r' ? 'Ответ в чате с ботом' : (t.st === 'o' ? 'Владелец ответит в чате' : (t.st === 'a' ? 'Ответ ИИ в чате' : 'Закрыто'))) + '</span></span><span class="chip ' + st[1] + '">' + st[0] + '</span></div>'; }).join('') + '</div>' : '<div class="xs muted">Пока нет обращений.</div>') +
     '<button class="card row" data-go="help" style="justify-content:space-between;height:50px;padding:0 16px;border-radius:14px;font-weight:600">Частые вопросы' + ic('chev', 18, 'var(--muted)', 2) + '</button>';
@@ -1194,6 +1198,7 @@ function spSend() {
   const f = S.spF, tx = f.tx.trim();
   if (!f.tp) { toast('Выберите тему'); return; }
   if (tx.length < 4) { toast('Напишите сообщение'); return; }
+  if (apiOn()) { if (!S.busy) apiSupport(f.tp, tx); return; }
   if (canSendData()) { try { tg.sendData(JSON.stringify({ v:1, k:'sup', tp:f.tp, tx:tx.slice(0, 1500), lang:S.lang })); return; } catch (x) {} }
   S.spF = { tp:'', tx:'' }; render();
   sendText('/support ' + tx);
@@ -1387,7 +1392,7 @@ const AI_EX = ['Что такое detention и когда его просить?
 Object.assign(I, { refresh:'<path d="M20 11a8 8 0 1 0-2.3 5.7M20 4v7h-7"/>' });
 function vAi() {
   const a = S.ai, trial = S.access !== 'active';
-  return mzHead('AI ассистент', 'Спросите про вашу работу или логистику. Ответ придёт в чат с ботом.', isWide() ? '' : 'home') +
+  return mzHead('AI ассистент', apiOn() ? 'Спросите про вашу работу, грузы или логистику. Ответ появится здесь.' : 'Спросите про вашу работу или логистику. Ответ придёт в чат с ботом.', isWide() ? '' : 'home') + aiLogHtml() + '<div id="aiLogEnd"></div>' +
     '<div class="card col" style="padding:16px;border-radius:18px;gap:10px;background:radial-gradient(120% 140% at 100% 0%,#12302A,#0E1626);border-color:var(--mint-bd)"><div class="row" style="gap:12px"><span class="icon" style="width:44px;height:44px;border-radius:13px;background:var(--mint);color:var(--on-mint);flex:none">' + ic('spark', 22, 'currentColor', 2) + '</span><span class="col" style="gap:3px;flex:1;min-width:0"><b style="font-size:15px">Можно просто писать боту в чат</b><span class="xs muted" style="line-height:1.45">Любое сообщение без команды попадёт ассистенту. Он видит только ваши группы водителей и дела из Update Board.</span></span></div>' +
     (trial ? '<span class="chip c-dev" style="align-self:flex-start">До оплаты: 5 вопросов в день</span>' : '') + '</div>' +
     '<div class="row" style="justify-content:space-between;gap:10px;flex-wrap:wrap"><span class="label">За сколько часов</span><span class="row" style="gap:6px">' + [4, 8, 12, 24].map((h) => '<button class="seg' + (a.h === h ? ' on' : '') + '" data-aih="' + h + '" style="height:34px;padding:0 12px;font-size:13px">' + h + ' ч</button>').join('') + '</span></div>' +
@@ -1397,12 +1402,13 @@ function vAi() {
     '<textarea id="aiText" rows="3" maxlength="1500" placeholder="Например: какие траки сегодня могут опоздать?" style="width:100%;padding:12px 14px;border-radius:14px;border:1px solid var(--line);background:#0B1220;color:var(--text);font:inherit;font-size:15px;resize:vertical">' + esc(a.q) + '</textarea>' +
     '<div class="wrap" style="gap:6px">' + AI_EX.map((x, i) => '<button class="chip c-gray" style="height:auto;min-height:30px;padding:6px 10px;cursor:pointer;text-align:left;white-space:normal" data-aiex="' + i + '">' + x + '</button>').join('') + '</div>' +
     '<button class="btn primary" style="height:50px;font-size:16px' + (a.q.trim().length > 1 ? '' : ';opacity:.45') + '" data-act="aisend">Спросить</button>' +
-    '<div class="xs muted" style="line-height:1.5;margin-top:-4px">' + (canSendData() ? 'Вопрос уйдёт боту сразу, окно закроется.' : 'Откроется чат с готовым вопросом: останется нажать «Отправить».') + '</div>';
+    '<div class="xs muted" style="line-height:1.5;margin-top:-4px">' + (apiOn() ? 'Ответ появится здесь, в окне.' : canSendData() ? 'Вопрос уйдёт боту сразу, окно закроется.' : 'Откроется чат с готовым вопросом: останется нажать «Отправить».') + '</div>';
 }
 function aiSend(p) {
   const a = S.ai, q = p === 'ask' ? a.q.trim() : '';
   if (p === 'ask' && q.length < 2) { toast('Напишите вопрос'); return; }
   if (S.access === 'survey') { S.lockSheet = 'survey'; render(); return; }
+  if (apiOn()) { if (S.busy) return; const lab = p === 'ask' ? q : ((AI_P.filter((x) => x[0] === p)[0] || ['', p])[1] + ' · ' + a.h + tr3(' ч', 'h', ' soat')); if (p === 'ask') S.ai.q = ''; apiAsk('ask', { p, h: a.h, q }, lab); return; }
   if (canSendData()) { try { tg.sendData(JSON.stringify({ v:1, k:'ai', p, h:a.h, q, lang:S.lang })); return; } catch (x) {} }
   if (p === 'ask') { sendText(q); return; }
   sendToBot('ai-' + p + '-' + a.h, '/ai');
@@ -1438,6 +1444,7 @@ function ltSend() {
   if (!t) { toast('Напишите номер трака'); return; }
   if (S.access === 'survey') { S.lockSheet = 'survey'; render(); return; }
   const m = (l.e || '').match(/^(\d{1,2})[:.]?(\d{2})$/), e = m ? m[1].padStart(2, '0') + m[2] : 'x';
+  if (apiOn()) { if (!S.busy) apiAsk('late', { t, r: l.r, e, f: l.f }, '✉️ ' + tr3('Текст брокеру', 'Broker text', 'Brokerga matn') + ' · UNIT ' + t); go('ai'); return; }
   if (canSendData()) { try { tg.sendData(JSON.stringify({ v:1, k:'ai', p:'late', t, r:l.r, e, f:l.f, lang:S.lang })); return; } catch (x) {} }
   sendToBot('ai-late-' + t + '-' + l.r + '-' + e + '-' + l.f, '/late ' + t);
 }
@@ -1457,6 +1464,7 @@ Object.assign(I, { plus2:'<path d="M12 5v14M5 12h14"/>', box:'<path d="M3 7l9-4 
 
 /* one way to hand text to the bot from the window: the chat opens with the message ready, the text is also copied */
 function sendText(text) {
+  if (apiOn()) { const x = String(text || ''); if (/^\/load\s/.test(x)) apiLoad(x.slice(6)); else if (/^\/support\s/.test(x)) apiSupport('oth', x.slice(9)); else apiAction({ text: x.slice(0, 6000) }); return; }
   const t = String(text || '').slice(0, 1500);
   copyText(t);
   if (tg && S.bot && tg.openTelegramLink) {
@@ -1483,7 +1491,7 @@ try {
   const ld = new URLSearchParams(location.search).get('ld');
   if (ld !== null) {
     STREET_REAL = true;
-    STREET = ld ? ld.split('|').map((x) => { const f = x.split('~'); return { dbid:+f[0], no:f[1], broker:f[2], truck:f[3], driver:f[4], pu:f[5], del:f[6], put:f[7], dlt:f[8], st:LST[f[9]] ? f[9] : 'ns', risk:+f[10] || 0, rate:+f[11] || 0, pun:f[12] || '', bph:f[13] || '' }; }).filter((l) => l.dbid) : [];
+    STREET = ld ? ld.split('|').map((x) => { const f = x.split('~'); return { dbid:+f[0], no:f[1], broker:f[2], truck:f[3], driver:f[4], pu:f[5], del:f[6], put:f[7], dlt:f[8], st:LST[f[9]] ? f[9] : 'ns', risk:+f[10] || 0, rate:+f[11] || 0, pun:f[12] || '', bph:f[13] || '', file:f[14] === '1' }; }).filter((l) => l.dbid) : [];
   }
 } catch (e) {}
 S.src = 'all'; S.addL = null; S.lsel = '';
@@ -1519,6 +1527,7 @@ function vBoard() {
       '<div class="col" style="gap:8px"><div class="row" style="gap:10px;align-items:flex-start"><span class="chip c-gray" style="min-width:42px;justify-content:center">PU</span><span class="col"><b style="font-size:14px">' + esc(l.pu || '—') + '</b><span class="xs muted">' + fdt(l.put) + '</span></span></div><div class="row" style="gap:10px;align-items:flex-start"><span class="chip c-gray" style="min-width:42px;justify-content:center">DEL</span><span class="col"><b style="font-size:14px">' + esc(l.del || '—') + '</b><span class="xs muted">' + fdt(l.dlt) + '</span></span></div></div>' +
       '<div class="col" style="gap:8px"><div class="label" style="font-size:11px">Статус</div><div style="display:grid;grid-template-columns:repeat(3,minmax(0,1fr));gap:6px">' + LST_ORDER.map((c, i) => '<button class="seg' + (c === l.st ? ' on' : '') + '" data-lst="' + c + '" style="height:38px;font-size:11px;padding:0 4px' + (i < idx ? ';opacity:.55' : '') + '">' + LST[c][0] + '</button>').join('') + '</div>' +
       '<div class="xs muted" style="line-height:1.45">Бот сам двигает статус по словам водителя в группе трака: «at shipper», «loaded», «delivered» и на русском, узбекском, турецком.</div></div>' +
+      (l.file && l.dbid ? '<button class="btn" style="height:44px;font-size:14px;border-color:var(--mint-bd)" data-rcopen="' + l.dbid + '">📄 Открыть rate con</button>' : '') +
       '<div class="grid2"><button class="btn" style="height:42px;font-size:13px" data-ltt="' + esc(l.truck || '') + '">✉️ Текст брокеру</button><button class="btn" style="height:42px;font-size:13px;color:var(--red)" data-lst="cx">Отменить груз</button></div></div>';
   }
   return '<div class="row" style="flex-wrap:wrap;gap:12px 16px;align-items:flex-end"><div style="flex:1 1 240px">' + (isWide() ? '' : '<button class="back" data-go="home" aria-label="Назад" style="margin-bottom:10px">' + ic('back', 20, '#EAF0FA', 2) + '</button>') + '<h1 class="title" style="font-size:28px">Доска грузов</h1><div class="small muted">' + (STREET_REAL ? 'Street грузы ваши, Amazon пока пример.' : 'Пример данных. Добавьте свой груз кнопкой справа.') + '</div></div>' +
@@ -1533,6 +1542,7 @@ function vBoard() {
 }
 function addLoadSheet() {
   const a = S.addL; if (!a) return '';
+  if (S.addRes || S.busy === 'load') return '<div class="mz-bg" style="position:fixed;inset:0;background:#0009;z-index:70;display:flex;align-items:flex-end;justify-content:center"><div class="card col" style="width:min(560px,100%);max-height:92vh;overflow:auto;padding:18px;border-radius:22px 22px 0 0;gap:12px;background:#0E1626" role="dialog" aria-label="Добавить груз"><h2 style="font-size:20px">' + (S.busy === 'load' ? 'Читаю груз…' : (S.addRes.ok ? 'Груз на доске' : 'Не получилось')) + '</h2>' + (S.busy === 'load' ? '<div class="row" style="gap:10px"><span class="mzSpin"></span><span class="small muted">ИИ разбирает rate con, это 5-20 секунд</span></div>' : repliesHtml(S.addRes.texts) + '<button class="btn primary" style="height:46px" data-act="addrefresh">Готово</button>') + '</div></div>';
   const f = a.f, inp = (k, ph, w) => '<input data-alf="' + k + '" placeholder="' + ph + '" value="' + esc(f[k] || '') + '" style="height:44px;padding:0 12px;border-radius:12px;border:1px solid var(--line);background:#0B1220;color:var(--text);font:inherit;font-size:14px;min-width:0;' + (w ? 'grid-column:span 2' : '') + '">';
   const ok = a.mode === 'paste' ? a.text.trim().length > 10 : (f.pu || '').trim() && (f.del || '').trim();
   return '<div style="position:fixed;inset:0;background:#0009;z-index:70;display:flex;align-items:flex-end;justify-content:center" data-act="addclose"><div class="card col" style="width:min(560px,100%);max-height:92vh;overflow:auto;padding:18px;border-radius:22px 22px 0 0;gap:12px;background:#0E1626" data-stop="1" role="dialog" aria-label="Добавить груз">' +
@@ -1540,11 +1550,12 @@ function addLoadSheet() {
     '<div class="grid2"><button class="card col" style="padding:12px;border-radius:14px;gap:2px;text-align:left;border-color:var(--mint)"><b style="font-size:14px">Street</b><span class="xs muted">Вы добавляете, бот следит</span></button><div class="card col" style="padding:12px;border-radius:14px;gap:2px;opacity:.55"><b style="font-size:14px">Amazon</b><span class="xs muted">Придут сами из Relay (расширение, позже)</span></div></div>' +
     '<div style="display:grid;grid-template-columns:repeat(3,minmax(0,1fr));gap:8px"><button class="seg' + (a.mode === 'file' ? ' on' : '') + '" data-alm="file" style="height:40px;font-size:13px">📄 Файл</button><button class="seg' + (a.mode === 'paste' ? ' on' : '') + '" data-alm="paste" style="height:40px;font-size:13px">✨ Текст</button><button class="seg' + (a.mode === 'form' ? ' on' : '') + '" data-alm="form" style="height:40px;font-size:13px">Вручную</button></div>' +
     (a.mode === 'file' ? '<div class="card col" style="padding:22px 16px;border-radius:16px;gap:10px;align-items:center;text-align:center;border-style:dashed;border-color:var(--mint-bd);background:#0E1F19"><span style="font-size:34px">📄</span><b style="font-size:16px">Rate confirmation: PDF или фото</b><span class="xs muted" style="line-height:1.5;max-width:380px">Бот сам прочитает всё: стопы, адреса, PU #, appointment, ставку, брокера и его контакты. Потом спросите ассистента: «PU number 4870546?».</span><div class="wrap" style="justify-content:center;gap:6px"><span class="chip c-done">PDF</span><span class="chip c-done">JPG / PNG</span><span class="chip c-gray">до 10 МБ</span></div><span class="xs" style="color:var(--amber);line-height:1.45">Другие файлы (BOL, POD, счета) бот не примет: проверка бесплатная, ИИ на них не тратится.</span></div>' +
-      '<button class="btn primary" style="height:48px;font-size:15px" data-act="addfile">Отправить файл в чат с ботом</button><div class="xs muted" style="line-height:1.45">Откроется чат: прикрепите файл скрепкой. Загрузка прямо в окно появится после сервера.</div></div></div>' :
+      (apiOn() ? '<label class="card row" style="padding:12px 14px;border-radius:14px;gap:10px;cursor:pointer">' + ic('plus2', 18, 'var(--mint-t)', 2.4) + '<span class="small" style="flex:1">Выбрать файл</span><input id="rcFile" type="file" accept="application/pdf,image/jpeg,image/png" style="max-width:55%;font-size:12px;color:var(--sub)"></label><button class="btn primary" style="height:48px;font-size:15px" data-act="rcupload">Загрузить и прочитать</button></div></div>'
+        : '<button class="btn primary" style="height:48px;font-size:15px" data-act="addfile">Отправить файл в чат с ботом</button><div class="xs muted" style="line-height:1.45">Сейчас файл отправляется через чат: прикрепите его скрепкой. Когда у бота появится сервер, файл загрузится прямо здесь.</div></div></div>') :
     a.mode === 'paste' ? '<textarea id="alText" rows="7" maxlength="6000" placeholder="Вставьте rate confirmation или письмо брокера целиком" style="width:100%;padding:12px 14px;border-radius:14px;border:1px solid var(--line);background:#0B1220;color:var(--text);font:inherit;font-size:14px;resize:vertical">' + esc(a.text) + '</textarea><div class="xs muted" style="line-height:1.45">ИИ найдёт номер груза, брокера, трак, погрузку, выгрузку, время и ставку. Ничего не выдумывает: чего нет в тексте, оставит пустым.</div>'
       : '<div style="display:grid;grid-template-columns:1fr 1fr;gap:8px">' + inp('no', 'Load #') + inp('broker', 'Брокер') + inp('truck', 'Трак (юнит)') + inp('rate', 'Ставка $') + inp('pu', 'Погрузка: город, штат', 1) + inp('put', 'Дата и время погрузки 11/22 08:00', 1) + inp('del', 'Выгрузка: город, штат', 1) + inp('dlt', 'Дата и время выгрузки 11/23 14:00', 1) + '</div>') +
     (a.mode === 'file' ? '' : '<button class="btn primary" style="height:48px;font-size:15px' + (ok ? '' : ';opacity:.45') + '" data-act="addsend">Добавить на доску</button>' +
-    '<div class="xs muted" style="line-height:1.45">' + (canSendData() ? 'Груз уйдёт боту сразу, окно закроется.' : 'Откроется чат с готовым сообщением: останется нажать «Отправить». Бот ответит карточкой груза.') + '</div></div></div>');
+    '<div class="xs muted" style="line-height:1.45">' + (apiOn() ? 'Груз появится на доске сразу, прямо здесь.' : canSendData() ? 'Груз уйдёт боту сразу, окно закроется.' : 'Откроется чат с готовым сообщением: останется нажать «Отправить». Бот ответит карточкой груза.') + '</div></div></div>');
 }
 function addSend() {
   const a = S.addL, f = a.f;
@@ -1553,6 +1564,7 @@ function addSend() {
   else text = [f.no || '', f.broker || '', f.truck || '', ((f.pu || '') + ' ' + (f.put || '')).trim(), ((f.del || '') + ' ' + (f.dlt || '')).trim(), f.rate || ''].join(' | ');
   if (text.replace(/[|\s]/g, '').length < 6) { toast('Заполните погрузку и выгрузку'); return; }
   if (S.access === 'survey') { S.lockSheet = 'survey'; render(); return; }
+  if (apiOn()) { if (!S.busy) apiLoad(text); return; }
   if (canSendData()) { try { tg.sendData(JSON.stringify({ v:1, k:'load', tx:text.slice(0, 6000) })); return; } catch (x) {} }
   S.addL = null; render();
   sendText('/load ' + text);
@@ -1881,12 +1893,127 @@ function tzStrip() {
   return '<div class="row" style="gap:8px;overflow-x:auto;padding-bottom:2px">' + box('', '⌂ Ваше время', mineIana, '', 0) + TZ4.map((z) => box(z[0], z[1], z[2], z[3], cnt[z[0]])).join('') + '</div>';
 }
 
+/* ---------------- direct link to the bot (API): everything happens inside the window when the bot has an address ---------------- */
+S.api = ''; S.busy = ''; S.aiLog = []; S.spRes = null; S.addRes = null; S.viewer = null;
+try { const a = new URLSearchParams(location.search).get('api') || ''; if (/^https:\/\/[A-Za-z0-9.-]+(:\d+)?(\/[A-Za-z0-9._\/-]*)?$/.test(a)) S.api = a.replace(/\/$/, ''); } catch (e) {}
+function apiOn() { return !!(S.api && tg && tg.initData); }
+async function apiCall(path, data, form) {
+  const opt = { method: data || form ? 'POST' : 'GET', headers: { 'X-Init-Data': tg.initData } };
+  if (form) opt.body = form;
+  else if (data) { opt.headers['Content-Type'] = 'application/json'; opt.body = JSON.stringify(data); }
+  const r = await fetch(S.api + path, opt);
+  let j = {};
+  try { j = await r.json(); } catch (e) {}
+  if (!r.ok && !j.texts) throw new Error(j.error || ('HTTP ' + r.status));
+  return j;
+}
+function apiFail(e) { S.busy = ''; render(); toast(String(e && e.message) === 'slow' ? 'Слишком часто. Подождите минуту' : 'Нет связи с ботом. Попробуйте ещё раз'); }
+/* fresh data from the bot without leaving the window */
+async function refreshState() {
+  try {
+    const j = await apiCall('/api/state?view=' + encodeURIComponent(S.view));
+    const q = new URLSearchParams(j.params || {});
+    if (S.bot && !q.get('bot')) q.set('bot', S.bot);
+    q.set('view', S.view);
+    location.replace(location.pathname + '?' + q.toString());
+  } catch (e) { apiFail(e); }
+}
+async function apiAction(payload, okText) {
+  S.busy = 'act'; render();
+  try { await apiCall('/api/action', payload); toast(okText || 'Готово'); setTimeout(refreshState, 500); }
+  catch (e) { apiFail(e); }
+}
+function hint(apiText, dataText, chatText) { return apiOn() ? apiText : (canSendData() ? dataText : chatText); }
+function repliesHtml(texts) {
+  return (texts || []).map((t) => '<div class="card" style="padding:12px 14px;border-radius:14px;background:#0F1A2B;border-color:#24344F;white-space:pre-wrap;line-height:1.5;font-size:14px;overflow-wrap:anywhere">' + esc(t) + '</div>').join('');
+}
+function aiLogHtml() {
+  if (!S.aiLog.length && S.busy !== 'ai') return '';
+  return '<div class="col" style="gap:8px">' + S.aiLog.slice(-6).map((x) => '<div class="col" style="gap:6px"><div style="align-self:flex-end;max-width:85%;padding:9px 12px;border-radius:14px 14px 4px 14px;background:#163A2E;font-size:14px;line-height:1.45">' + esc(x.q) + '</div>' + repliesHtml(x.a) + '</div>').join('') +
+    (S.busy === 'ai' ? '<div class="card row" style="padding:12px 14px;border-radius:14px;gap:10px"><span class="mzSpin"></span><span class="small muted">Думаю…</span></div>' : '') + '</div>';
+}
+async function apiAsk(kind, data, label) {
+  S.busy = 'ai'; S.aiLog.push({ q: label, a: [] }); render();
+  try { const j = await apiCall(kind === 'late' ? '/api/late' : '/api/ask', data); S.aiLog[S.aiLog.length - 1].a = j.texts && j.texts.length ? j.texts : ['—']; }
+  catch (e) { S.aiLog.pop(); apiFail(e); return; }
+  S.busy = ''; render();
+  setTimeout(() => { const el = document.getElementById('aiLogEnd'); if (el && el.scrollIntoView) el.scrollIntoView({ block: 'end', behavior: 'smooth' }); }, 50);
+}
+async function apiSupport(tp, tx) {
+  S.busy = 'sp'; render();
+  try { const j = await apiCall('/api/support', { tp, tx }); S.spRes = j.texts || []; S.spF = { tp: '', tx: '' }; }
+  catch (e) { apiFail(e); return; }
+  S.busy = ''; render();
+}
+async function apiLoad(text) {
+  S.busy = 'load'; render();
+  try { const j = await apiCall('/api/load', { tx: text }); S.addRes = { ok: j.ok, texts: j.texts || [] }; }
+  catch (e) { apiFail(e); return; }
+  S.busy = ''; render();
+}
+async function apiUpload() {
+  const inp = document.getElementById('rcFile'), f = inp && inp.files && inp.files[0];
+  if (!f) { toast('Выберите файл'); return; }
+  if (f.size > 10 * 1024 * 1024) { toast('Файл больше 10 МБ'); return; }
+  if (!/pdf|jpe?g|png/i.test(f.type || f.name)) { toast('Только PDF, JPG или PNG'); return; }
+  const fd = new FormData(); fd.append('file', f, f.name);
+  S.busy = 'load'; S.addRes = null; render();
+  try { const j = await apiCall('/api/upload', null, fd); S.addRes = { ok: j.ok, texts: j.texts || [] }; }
+  catch (e) { apiFail(e); return; }
+  S.busy = ''; render();
+}
+async function openRateCon(dbid) {
+  if (!apiOn()) { sendToBot('rf-' + dbid, '/loads'); return; }
+  S.busy = 'file'; render();
+  try {
+    const r = await fetch(S.api + '/api/file/' + dbid, { headers: { 'X-Init-Data': tg.initData } });
+    if (!r.ok) throw new Error('HTTP ' + r.status);
+    const b = await r.blob();
+    S.viewer = { url: URL.createObjectURL(b), type: b.type || 'application/pdf', name: 'ratecon-' + dbid + (/(png)/.test(b.type) ? '.png' : (/jpe?g/.test(b.type) ? '.jpg' : '.pdf')) };
+  } catch (e) { apiFail(e); return; }
+  S.busy = ''; render();
+}
+function viewerSheet() {
+  const v = S.viewer; if (!v) return '';
+  const body = /^image\//.test(v.type) ? '<img src="' + v.url + '" alt="Rate con" style="max-width:100%;border-radius:10px;display:block;margin:0 auto">' : '<iframe src="' + v.url + '" title="Rate con" style="width:100%;height:100%;border:0;border-radius:10px;background:#fff"></iframe>';
+  return '<div style="position:fixed;inset:0;background:#000c;z-index:90;display:flex;flex-direction:column;padding:12px;gap:10px" role="dialog" aria-label="Rate con"><div class="row" style="justify-content:space-between;gap:10px"><b style="font-size:16px">Rate con</b><span class="row" style="gap:8px"><a class="btn" href="' + v.url + '" download="' + v.name + '" style="height:38px;padding:0 14px;display:inline-flex;align-items:center;text-decoration:none;font-size:13px">Скачать</a><button class="btn" data-act="viewclose" style="height:38px;width:38px;padding:0" aria-label="Закрыть">' + ic('x', 18) + '</button></span></div><div style="flex:1;min-height:0;overflow:auto">' + body + '</div></div>';
+}
+function apiClick(d) {
+  if (d.act === 'viewclose') { try { URL.revokeObjectURL(S.viewer.url); } catch (x) {} S.viewer = null; render(); return true; }
+  if (d.rcopen) { openRateCon(d.rcopen); return true; }
+  if (d.act === 'rcupload') { apiUpload(); return true; }
+  if (d.act === 'addrefresh') { S.addL = null; S.addRes = null; refreshState(); return true; }
+  if (d.act === 'spnew') { S.spRes = null; render(); return true; }
+  return false;
+}
+
 const VIEWS = { custom:vCustom, ai:vAi, support:vSupport, answers:vAnswers, map:vMap, setup:vSetup, ub:vUb, home:vHome, shift:vShift, updates:vUpdates, eta:vEta, groups:vGroups, features:vFeatures, help:vHelp, settings:vSettings, plans:vPlans, agents:vAgents, work:vWork, tz:vTz, board:vBoard, drivers:vDrivers };
 const TABS = [['home','Главная','home'],['updates','Апдейты','send'],['big','Большой экран','monitor'],['features','Функции','grid'],['settings','Настройки','sliders']];
 const NAV = [['home','Главная','home'],['ub','Update Board','bell'],['map','Слежка','map'],['board','Доска грузов','truck'],['drivers','Водители','wheel'],['updates','Апдейты','send'],['eta','Расчёт ETA','pin'],['groups','Группы','users'],['features','Все функции','grid'],['help','Инструкция','help'],['settings','Настройки','sliders']];
 const TAB_OF = { ai:'home', support:'settings', answers:'settings', map:'home', ub:'home', shift:'home', eta:'home', board:'home', drivers:'home', groups:'home', help:'settings', plans:'settings', agents:'settings', work:'settings', tz:'settings' };
 
 const EN = {
+"Слишком часто. Подождите минуту":"Too often. Wait a minute",
+"Нет связи с ботом. Попробуйте ещё раз":"No connection to the bot. Try again",
+"Думаю…":"Thinking…",
+"Выберите файл":"Choose a file",
+"Файл больше 10 МБ":"The file is over 10 MB",
+"Только PDF, JPG или PNG":"Only PDF, JPG or PNG",
+"Скачать":"Download",
+"Rate con":"Rate con",
+"Новое обращение":"New request",
+"Читаю груз…":"Reading the load…",
+"Груз на доске":"Load is on the board",
+"Не получилось":"It did not work",
+"ИИ разбирает rate con, это 5-20 секунд":"The AI is reading the rate con, 5-20 seconds",
+"Выбрать файл":"Choose file",
+"Загрузить и прочитать":"Upload and read",
+"Сейчас файл отправляется через чат: прикрепите его скрепкой. Когда у бота появится сервер, файл загрузится прямо здесь.":"For now the file goes through the chat: attach it with the paperclip. Once the bot has a server, the file uploads right here.",
+"📄 Открыть rate con":"📄 Open rate con",
+"Ответ появится здесь, в окне.":"The answer appears here, in the window.",
+"Груз появится на доске сразу, прямо здесь.":"The load appears on the board right away, right here.",
+"Спросите про вашу работу, грузы или логистику. Ответ появится здесь.":"Ask about your work, loads or logistics. The answer appears here.",
+"Сохранено":"Saved",
 "📄 Файл":"📄 File",
 "✨ Текст":"✨ Text",
 "Вручную":"Manual",
@@ -2177,7 +2304,7 @@ const EN = {
 "Окно и бот: русский, английский и узбекский. Водителей бот понимает и на турецком и отвечает им на их языке.":"The window and the bot: Russian, English and Uzbek. The bot also understands drivers in Turkish and answers them in their language.","Да, командой /tr: русский текст превращается в короткое английское сообщение водителю, английский переводится на русский. Например: /tr пришли фото BOL":"Yes, with /tr: Russian text becomes a short English message for the driver, English is translated to Russian. Example: /tr пришли фото BOL","Тарифы отличаются числом водителей и апдейтов в день. Оплата заработает после запуска сервера.":"Plans differ by number of drivers and updates a day. Payment works after the server launch.","Русский, английский, узбекский":"Russian, English, Uzbek","Окно, бот и ответы":"Window, bot and answers","Турецкий для водителей":"Turkish for drivers","Бот понимает водителей на турецком и отвечает им по-турецки":"The bot understands drivers in Turkish and answers them in Turkish","Язык окна и бота":"Window and bot language","Окно переключается сразу.":"The window switches right away.","Язык сообщений бота":"Bot messages language","Сменить и в боте":"Change in the bot too","Водителям бот отвечает на их языке, в том числе на турецком.":"The bot answers drivers in their language, Turkish included.","Русский":"Russian","Английский":"English","Узбекский":"Uzbek",
 "Кнопка «Разобрать фото» в /proof":"The “Read the photos” button in /proof","Перерыв 30 мин после 8 ч, отдых 10 ч. Остаток часов из ELD в плане":"30-min break after 8 h, 10-h rest. Hours left from the ELD planned","Пояс по штату готов. Цепочка стопов после подключения борда":"Zone by state is ready. The stop chain after the board is connected","Команда /eta":"The /eta command","Командой или формой в окне, ответ в чате":"By command or the window form, answer in the chat","Другие темы бот вежливо отклоняет, отвечает по вашей базе знаний":"Other topics are politely declined, answers use your knowledge base","Команда /tr: русский → английский для водителя и обратно":"The /tr command: Russian → English for the driver and back","Агенты 24/7":"Agents 24/7","Водитель ждёт ответа, молчит, тревога, стоянка, нет GPS, автоответ":"Driver waiting, silent, alarm, long stop, no GPS, auto-reply","Какой груз и на сколько. После подключения борда":"Which load and by how much. After the board is connected","Сам в конце смены или командой /report":"By itself at shift end or with /report","Утренняя сводка":"Morning summary","Каждое утро в 09:00 в режиме 24/7":"Every morning at 09:00 in 24/7 mode","Фото, сообщения и письмо брокеру при простое":"Photos, messages and a detention email to the broker","Настройки, расписание, тарифы, агенты, рабочее время":"Settings, schedule, plans, agents, working time","Рабочее время и часовой пояс":"Working time and time zone","Смена или 24/7, дни недели, разовые выходные":"Shift or 24/7, weekdays, one-off days off","Экран готов. Данные грузов после подключения борда":"The screen is ready. Load data after the board is connected","Группы и настройки уже отдельно. Свой ELD и шифрование ключей на сервере":"Groups and settings are already separate. Own ELD and key encryption on the server","Тарифы и смена тарифа готовы. Оферта и пробная неделя в плане":"Plans and plan changes are ready. Offer and trial week planned",
 "Расчёт ETA":"ETA calculation","От GPS трака до стопа: пробки, часы водителя, погода":"From truck GPS to the stop: traffic, driver hours, weather","Посчитать ETA":"Calculate ETA","Номер трака, например 2080":"Truck number, for example 2080","Адрес стопа, например PDX9, Troutdale, OR":"Stop address, for example PDX9, Troutdale, OR","Appointment по времени стопа, например 21.11 16:20":"Appointment in stop time, for example 21.11 16:20","Штат в адресе (OR, TX...) нужен, чтобы знать часовой пояс стопа. Appointment можно не писать.":"The state in the address (OR, TX...) tells the stop time zone. The appointment is optional.","Посчитать в чате с ботом":"Calculate in the bot chat","Ответ придёт в чат с ботом.":"The answer comes to the bot chat.","Ответ придёт в чат с ботом. Пока /eta работает только у владельца бота: GPS берётся из его Samsara. У вас заработает после подключения вашего ELD на сервере (в плане).":"The answer comes to the bot chat. For now /eta works only for the bot owner: GPS comes from the owner's Samsara. It works for you after your ELD is connected on the server (planned).","Пример разбора: Load 1042":"Sample breakdown: Load 1042","Напишите номер трака и адрес стопа":"Write the truck number and the stop address","Команда скопирована: вставьте её в чат и отправьте":"Command copied: paste it in the chat and send","Окно и бот переключаются на этот язык":"The window and the bot switch to this language","Написать в поддержку":"Write to support","Все команды бота":"All bot commands",
-"Modenzo AI · версия окна 2026-11-22 07:00":"Modenzo AI · window version 2026-11-22 07:00",
+"Modenzo AI · версия окна 2026-11-22 08:30":"Modenzo AI · window version 2026-11-22 08:30",
 "Это пример. Настоящие черновики приходят в чат с ботом с теми же кнопками: «Отправить», «Изменить», «Пропустить».":"This is an example. Real drafts come to the bot chat with the same buttons: “Send”, “Edit”, “Skip”.","Сохранить текст":"Save text","Отмена":"Cancel","Текст изменён вами":"Text edited by you","Текст сохранён. Нажмите «Отправить»":"Text saved. Tap “Send”",
 "Активация":"Activation","Опрос":"Survey","7 коротких вопросов в чате с ботом":"7 short questions in the bot chat","Выбрать и оплатить":"Pick and pay","Ключ на проверке":"Key being checked","Бот добавлен хотя бы в одну группу":"The bot is in at least one group","Настройки уже можно менять. Апдейты включатся после всех шагов.":"You can change settings already. Updates turn on after all steps.","Отправить ключ заново":"Send the key again","Ключ ELD на проверке":"ELD key being checked","Ключ получен и проверяется. Как только он заработает, апдейты можно будет включить. Если ключ неверный, отправьте новый.":"The key is received and being checked. Once it works you can turn updates on. If the key is wrong, send a new one.","Почему некоторые кнопки с замком?":"Why do some buttons have a lock?","Пока активация не закончена, часть функций закрыта, чтобы ничего не сломать. Шаги: опрос, тариф, ELD, хотя бы одна группа водителя. Нажмите на кнопку с замком: окно подскажет, какой шаг остался, и даст кнопку, чтобы его сделать. Например, ELD подключается командой /eld":"Until activation is finished some features are closed so nothing breaks. Steps: survey, plan, ELD, at least one driver group. Tap a locked button: the window tells you which step is left and gives a button to do it. For example, the ELD is connected with /eld","Ключ, чтобы бот видел, где траки":"A key so the bot sees where trucks are","Пока активация не закончена, окно работает только для просмотра.":"Until activation is finished the window is view-only.","Сначала пройдите опрос":"Finish the survey first","Это 7 коротких вопросов в чате с ботом: борд, грузы, ELD, коллеги, часовой пояс, смена, число водителей. После него функции включатся. Смотреть окно можно и сейчас.":"It is 7 short questions in the bot chat: board, freight, ELD, teammates, time zone, shift, number of drivers. Then features turn on. You can look around the window already.","Выбрать тариф":"Pick a plan","Выберите и оплатите тариф":"Pick and pay for a plan","Функции включатся после оплаты. Смотреть окно, тарифы и инструкцию можно и сейчас.":"Features turn on after payment. You can look at the window, plans and guide already.","Подключите ELD":"Connect your ELD","Подключить ELD":"Connect ELD","Без ELD бот не видит, где траки, и апдейты будут без местоположения. Бот спросит, какой у вас ELD, и проверит ключ. Это пара минут.":"Without an ELD the bot cannot see where trucks are and updates have no location. The bot asks which ELD you have and checks the key. It takes a couple of minutes.","Добавьте бота в группу водителя":"Add the bot to a driver group","Апдейты идут в группы водителей. Добавьте бота хотя бы в одну группу, и он сам проверит, видит ли сообщения.":"Updates go to driver groups. Add the bot to at least one group and it checks by itself whether it can read messages.","Как добавить":"How to add","Пройти опрос":"Take survey","Группы водителей":"Driver groups","Тариф":"Plan","Понятно":"Got it",
 "Окно переключается на этот язык. Язык ответов бота: /start":"The window switches to this language. The bot's reply language: /start","Окно переключается на этот язык":"The window switches to this language",
@@ -2286,6 +2413,27 @@ const EN = {
 'Telegram не дал включить полный экран на этом устройстве':'Telegram did not allow full screen on this device','Отдых 10 ч, до 04:00':'10 h rest, until 04:00','после отдыха 11 ч':'11 h after rest','У шиппера · 40 мин':'At shipper · 40 min'
 };
 const UZ = {
+"Слишком часто. Подождите минуту":"Juda tez. Bir daqiqa kuting",
+"Нет связи с ботом. Попробуйте ещё раз":"Bot bilan aloqa yo'q. Qayta urinib ko'ring",
+"Думаю…":"O'ylayapman…",
+"Выберите файл":"Faylni tanlang",
+"Файл больше 10 МБ":"Fayl 10 MB dan katta",
+"Только PDF, JPG или PNG":"Faqat PDF, JPG yoki PNG",
+"Скачать":"Yuklab olish",
+"Rate con":"Rate con",
+"Новое обращение":"Yangi murojaat",
+"Читаю груз…":"Yuk o'qilmoqda…",
+"Груз на доске":"Yuk doskada",
+"Не получилось":"Bo'lmadi",
+"ИИ разбирает rate con, это 5-20 секунд":"AI rate con ni o'qiyapti, 5-20 soniya",
+"Выбрать файл":"Fayl tanlash",
+"Загрузить и прочитать":"Yuklash va o'qish",
+"Сейчас файл отправляется через чат: прикрепите его скрепкой. Когда у бота появится сервер, файл загрузится прямо здесь.":"Hozircha fayl chat orqali yuboriladi: uni qisqich bilan biriktiring. Botda server paydo bo'lgach, fayl shu yerning o'ziga yuklanadi.",
+"📄 Открыть rate con":"📄 Rate con ni ochish",
+"Ответ появится здесь, в окне.":"Javob shu yerda, oynada chiqadi.",
+"Груз появится на доске сразу, прямо здесь.":"Yuk darhol shu yerda doskada chiqadi.",
+"Спросите про вашу работу, грузы или логистику. Ответ появится здесь.":"Ishingiz, yuklar yoki logistika haqida so'rang. Javob shu yerda chiqadi.",
+"Сохранено":"Saqlandi",
 "📄 Файл":"📄 Fayl",
 "✨ Текст":"✨ Matn",
 "Вручную":"Qo'lda",
@@ -2965,7 +3113,7 @@ const UZ = {
 "готовится":"tayyorlanmoqda",
 "Тарифы отличаются только числом водителей. Оплата заработает после запуска сервера.":"Tariflar haydovchilar va kunlik apdeytlar soni bilan farq qiladi. To'lov server ishga tushgandan keyin ishlaydi.",
 "Или командой в чате, например: /plan pro":"Yoki chatda buyruq bilan, masalan: /plan pro",
-"Modenzo AI · версия окна 2026-11-22 07:00":"Modenzo AI · oyna versiyasi 2026-11-22 07:00",
+"Modenzo AI · версия окна 2026-11-22 08:30":"Modenzo AI · oyna versiyasi 2026-11-22 08:30",
 "Все функции и агенты на любом тарифе. Отличаются число водителей, апдейтов в день и режим.":"Barcha funksiyalar va agentlar har qanday tarifda. Haydovchilar, kunlik apdeytlar soni va rejim bilan farq qiladi.",
 "Смена":"Smena",
 "дешевле":"arzonroq",
@@ -3338,7 +3486,7 @@ function renderInner() {
     console.error('view ' + S.view, err);
     body = '<div class="card pad col" style="gap:10px;border-radius:18px;border-color:var(--amber-bd)"><b>Этот экран не открылся</b><div class="small sub" style="line-height:1.5">Пришлите скриншот разработчику: ' + esc(S.view + ': ' + (err && err.message || err)) + '</div><button class="btn" data-go="home">На главную</button></div>';
   }
-  app.innerHTML = side + '<div class="main"><div class="content">' + (S.view !== 'setup' && (S.view === 'home' || S.view === 'settings' || locked()) ? activationCard() : '') + (S.view === 'home' ? (isWide() ? '' : gsButton()) + previewRibbon() + phoneTip() : '') + body + '</div>' + (S.view === 'setup' ? '' : tabbar) + '</div>' + sheet + lockSheetHtml() + tourCard() + addLoadSheet() + gsOverlay();
+  app.innerHTML = side + '<div class="main"><div class="content">' + (S.view !== 'setup' && (S.view === 'home' || S.view === 'settings' || locked()) ? activationCard() : '') + (S.view === 'home' ? (isWide() ? '' : gsButton()) + previewRibbon() + phoneTip() : '') + body + '</div>' + (S.view === 'setup' ? '' : tabbar) + '</div>' + sheet + lockSheetHtml() + tourCard() + addLoadSheet() + gsOverlay() + viewerSheet();
   if (S.lang !== 'ru') translateDom(app);
   [['etaTruck','truck'],['etaAddr','addr'],['etaAppt','appt']].forEach((x) => { const el = document.getElementById(x[0]); if (el) el.addEventListener('input', (e) => { S.etaF[x[1]] = e.target.value; const mono = el.parentNode.querySelector('.mono'); if (mono) mono.textContent = etaCommand(); }); });
   [['tkWho','who'],['tkTime','time'],['tkNote','note']].forEach((x) => { const el = document.getElementById(x[0]); if (el) el.addEventListener('input', (e) => { S.tkForm[x[1]] = e.target.value; const mono = el.parentNode.querySelector('.mono'); if (mono) mono.textContent = tkCommand(); }); });
@@ -3397,6 +3545,7 @@ function onClick(e) {
   if (d.setup) { S.lockSheet = ''; render(); sendToBot('setup-' + d.setup, ({ eld:'/eld', support:'/support', help:'/help' })[d.setup] || '/start'); return; }
   if (d.go && S.lockSheet) S.lockSheet = '';
   if (d.su || d.sub || d.sua || d.sue || d.sutz || d.sutzall || d.sum || d.sust || d.sulen || d.sud || d.sugo) { suClick(d); return; }
+  if (apiClick(d)) return;
   if (b2Click(d)) return;
   if (mpClick(d)) return;
   if (ltClick(d)) return;
