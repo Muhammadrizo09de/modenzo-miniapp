@@ -877,7 +877,8 @@ function vHelp() {
 
 function vSettings() {
   const nl = [['late','Груз опаздывает','Сразу, как только расчёт показал опоздание'],['silent','Водитель молчит','Если долго нет ответа в группе'],['group','Проблема с группой или ELD','Бот не видит чат или ключ перестал работать']];
-  return '<h1 class="title">Настройки</h1>' + themeCard() +
+  return '<h1 class="title">Настройки</h1>' + (S.role === 'member' && !S.tedit ? '<div class="card" style="padding:12px 14px;border-radius:14px;border-color:var(--amber-bd);background:var(--amber-bg)"><span class="xs" style="color:var(--amber);line-height:1.45">' + tr3('Вы напарник: настройки смотрите, меняет их главный аккаунт. Он может дать вам права.', 'You are a teammate: you can view settings, the main account changes them. It can give you rights.', 'Siz jamoadoshsiz: sozlamalarni koʻrasiz, ularni asosiy akkaunt oʻzgartiradi. U sizga huquq bera oladi.') + '</span></div>' : '') + themeCard() +
+    '<button class="card row" data-gome="1" style="text-align:left;padding:14px 16px;border-radius:16px;gap:12px"><span class="icon" style="width:40px;height:40px;border-radius:12px;background:var(--mint-bg);color:var(--mint-t)">' + ic('users', 20, 'currentColor', 2) + '</span><span class="col" style="flex:1;gap:2px"><b style="font-size:15px">' + tr3('Команда и компании', 'Team and companies', 'Jamoa va kompaniyalar') + '</b><span class="xs muted">' + tr3('Напарники: ', 'Teammates: ', 'Jamoadoshlar: ') + S.seat[0] + ' / ' + S.seat[1] + ', ' + tr3('компании: ', 'companies: ', 'kompaniyalar: ') + (S.cos.length || 1) + '</span></span>' + ic('chev', 16, 'var(--muted)', 2) + '</button>' +
     '<button class="card row" data-go="help" style="text-align:left;padding:16px;background:var(--mint-bg);border-color:var(--mint-bd)"><span class="icon" style="width:48px;height:48px;border-radius:14px;background:var(--mint)">' + ic('help', 24, 'var(--on-mint)', 2.2) + '</span><span class="col" style="flex:1"><b style="font-size:16px">Инструкция и вопросы</b><span class="small" style="color:var(--mint-t)">Как всё работает: ' + FAQ.length + ' ответов</span></span>' + ic('chev', 18, 'var(--mint-t)', 2) + '</button>' +
     '<button class="card row" data-go="answers" style="text-align:left;padding:14px 16px;border-radius:16px;gap:12px"><span class="icon" style="width:40px;height:40px;border-radius:12px;background:var(--raised);color:var(--sub)">' + ic('edit', 20, 'currentColor', 2) + '</span><span class="col" style="flex:1;gap:2px"><b style="font-size:15px">Мои ответы</b><span class="xs muted">Борд, грузы, ELD, команда, пояс, смена</span></span>' + ic('chev', 18, 'var(--muted)', 2) + '</button>' +
     '<div class="grid2"><button class="btn" style="height:48px" data-go="support">Центр поддержки</button><button class="btn" style="height:48px" data-setup="help">Все команды бота</button></div>' +
@@ -892,7 +893,7 @@ function vSettings() {
     '<div class="col" style="gap:10px"><div class="label">Подключения и команда</div><div class="listcard list"><button data-go="groups" class="row" style="justify-content:space-between;width:100%;background:none;border:0;border-bottom:1px solid var(--line2);font-size:15px;text-align:left"><span>Группы водителей</span><span class="row small muted" style="gap:6px">' + (S.plan === 'owner' ? S.used : S.used + ' из ' + S.lim) + ' ' + ic('chev', 16, 'var(--muted)', 2) + '</span></button><div class="row" style="justify-content:space-between"><span>ELD · Samsara</span><span class="small" style="color:var(--mint-t)">Подключено (пример)</span></div><div class="row" style="justify-content:space-between"><span>Борд (Google Sheets)</span><span class="small muted">Update Board</span></div><div class="row" style="justify-content:space-between"><span>Тиммейты</span><span class="small muted">3 человека</span></div><div class="row" style="justify-content:space-between"><span>Amazon Relay</span><span class="chip c-plan">План</span></div></div></div>' +
     '<div class="col" style="gap:10px"><div class="label">Уведомления мне</div><div class="listcard list">' + nl.map((t) => '<div class="row"><span class="col" style="flex:1"><span>' + t[1] + '</span><span class="xs muted">' + t[2] + '</span></span><button class="toggle' + (S.notif[t[0]] ? ' on' : '') + '" data-notif="' + t[0] + '" aria-label="' + t[1] + '"><span></span></button></div>').join('') + '</div></div>' +
     '<div class="col" style="gap:10px"><div class="label">Тариф и оплата</div>' + planCard(true) + '<div class="listcard list">' + [['Пробная неделя','появится позже'],['Оплата','Click · Payme · другие'],['Оферта','готовится']].map((r) => '<div class="row" style="justify-content:space-between"><span>' + r[0] + '</span><span class="small muted">' + r[1] + '</span></div>').join('') + '</div><div class="xs muted">Тарифы отличаются числом водителей и апдейтов в день. Оплата заработает после запуска сервера.</div><div class="xs muted">Или командой в чате, например: /plan pro</div></div>' +
-    apiBadge() + '<div class="xs" style="text-align:center;color:var(--faint)">Modenzo AI · версия окна 2026-11-22 14:00</div>';
+    apiBadge() + '<div class="xs" style="text-align:center;color:var(--faint)">Modenzo AI · версия окна 2026-11-22 15:00</div>';
 }
 
 function inTab(l, t) { return t === 'all' || (t === 'risk' ? (l.v === 'late' || l.v === 'tight') && l.st !== 'delivered' : l.st === t); }
@@ -1833,7 +1834,7 @@ function mpMount() {
         mpLoadStates(mpStatesLayer);
       } else { sl.innerHTML = ''; sl.appendChild(LMAP_EL); }
       setTimeout(() => { try { LMAP.invalidateSize(); } catch (x) {} }, 30);
-      mpDecor();
+      mpDecor(); liveDraw();
     } catch (err) { console.error('map', err); S.mp.fail = true; mpDrawFallback(sl); }
   });
 }
@@ -1924,7 +1925,7 @@ Object.assign(I, { sun:'<circle cx="12" cy="12" r="4"/><path d="M12 2v2M12 20v2M
 function topStrip() {
   if (S.view === 'setup') return '';
   const light = document.documentElement.dataset.theme === 'light';
-  const me = S.me ? '<span class="xs" style="color:var(--muted)">' + tr3('Вы: ', 'You: ', 'Siz: ') + '<b style="color:var(--text);font-weight:600">' + esc(S.me) + '</b></span>' : '';
+  const me = S.me ? '<button data-gome="1" class="xs" style="background:none;border:0;cursor:pointer;color:var(--muted);padding:6px 4px">' + tr3('Вы: ', 'You: ', 'Siz: ') + '<b style="color:var(--text);font-weight:600">' + esc(S.me) + '</b>' + (S.role === 'member' ? ' <span class="chip c-gray" style="margin-left:4px">' + tr3('напарник', 'teammate', 'jamoadosh') + '</span>' : '') + '</button>' : '';
   return '<div class="row" style="justify-content:flex-end;gap:12px;margin:-4px 0 6px;min-height:36px">' + me +
     '<button data-themeflip="1" class="row" style="gap:8px;height:36px;padding:0 14px 0 10px;border-radius:999px;border:1px solid var(--mint-bd);background:var(--mint-bg);color:var(--text);font-size:13px;font-weight:600;cursor:pointer" aria-label="' + tr3('Переключить оформление', 'Switch appearance', 'Koʻrinishni almashtirish') + '" title="' + tr3('Переключить оформление', 'Switch appearance', 'Koʻrinishni almashtirish') + '">' +
     '<span class="icon" style="width:24px;height:24px;border-radius:50%;background:var(--mint);color:var(--on-mint)">' + ic(light ? 'sun' : 'moon', 15, 'currentColor', 2.2) + '</span>' + (light ? tr3('Светлая', 'Light', 'Yorugʻ') : tr3('Тёмная', 'Dark', 'Qorongʻi')) + '</button></div>';
@@ -1942,6 +1943,134 @@ function themeClick(d) {
   themeApply(); render();
   if (apiOn()) apiCall('/api/action', { start: 'th-' + THEME }).catch(() => {});
   return true;
+}
+
+/* ---------------- team and companies: invite teammates (nick, rights), companies with their own ELD, live trucks ---------------- */
+S.me = ''; S.role = 'owner'; S.tedit = true; S.team = []; S.seat = [0, 3]; S.cos = []; S.colim = 1; S.acct = 'one'; S.cog = 0; S.inv = ''; S.tmEdit = 0; S.coForm = null; S.live = null; S.liveT = 0;
+try {
+  const q = new URLSearchParams(location.search);
+  S.me = (q.get('me') || '').slice(0, 24); S.role = q.get('role') === 'member' ? 'member' : 'owner'; S.tedit = q.get('tedit') !== '0';
+  const st = (q.get('seat') || '').split('.'); if (st.length === 2) S.seat = [+st[0] || 0, +st[1] || 3];
+  S.team = (q.get('tm2') || '').split('|').filter(Boolean).map((r, i) => { const j = r.indexOf('.'); return { id: r.slice(0, j), nick: r.slice(j + 1), owner: i === 0 }; });
+  S.cos = (q.get('co') || '').split('|').filter(Boolean).map((r) => { const x = r.split('~'); return { id: +x[0], name: x[1] || '', eld: x[2] || '', st: x[3] || '', g: +x[4] || 0 }; });
+  S.colim = +(q.get('col') || 1) || 1; S.acct = q.get('acct') === 'service' ? 'service' : 'one'; S.cog = +(q.get('cog') || 0) || 0;
+} catch (e) {}
+function tmApply(params) {  // fresh team data from the bot without a reload
+  if (!params) return;
+  const q = new URLSearchParams(params);
+  S.me = (q.get('me') || S.me); S.tedit = q.get('tedit') !== '0';
+  const st = (q.get('seat') || '').split('.'); if (st.length === 2) S.seat = [+st[0] || 0, +st[1] || 3];
+  if (q.get('tm2') !== null) S.team = (q.get('tm2') || '').split('|').filter(Boolean).map((r, i) => { const j = r.indexOf('.'); return { id: r.slice(0, j), nick: r.slice(j + 1), owner: i === 0 }; });
+  if (q.get('co') !== null) S.cos = (q.get('co') || '').split('|').filter(Boolean).map((r) => { const x = r.split('~'); return { id: +x[0], name: x[1] || '', eld: x[2] || '', st: x[3] || '', g: +x[4] || 0 }; });
+  S.colim = +(q.get('col') || S.colim) || 1; S.acct = q.get('acct') === 'service' ? 'service' : 'one'; S.cog = +(q.get('cog') || 0) || 0;
+}
+const isOwner = () => S.role !== 'member';
+const ELDN = { samsara:'Samsara', motive:'Motive', geotab:'Geotab', other:tr3('Другой', 'Other', 'Boshqa') };
+function coChip(st) {
+  if (st === 'ok') return '<span class="chip c-done">' + tr3('ELD работает', 'ELD works', 'ELD ishlaydi') + '</span>';
+  if (st === 'manual' || st === 'pending') return '<span class="chip c-dev">' + tr3('Проверяется', 'Being checked', 'Tekshirilmoqda') + '</span>';
+  return '<span class="chip c-gray">' + tr3('Нет ELD', 'No ELD', 'ELD yoʻq') + '</span>';
+}
+function avatar(n) { const c = (n || '?').trim().charAt(0).toUpperCase() || '?'; return '<span class="icon" style="width:38px;height:38px;border-radius:50%;background:var(--mint-bg);color:var(--mint-t);font-weight:700;font-size:15px;flex:none">' + esc(c) + '</span>'; }
+function vTeam() {
+  const own = isOwner(), live = apiOn();
+  const head = mzHead(tr3('Команда и компании', 'Team and companies', 'Jamoa va kompaniyalar'), own ? tr3('Пригласите напарников, дайте им ник и права. Добавьте компании, если вы сервис.', 'Invite teammates, give them a nick and rights. Add companies if you are a service.', 'Jamoadoshlarni taklif qiling, nik va huquq bering. Servis boʻlsangiz, kompaniyalar qoʻshing.') : tr3('Вы в команде. Ваш ник видят напарники.', 'You are in the team. Teammates see your nick.', 'Siz jamoadasiz. Nikingizni jamoadoshlar koʻradi.'), isWide() ? '' : 'settings');
+  if (!live) return head + '<div class="card col" style="padding:16px;border-radius:16px;gap:10px">' + apiBadge() + '<span class="small sub" style="line-height:1.5">' + tr3('Без прямой связи команду и компании можно настроить в чате с ботом: команды /team и /companies.', 'Without the direct link, set up the team and companies in the bot chat: /team and /companies.', 'Toʻgʻridan-toʻgʻri aloqasiz jamoa va kompaniyalarni bot chatida sozlang: /team va /companies.') + '</span><button class="btn primary" data-tm="chat" style="height:44px">' + tr3('Открыть /team в чате', 'Open /team in the chat', 'Chatda /team ni ochish') + '</button></div>';
+  const used = S.seat[0], lim = S.seat[1];
+  const rows = S.team.map((m) => {
+    const me = m.nick && m.nick === S.me;
+    const editing = S.tmEdit && String(S.tmEdit) === m.id;
+    return '<div class="row" style="gap:12px;padding:12px 0;border-bottom:1px solid var(--line2)">' + avatar(m.nick) +
+      (editing ? '<input id="tmNick" maxlength="24" value="' + esc(S.tmNickV != null ? S.tmNickV : m.nick) + '" style="flex:1;min-width:0;height:40px;padding:0 12px;border-radius:10px;border:1px solid var(--mint-bd);background:var(--input);color:var(--text);font:inherit"><button class="btn primary" data-tmsave="' + m.id + '" style="height:40px;padding:0 14px">' + tr3('Сохранить', 'Save', 'Saqlash') + '</button>'
+        : '<span class="col" style="flex:1;min-width:0;gap:1px"><b style="font-size:15px">' + (m.nick ? esc(m.nick) : '<span class="muted">' + tr3('без ника', 'no nick', 'niksiz') + '</span>') + (me ? ' <span class="xs muted">(' + tr3('вы', 'you', 'siz') + ')</span>' : '') + '</b><span class="xs muted">' + (m.owner ? tr3('Главный аккаунт', 'Main account', 'Asosiy akkaunt') : tr3('Напарник', 'Teammate', 'Jamoadosh')) + '</span></span>' +
+          ((own || me) ? '<button class="btn" data-tmedit="' + m.id + '" style="height:36px;padding:0 12px;font-size:13px" aria-label="' + tr3('Изменить ник', 'Change nick', 'Nikni oʻzgartirish') + '">' + ic('edit', 16, 'currentColor', 2) + '</button>' : '') +
+          (own && !m.owner ? '<button class="btn" data-tmrm="' + m.id + '" style="height:36px;width:36px;padding:0;color:var(--red)" aria-label="' + tr3('Удалить из команды', 'Remove from the team', 'Jamoadan oʻchirish') + '">' + ic('x', 16, 'currentColor', 2) + '</button>' : '')) + '</div>';
+  }).join('');
+  const invite = own ? (S.inv ? '<div class="card col" style="padding:14px;border-radius:14px;gap:10px;background:var(--mint-bg);border-color:var(--mint-bd)"><b style="font-size:14px">' + tr3('Ссылка-приглашение готова', 'The invite link is ready', 'Taklif havolasi tayyor') + '</b><span class="xs" style="word-break:break-all;color:var(--mint-t)">' + esc(S.inv) + '</span><span class="xs muted" style="line-height:1.45">' + tr3('Одна ссылка на одного человека, 48 часов. Напарник откроет бота, поставит ник и сразу попадёт в команду.', 'One link for one person, 48 hours. The teammate opens the bot, sets a nick and joins the team.', 'Bitta havola bitta odamga, 48 soat. Jamoadosh botni ochadi, nik qoʻyadi va jamoaga qoʻshiladi.') + '</span><div class="grid2"><button class="btn primary" data-tm="share" style="height:42px">' + tr3('Отправить в Telegram', 'Send in Telegram', 'Telegramda yuborish') + '</button><button class="btn" data-tm="copy" style="height:42px">' + tr3('Скопировать', 'Copy', 'Nusxa olish') + '</button></div></div>'
+    : '<button class="btn primary" data-tm="invite" style="height:46px;font-size:15px"' + (used >= lim ? ' disabled style="height:46px;opacity:.5"' : '') + '>' + ic('plus2', 18, 'currentColor', 2.4) + ' ' + tr3('Пригласить напарника', 'Invite a teammate', 'Jamoadosh taklif qilish') + '</button>') : '';
+  const perm = '<div class="card col" style="padding:14px 16px;border-radius:16px;gap:10px"><div class="row" style="gap:12px"><span class="col" style="flex:1;gap:2px"><b style="font-size:15px">' + tr3('Напарники могут менять настройки', 'Teammates may change settings', 'Jamoadoshlar sozlamalarni oʻzgartira oladi') + '</b><span class="xs muted" style="line-height:1.45">' + tr3('Время апдейтов, рабочее время и выходные, агенты.', 'Update times, working time and days off, agents.', 'Apdeyt vaqtlari, ish vaqti va dam olish kunlari, agentlar.') + '</span></span>' +
+    (own ? '<button class="toggle' + (S.tedit ? ' on' : '') + '" data-tm="perm" aria-label="' + tr3('Права напарников', 'Teammates\' rights', 'Jamoadosh huquqlari') + '" aria-pressed="' + S.tedit + '"><span></span></button>' : '<span class="chip ' + (S.tedit ? 'c-done' : 'c-gray') + '">' + (S.tedit ? tr3('Можно', 'Allowed', 'Mumkin') : tr3('Нельзя', 'Not allowed', 'Mumkin emas')) + '</span>') + '</div>' +
+    '<span class="xs muted" style="line-height:1.5">' + tr3('Только главный аккаунт: тариф и оплата, ключи ELD, ответы опроса, команда и компании.', 'Main account only: plan and payment, ELD keys, survey answers, the team and companies.', 'Faqat asosiy akkaunt: tarif va toʻlov, ELD kalitlari, soʻrovnoma javoblari, jamoa va kompaniyalar.') + '</span></div>';
+  const coRows = S.cos.map((c) => '<div class="row" style="gap:12px;padding:12px 0;border-bottom:1px solid var(--line2)"><span class="icon" style="width:38px;height:38px;border-radius:10px;background:var(--raised);color:var(--sub);flex:none">' + ic('truck', 18, 'currentColor', 2) + '</span><span class="col" style="flex:1;min-width:0;gap:2px"><b style="font-size:15px">' + esc(c.name) + (c.id === 0 ? ' <span class="xs muted">(' + tr3('основная', 'main', 'asosiy') + ')</span>' : '') + '</b><span class="xs muted">' + (ELDN[c.eld] || '—') + ', ' + c.g + ' ' + tr3('групп', 'groups', 'guruh') + '</span></span>' + coChip(c.st) +
+    (own ? '<button class="btn" data-corn="' + c.id + '" style="height:36px;padding:0 12px" aria-label="' + tr3('Переименовать', 'Rename', 'Nomini oʻzgartirish') + '">' + ic('edit', 16, 'currentColor', 2) + '</button>' + (c.id ? '<button class="btn" data-corm="' + c.id + '" style="height:36px;width:36px;padding:0;color:var(--red)" aria-label="' + tr3('Удалить компанию', 'Remove the company', 'Kompaniyani oʻchirish') + '">' + ic('x', 16, 'currentColor', 2) + '</button>' : '') : '') + '</div>').join('');
+  const f = S.coForm;
+  const coForm = !own ? '' : (f ? '<div class="card col" style="padding:14px;border-radius:14px;gap:10px"><b style="font-size:15px">' + (f.id !== undefined ? tr3('Новое название', 'New name', 'Yangi nom') : tr3('Новая компания', 'New company', 'Yangi kompaniya')) + '</b><input id="coName" maxlength="60" placeholder="' + tr3('Название, например Acme Freight LLC', 'Name, e.g. Acme Freight LLC', 'Nomi, masalan Acme Freight LLC') + '" value="' + esc(f.name || '') + '" style="height:44px;padding:0 12px;border-radius:12px;border:1px solid var(--line);background:var(--input);color:var(--text);font:inherit">' +
+    (f.id !== undefined ? '' : '<div style="display:grid;grid-template-columns:repeat(4,minmax(0,1fr));gap:6px">' + ['samsara', 'motive', 'geotab', 'other'].map((e) => '<button class="seg' + (f.eld === e ? ' on' : '') + '" data-coeld="' + e + '" style="height:38px;font-size:12.5px">' + ELDN[e] + '</button>').join('') + '</div>' + (f.eld && f.eld !== 'other' ? '<input id="coKey" type="password" autocomplete="off" value="' + esc(f.key || '') + '" placeholder="' + (f.eld === 'geotab' ? tr3('База, логин и пароль: каждое с новой строки', 'Database, login and password, one per line', 'Baza, login va parol: har biri yangi qatordan') : tr3('API ключ ', 'API key ', 'API kalit ') + ELDN[f.eld]) + '" style="height:44px;padding:0 12px;border-radius:12px;border:1px solid var(--line);background:var(--input);color:var(--text);font:inherit"><span class="xs muted" style="line-height:1.45">' + tr3('Ключ уходит боту напрямую, бот сразу его проверит. В окне он не сохраняется.', 'The key goes straight to the bot, which checks it right away. The window does not keep it.', 'Kalit toʻgʻridan-toʻgʻri botga ketadi, bot darhol tekshiradi. Oynada saqlanmaydi.') + (f.eld !== 'samsara' ? ' ' + tr3('Траки на карте пока проверены только для Samsara.', 'Trucks on the map are verified only for Samsara so far.', 'Xaritadagi traklar hozircha faqat Samsara uchun tekshirilgan.') : '') + '</span>' : '')) +
+    (f.err ? '<span class="xs" style="color:var(--red)">' + esc(f.err) + '</span>' : '') + '<div class="grid2"><button class="btn" data-co="cancel" style="height:42px">' + tr3('Отмена', 'Cancel', 'Bekor qilish') + '</button><button class="btn primary" data-co="save" style="height:42px">' + (S.busy === 'co' ? '<span class="mzSpin"></span>' : tr3('Сохранить', 'Save', 'Saqlash')) + '</button></div></div>'
+    : (S.cos.length < S.colim ? '<button class="btn" data-co="new" style="height:44px">' + ic('plus2', 16, 'currentColor', 2.4) + ' ' + tr3('Добавить компанию', 'Add a company', 'Kompaniya qoʻshish') + '</button>' : '<span class="xs muted">' + tr3('В тарифе до ' + S.colim + ' компаний. Больше: тариф побольше.', 'Your plan allows up to ' + S.colim + ' companies. More: a bigger plan.', 'Tarifda ' + S.colim + ' tagacha kompaniya. Koʻproq: kattaroq tarif.') + '</span>'));
+  const acct = own ? '<div style="display:grid;grid-template-columns:1fr 1fr;gap:8px"><button class="seg' + (S.acct === 'one' ? ' on' : '') + '" data-coacct="one" style="height:42px;font-size:13.5px">' + tr3('Одна компания', 'One company', 'Bitta kompaniya') + '</button><button class="seg' + (S.acct === 'service' ? ' on' : '') + '" data-coacct="service" style="height:42px;font-size:13.5px">' + tr3('Сервис: несколько компаний', 'Service: several companies', 'Servis: bir nechta kompaniya') + '</button></div>' : '';
+  return head + '<div class="col" style="gap:18px;max-width:760px">' +
+    '<div class="col" style="gap:10px"><div class="row" style="justify-content:space-between"><span class="label">' + tr3('Команда', 'Team', 'Jamoa') + '</span><span class="xs muted">' + tr3('Мест: ', 'Seats: ', 'Oʻrin: ') + used + ' / ' + lim + '</span></div><div class="card" style="padding:4px 16px;border-radius:16px">' + rows + '</div>' + invite +
+    (own ? '<span class="xs muted" style="line-height:1.45">' + tr3('Смена: 3 напарника, 24/7: 6. Каждый сверх тарифа: +$9 в месяц (включится вместе с оплатой).', 'Shift plan: 3 teammates, 24/7: 6. Each extra one: +$9 a month (with payments).', 'Smena: 3 jamoadosh, 24/7: 6. Har bir ortiqchasi: oyiga +$9 (toʻlov bilan birga).') + '</span>' : '') + '</div>' + perm +
+    '<div class="col" style="gap:10px"><div class="row" style="justify-content:space-between"><span class="label">' + tr3('Компании', 'Companies', 'Kompaniyalar') + '</span><span class="xs muted">' + S.cos.length + ' / ' + S.colim + '</span></div>' + acct + '<div class="card" style="padding:4px 16px;border-radius:16px">' + coRows + '</div>' +
+    (S.cog ? '<div class="card" style="padding:12px 14px;border-radius:12px;border-color:var(--amber-bd);background:var(--amber-bg)"><span class="xs" style="color:var(--amber);line-height:1.45">' + tr3('Групп без компании: ' + S.cog + '. Бот спросил в чате, к какой компании они относятся.', 'Groups without a company: ' + S.cog + '. The bot asked in the chat which company they belong to.', 'Kompaniyasiz guruhlar: ' + S.cog + '. Bot chatda qaysi kompaniyaga tegishli ekanini soʻradi.') + '</span></div>' : '') + coForm + '</div></div>';
+}
+function welcomeSheet() {
+  if (S.role !== 'member' || S.me || !apiOn() || S.view === 'setup') return '';
+  const u = tg && tg.initDataUnsafe && tg.initDataUnsafe.user || {};
+  const sug = [u.first_name, u.username].filter((x) => x && /^[\w .\-']{2,24}$/u.test(x)).slice(0, 2);
+  return '<div style="position:fixed;inset:0;background:var(--shade);z-index:95;display:flex;align-items:center;justify-content:center;padding:16px"><div class="card col" role="dialog" aria-label="' + tr3('Добро пожаловать', 'Welcome', 'Xush kelibsiz') + '" style="width:min(440px,100%);padding:22px;border-radius:20px;gap:14px;background:var(--card)">' +
+    '<span class="icon" style="width:52px;height:52px;border-radius:16px;background:var(--mint);color:var(--on-mint)">' + ic('users', 26, 'currentColor', 2) + '</span><h2 style="font-size:22px;margin:0">' + tr3('Добро пожаловать в команду', 'Welcome to the team', 'Jamoaga xush kelibsiz') + (S.team[0] && S.team[0].nick ? ' ' + esc(S.team[0].nick) : '') + '</h2><span class="small sub" style="line-height:1.5">' + tr3('Как вас называть? Этот ник увидят напарники, например Bruce или Kevin.', 'What should we call you? Teammates will see this nick, e.g. Bruce or Kevin.', 'Sizni qanday atashsin? Bu nikni jamoadoshlar koʻradi, masalan Bruce yoki Kevin.') + '</span>' +
+    '<input id="wlNick" maxlength="24" placeholder="' + tr3('Ваш ник', 'Your nick', 'Nikingiz') + '" value="' + esc(S.wlNickV != null ? S.wlNickV : (sug[0] || '')) + '" style="height:48px;padding:0 14px;border-radius:12px;border:1px solid var(--mint-bd);background:var(--input);color:var(--text);font:inherit;font-size:16px">' +
+    (sug.length ? '<div class="wrap" style="gap:6px">' + sug.map((x) => '<button class="seg" data-wlsug="' + esc(x) + '" style="height:34px;padding:0 12px;font-size:13px">' + esc(x) + '</button>').join('') + '</div>' : '') +
+    (S.wlErr ? '<span class="xs" style="color:var(--red)">' + esc(S.wlErr) + '</span>' : '') + '<button class="btn primary" data-tm="wlsave" style="height:48px;font-size:15px">' + tr3('Готово', 'Done', 'Tayyor') + '</button></div></div>';
+}
+function nickErr(e) { return e === 'taken' ? tr3('Такой ник уже есть в команде', 'This nick is already in the team', 'Bu nik jamoada bor') : tr3('Ник: 2–24 символа, буквы и цифры', 'Nick: 2–24 characters, letters and digits', 'Nik: 2–24 belgi, harf va raqam'); }
+async function tmCall(path, data, after) {
+  try { const j = await apiCall(path, data); if (j.params) tmApply(j.params); if (after) after(j); render(); return j; } catch (e) { apiFail(e); return null; }
+}
+function teamClick(d) {
+  if (d.tm === 'chat') { sendText('/team'); return true; }
+  if (d.tm === 'invite') { tmCall('/api/team/invite', {}, (j) => { if (j.ok) S.inv = j.link; else toast(j.error === 'full' ? tr3('Нет свободных мест', 'No free seats', 'Boʻsh oʻrin yoʻq') : tr3('Не получилось', 'Did not work', 'Boʻlmadi')); }); return true; }
+  if (d.tm === 'copy') { copyText(S.inv); toast(tr3('Ссылка скопирована', 'Link copied', 'Havola nusxalandi')); return true; }
+  if (d.tm === 'share') { const u = 'https://t.me/share/url?url=' + encodeURIComponent(S.inv) + '&text=' + encodeURIComponent(tr3('Приглашение в команду Modenzo AI', 'Invite to the Modenzo AI team', 'Modenzo AI jamoasiga taklif')); if (tg && tg.openTelegramLink) tg.openTelegramLink(u); else window.open(u, '_blank'); return true; }
+  if (d.tm === 'perm') { tmCall('/api/team/perm', { edit: S.tedit ? 0 : 1 }); return true; }
+  if (d.tmedit) { S.tmEdit = d.tmedit; S.tmNickV = null; render(); setTimeout(() => { const el = document.getElementById('tmNick'); if (el) el.focus(); }, 30); return true; }
+  if (d.tmsave) { const el = document.getElementById('tmNick'); tmCall('/api/team/nick', { id: +d.tmsave, nick: el ? el.value : '' }, (j) => { if (j.ok) { S.tmEdit = 0; S.tmNickV = null; } else toast(nickErr(j.error)); }); return true; }
+  if (d.tmrm) { const m = S.team.filter((x) => x.id === d.tmrm)[0]; if (!m) return true; if (S.tmRmAsk !== d.tmrm) { S.tmRmAsk = d.tmrm; toast(tr3('Нажмите ещё раз, чтобы удалить ', 'Tap again to remove ', 'Oʻchirish uchun yana bosing: ') + (m.nick || m.id)); return true; } S.tmRmAsk = ''; tmCall('/api/team/remove', { id: +d.tmrm }); return true; }
+  if (d.tm === 'wlsave' || d.wlsug) { const el = document.getElementById('wlNick'); const v = d.wlsug || (el ? el.value : ''); tmCall('/api/team/nick', { nick: v }, (j) => { if (j.ok) { S.me = v.trim(); S.wlErr = ''; toast(tr3('Готово, вы ', 'Done, you are ', 'Tayyor, siz ') + S.me); } else S.wlErr = nickErr(j.error); }); return true; }
+  if (d.co === 'new') { S.coForm = { name: '', eld: 'samsara' }; render(); return true; }
+  if (d.corn) { const c = S.cos.filter((x) => String(x.id) === d.corn)[0]; S.coForm = { id: +d.corn, name: c ? c.name : '' }; render(); return true; }
+  if (d.co === 'cancel') { S.coForm = null; render(); return true; }
+  if (d.coeld) { const n = document.getElementById('coName'); S.coForm.name = n ? n.value : S.coForm.name; S.coForm.eld = d.coeld; S.coForm.err = ''; render(); return true; }
+  if (d.co === 'save') {
+    const f = S.coForm; if (!f || S.busy) return true;
+    const n = document.getElementById('coName'), k = document.getElementById('coKey'); f.name = (n ? n.value : f.name || '').trim(); if (k) f.key = k.value;
+    if (f.name.length < 2) { f.err = tr3('Напишите название компании', 'Type the company name', 'Kompaniya nomini yozing'); render(); return true; }
+    S.busy = 'co'; render();
+    const done = (j) => { S.busy = ''; if (j.ok) { S.coForm = null; toast(j.status === 'pending' ? tr3('Компания добавлена, ключ бот проверит позже', 'Company added, the bot checks the key later', 'Kompaniya qoʻshildi, kalitni bot keyin tekshiradi') : tr3('Сохранено', 'Saved', 'Saqlandi')); } else f.err = j.error === 'key' ? tr3('Ключ не подошёл: ', 'The key did not work: ', 'Kalit toʻgʻri kelmadi: ') + (j.detail || '') : (j.error === 'limit' ? tr3('Лимит компаний в тарифе', 'Company limit of the plan', 'Tarifdagi kompaniya chegarasi') : tr3('Не получилось сохранить', 'Could not save', 'Saqlab boʻlmadi')); };
+    if (f.id !== undefined) tmCall('/api/co/rename', { id: f.id, name: f.name }, done).then((j) => { if (!j) S.busy = ''; });
+    else tmCall('/api/co/add', { name: f.name, eld: f.eld, key: f.key || '' }, done).then((j) => { if (!j) S.busy = ''; });
+    return true;
+  }
+  if (d.corm) { if (S.coRmAsk !== d.corm) { S.coRmAsk = d.corm; toast(tr3('Нажмите ещё раз, чтобы удалить компанию', 'Tap again to remove the company', 'Kompaniyani oʻchirish uchun yana bosing')); return true; } S.coRmAsk = ''; tmCall('/api/co/remove', { id: +d.corm }); return true; }
+  if (d.coacct) { tmCall('/api/co/type', { acct: d.coacct }); return true; }
+  if (d.gome) { S.view = 'team'; render(); return true; }
+  return false;
+}
+/* live trucks of all companies on the map (when the bot has the direct link and an ELD key works) */
+async function liveLoad(force) {
+  if (!apiOn() || (!force && Date.now() - S.liveT < 60000)) return;
+  S.liveT = Date.now();
+  try { const j = await apiCall('/api/trucks'); S.live = j.trucks || []; } catch (e) { S.live = S.live || []; }
+  liveDraw(); if (S.view === 'map') render();
+}
+let LLIVE = [];
+function liveDraw() {
+  if (!LMAP || !window.L || !S.live || !S.live.length) return;
+  const L = window.L;
+  Object.keys(LMK).forEach((u) => { try { LMK[u].remove(); } catch (x) {} }); LLINES.forEach((l) => { try { l.remove(); } catch (x) {} });
+  LLIVE.forEach((m) => { try { m.remove(); } catch (x) {} }); LLIVE = [];
+  S.live.forEach((t) => { LLIVE.push(L.circleMarker([t.lat, t.lon], { radius: 7, color: '#06241A', weight: 2, fillColor: '#3DDC97', fillOpacity: 0.95 }).addTo(LMAP).bindTooltip(String(t.unit) + ' · ' + String(t.co || '') + (t.speed != null ? ' · ' + Math.round(t.speed) + ' mph' : ''))); });
+  try { LMAP.fitBounds(L.latLngBounds(S.live.map((t) => [t.lat, t.lon])), { padding: [30, 30], maxZoom: 9 }); } catch (x) {}
+}
+function liveCard() {
+  if (!apiOn()) return '';
+  if (S.live === null) { setTimeout(() => liveLoad(true), 0); return ''; }
+  if (!S.live.length) return '<div class="card row" style="padding:12px 14px;border-radius:14px;gap:12px;margin-bottom:12px"><span class="small sub" style="flex:1;line-height:1.45">' + tr3('На карте пример. Живые траки появятся, когда ключ ELD компании заработает.', 'The map shows an example. Live trucks appear once a company ELD key works.', 'Xaritada namuna. Kompaniya ELD kaliti ishlaganda jonli traklar chiqadi.') + '</span><button class="btn" data-gome="1" style="height:38px;padding:0 14px;font-size:13px">' + tr3('Компании', 'Companies', 'Kompaniyalar') + '</button></div>';
+  const by = {}; S.live.forEach((t) => { by[t.co] = (by[t.co] || 0) + 1; });
+  return '<div class="card col" style="padding:12px 14px;border-radius:14px;gap:8px;margin-bottom:12px;border-color:var(--mint-bd)"><b style="font-size:14px">' + tr3('Живые траки из ELD: ', 'Live trucks from ELD: ', 'ELD dan jonli traklar: ') + S.live.length + '</b><span class="xs muted">' + Object.keys(by).map((k) => esc(k) + ': ' + by[k]).join(', ') + '</span>' +
+    '<div class="col" style="gap:0;max-height:220px;overflow:auto">' + S.live.slice(0, 60).map((t) => '<div class="row" style="gap:10px;padding:7px 0;border-bottom:1px solid var(--line2);font-size:13px"><b style="min-width:54px">' + esc(t.unit) + '</b><span class="muted" style="flex:1;min-width:0;overflow:hidden;text-overflow:ellipsis;white-space:nowrap">' + esc(t.address || (t.lat.toFixed(3) + ', ' + t.lon.toFixed(3))) + '</span><span class="xs muted">' + esc(t.co || '') + '</span><span class="xs" style="min-width:52px;text-align:right">' + (t.speed != null ? Math.round(t.speed) + ' mph' : '') + '</span></div>').join('') + '</div></div>';
 }
 /* ---------------- direct link to the bot (API): everything happens inside the window when the bot has an address ---------------- */
 S.api = ''; S.busy = ''; S.aiLog = []; S.spRes = null; S.addRes = null; S.viewer = null;
@@ -2015,7 +2144,11 @@ async function refreshState() {
 }
 async function apiAction(payload, okText) {
   S.busy = 'act'; render();
-  try { await apiCall('/api/action', payload); toast(okText || 'Готово'); setTimeout(refreshState, 500); }
+  try {
+    const j = await apiCall('/api/action', payload);
+    if (j && j.ok === false && (j.error === 'owner' || j.error === 'perm')) { S.busy = ''; render(); toast(j.error === 'perm' ? tr3('Настройки меняет главный аккаунт. Он может дать вам права.', 'The main account changes settings. It can give you rights.', 'Sozlamalarni asosiy akkaunt oʻzgartiradi. U sizga huquq bera oladi.') : tr3('Это делает только главный аккаунт', 'Only the main account can do this', 'Buni faqat asosiy akkaunt qiladi')); return; }
+    toast(okText || 'Готово'); setTimeout(refreshState, 500);
+  }
   catch (e) { apiFail(e); }
 }
 function hint(apiText, dataText, chatText) { return apiOn() ? apiText : (canSendData() ? dataText : chatText); }
@@ -2235,10 +2368,10 @@ function draftClick(d) {
   return false;
 }
 
-const VIEWS = { custom:vCustom, ai:vAi, support:vSupport, answers:vAnswers, map:vMap, setup:vSetup, ub:vUb, home:vHome, shift:vShift, updates:vUpdates, eta:vEta, groups:vGroups, features:vFeatures, help:vHelp, settings:vSettings, plans:vPlans, agents:vAgents, work:vWork, tz:vTz, board:vBoard, drivers:vDrivers };
+const VIEWS = { map:() => liveCard() + vMap(), team:vTeam, custom:vCustom, ai:vAi, support:vSupport, answers:vAnswers, setup:vSetup, ub:vUb, home:vHome, shift:vShift, updates:vUpdates, eta:vEta, groups:vGroups, features:vFeatures, help:vHelp, settings:vSettings, plans:vPlans, agents:vAgents, work:vWork, tz:vTz, board:vBoard, drivers:vDrivers };
 const TABS = [['home','Главная','home'],['updates','Апдейты','send'],['big','Большой экран','monitor'],['features','Функции','grid'],['settings','Настройки','sliders']];
-const NAV = [['home','Главная','home'],['ub','Update Board','bell'],['map','Слежка','map'],['board','Доска грузов','truck'],['drivers','Водители','wheel'],['updates','Апдейты','send'],['eta','Расчёт ETA','pin'],['groups','Группы','users'],['features','Все функции','grid'],['help','Инструкция','help'],['settings','Настройки','sliders']];
-const TAB_OF = { ai:'home', support:'settings', answers:'settings', map:'home', ub:'home', shift:'home', eta:'home', board:'home', drivers:'home', groups:'home', help:'settings', plans:'settings', agents:'settings', work:'settings', tz:'settings' };
+const NAV = [['home','Главная','home'],['ub','Update Board','bell'],['map','Слежка','map'],['board','Доска грузов','truck'],['drivers','Водители','wheel'],['updates','Апдейты','send'],['eta','Расчёт ETA','pin'],['groups','Группы','users'],['features','Все функции','grid'],['team','Команда','users'],['help','Инструкция','help'],['settings','Настройки','sliders']];
+const TAB_OF = { team:'settings', ai:'home', support:'settings', answers:'settings', map:'home', ub:'home', shift:'home', eta:'home', board:'home', drivers:'home', groups:'home', help:'settings', plans:'settings', agents:'settings', work:'settings', tz:'settings' };
 
 const EN = {
 "Проверьте груз":"Check the load",
@@ -2412,6 +2545,7 @@ const EN = {
 "Любое сообщение без команды попадёт ассистенту. Он видит только ваши группы водителей и дела из Update Board.":"Any message without a command goes to the assistant. It sees only your driver groups and Update Board tasks.",
 "До оплаты: 5 вопросов в день":"Before payment: 5 questions a day",
 "За сколько часов":"For how many hours",
+"Команда":"Team",
 "Передача смены":"Shift handoff",
 "Сводка для следующей смены: что было, что открыто, что сделать и когда":"A summary for the next shift: what happened, what is open, what to do and when",
 "Кто ждёт ответа":"Who is waiting",
@@ -2590,7 +2724,7 @@ const EN = {
 "Окно и бот: русский, английский и узбекский. Водителей бот понимает и на турецком и отвечает им на их языке.":"The window and the bot: Russian, English and Uzbek. The bot also understands drivers in Turkish and answers them in their language.","Да, командой /tr: русский текст превращается в короткое английское сообщение водителю, английский переводится на русский. Например: /tr пришли фото BOL":"Yes, with /tr: Russian text becomes a short English message for the driver, English is translated to Russian. Example: /tr пришли фото BOL","Тарифы отличаются числом водителей и апдейтов в день. Оплата заработает после запуска сервера.":"Plans differ by number of drivers and updates a day. Payment works after the server launch.","Русский, английский, узбекский":"Russian, English, Uzbek","Окно, бот и ответы":"Window, bot and answers","Турецкий для водителей":"Turkish for drivers","Бот понимает водителей на турецком и отвечает им по-турецки":"The bot understands drivers in Turkish and answers them in Turkish","Язык окна и бота":"Window and bot language","Окно переключается сразу.":"The window switches right away.","Язык сообщений бота":"Bot messages language","Сменить и в боте":"Change in the bot too","Водителям бот отвечает на их языке, в том числе на турецком.":"The bot answers drivers in their language, Turkish included.","Русский":"Russian","Английский":"English","Узбекский":"Uzbek",
 "Кнопка «Разобрать фото» в /proof":"The “Read the photos” button in /proof","Перерыв 30 мин после 8 ч, отдых 10 ч. Остаток часов из ELD в плане":"30-min break after 8 h, 10-h rest. Hours left from the ELD planned","Пояс по штату готов. Цепочка стопов после подключения борда":"Zone by state is ready. The stop chain after the board is connected","Команда /eta":"The /eta command","Командой или формой в окне, ответ в чате":"By command or the window form, answer in the chat","Другие темы бот вежливо отклоняет, отвечает по вашей базе знаний":"Other topics are politely declined, answers use your knowledge base","Команда /tr: русский → английский для водителя и обратно":"The /tr command: Russian → English for the driver and back","Агенты 24/7":"Agents 24/7","Водитель ждёт ответа, молчит, тревога, стоянка, нет GPS, автоответ":"Driver waiting, silent, alarm, long stop, no GPS, auto-reply","Какой груз и на сколько. После подключения борда":"Which load and by how much. After the board is connected","Сам в конце смены или командой /report":"By itself at shift end or with /report","Утренняя сводка":"Morning summary","Каждое утро в 09:00 в режиме 24/7":"Every morning at 09:00 in 24/7 mode","Фото, сообщения и письмо брокеру при простое":"Photos, messages and a detention email to the broker","Настройки, расписание, тарифы, агенты, рабочее время":"Settings, schedule, plans, agents, working time","Рабочее время и часовой пояс":"Working time and time zone","Смена или 24/7, дни недели, разовые выходные":"Shift or 24/7, weekdays, one-off days off","Экран готов. Данные грузов после подключения борда":"The screen is ready. Load data after the board is connected","Группы и настройки уже отдельно. Свой ELD и шифрование ключей на сервере":"Groups and settings are already separate. Own ELD and key encryption on the server","Тарифы и смена тарифа готовы. Оферта и пробная неделя в плане":"Plans and plan changes are ready. Offer and trial week planned",
 "Расчёт ETA":"ETA calculation","От GPS трака до стопа: пробки, часы водителя, погода":"From truck GPS to the stop: traffic, driver hours, weather","Посчитать ETA":"Calculate ETA","Номер трака, например 2080":"Truck number, for example 2080","Адрес стопа, например PDX9, Troutdale, OR":"Stop address, for example PDX9, Troutdale, OR","Appointment по времени стопа, например 21.11 16:20":"Appointment in stop time, for example 21.11 16:20","Штат в адресе (OR, TX...) нужен, чтобы знать часовой пояс стопа. Appointment можно не писать.":"The state in the address (OR, TX...) tells the stop time zone. The appointment is optional.","Посчитать в чате с ботом":"Calculate in the bot chat","Ответ придёт в чат с ботом.":"The answer comes to the bot chat.","Ответ придёт в чат с ботом. Пока /eta работает только у владельца бота: GPS берётся из его Samsara. У вас заработает после подключения вашего ELD на сервере (в плане).":"The answer comes to the bot chat. For now /eta works only for the bot owner: GPS comes from the owner's Samsara. It works for you after your ELD is connected on the server (planned).","Пример разбора: Load 1042":"Sample breakdown: Load 1042","Напишите номер трака и адрес стопа":"Write the truck number and the stop address","Команда скопирована: вставьте её в чат и отправьте":"Command copied: paste it in the chat and send","Окно и бот переключаются на этот язык":"The window and the bot switch to this language","Написать в поддержку":"Write to support","Все команды бота":"All bot commands",
-"Modenzo AI · версия окна 2026-11-22 14:00":"Modenzo AI · window version 2026-11-22 14:00",
+"Modenzo AI · версия окна 2026-11-22 15:00":"Modenzo AI · window version 2026-11-22 15:00",
 "Это пример. Настоящие черновики приходят в чат с ботом с теми же кнопками: «Отправить», «Изменить», «Пропустить».":"This is an example. Real drafts come to the bot chat with the same buttons: “Send”, “Edit”, “Skip”.","Сохранить текст":"Save text","Отмена":"Cancel","Текст изменён вами":"Text edited by you","Текст сохранён. Нажмите «Отправить»":"Text saved. Tap “Send”",
 "Активация":"Activation","Опрос":"Survey","7 коротких вопросов в чате с ботом":"7 short questions in the bot chat","Выбрать и оплатить":"Pick and pay","Ключ на проверке":"Key being checked","Бот добавлен хотя бы в одну группу":"The bot is in at least one group","Настройки уже можно менять. Апдейты включатся после всех шагов.":"You can change settings already. Updates turn on after all steps.","Отправить ключ заново":"Send the key again","Ключ ELD на проверке":"ELD key being checked","Ключ получен и проверяется. Как только он заработает, апдейты можно будет включить. Если ключ неверный, отправьте новый.":"The key is received and being checked. Once it works you can turn updates on. If the key is wrong, send a new one.","Почему некоторые кнопки с замком?":"Why do some buttons have a lock?","Пока активация не закончена, часть функций закрыта, чтобы ничего не сломать. Шаги: опрос, тариф, ELD, хотя бы одна группа водителя. Нажмите на кнопку с замком: окно подскажет, какой шаг остался, и даст кнопку, чтобы его сделать. Например, ELD подключается командой /eld":"Until activation is finished some features are closed so nothing breaks. Steps: survey, plan, ELD, at least one driver group. Tap a locked button: the window tells you which step is left and gives a button to do it. For example, the ELD is connected with /eld","Ключ, чтобы бот видел, где траки":"A key so the bot sees where trucks are","Пока активация не закончена, окно работает только для просмотра.":"Until activation is finished the window is view-only.","Сначала пройдите опрос":"Finish the survey first","Это 7 коротких вопросов в чате с ботом: борд, грузы, ELD, коллеги, часовой пояс, смена, число водителей. После него функции включатся. Смотреть окно можно и сейчас.":"It is 7 short questions in the bot chat: board, freight, ELD, teammates, time zone, shift, number of drivers. Then features turn on. You can look around the window already.","Выбрать тариф":"Pick a plan","Выберите и оплатите тариф":"Pick and pay for a plan","Функции включатся после оплаты. Смотреть окно, тарифы и инструкцию можно и сейчас.":"Features turn on after payment. You can look at the window, plans and guide already.","Подключите ELD":"Connect your ELD","Подключить ELD":"Connect ELD","Без ELD бот не видит, где траки, и апдейты будут без местоположения. Бот спросит, какой у вас ELD, и проверит ключ. Это пара минут.":"Without an ELD the bot cannot see where trucks are and updates have no location. The bot asks which ELD you have and checks the key. It takes a couple of minutes.","Добавьте бота в группу водителя":"Add the bot to a driver group","Апдейты идут в группы водителей. Добавьте бота хотя бы в одну группу, и он сам проверит, видит ли сообщения.":"Updates go to driver groups. Add the bot to at least one group and it checks by itself whether it can read messages.","Как добавить":"How to add","Пройти опрос":"Take survey","Группы водителей":"Driver groups","Тариф":"Plan","Понятно":"Got it",
 "Окно переключается на этот язык. Язык ответов бота: /start":"The window switches to this language. The bot's reply language: /start","Окно переключается на этот язык":"The window switches to this language",
@@ -2870,6 +3004,7 @@ const UZ = {
 "Любое сообщение без команды попадёт ассистенту. Он видит только ваши группы водителей и дела из Update Board.":"Buyruqsiz har qanday xabar yordamchiga boradi. U faqat sizning haydovchilar guruhlaringiz va Update Board ishlarini ko'radi.",
 "До оплаты: 5 вопросов в день":"To'lovgacha: kuniga 5 ta savol",
 "За сколько часов":"Necha soat uchun",
+"Команда":"Jamoa",
 "Передача смены":"Smena topshirish",
 "Сводка для следующей смены: что было, что открыто, что сделать и когда":"Keyingi smena uchun xulosa: nima bo'ldi, nima ochiq, nima qilish kerak va qachon",
 "Кто ждёт ответа":"Kim javob kutyapti",
@@ -3438,7 +3573,7 @@ const UZ = {
 "готовится":"tayyorlanmoqda",
 "Тарифы отличаются только числом водителей. Оплата заработает после запуска сервера.":"Tariflar haydovchilar va kunlik apdeytlar soni bilan farq qiladi. To'lov server ishga tushgandan keyin ishlaydi.",
 "Или командой в чате, например: /plan pro":"Yoki chatda buyruq bilan, masalan: /plan pro",
-"Modenzo AI · версия окна 2026-11-22 14:00":"Modenzo AI · oyna versiyasi 2026-11-22 14:00",
+"Modenzo AI · версия окна 2026-11-22 15:00":"Modenzo AI · oyna versiyasi 2026-11-22 15:00",
 "Все функции и агенты на любом тарифе. Отличаются число водителей, апдейтов в день и режим.":"Barcha funksiyalar va agentlar har qanday tarifda. Haydovchilar, kunlik apdeytlar soni va rejim bilan farq qiladi.",
 "Смена":"Smena",
 "дешевле":"arzonroq",
@@ -3811,10 +3946,11 @@ function renderInner() {
     console.error('view ' + S.view, err);
     body = '<div class="card pad col" style="gap:10px;border-radius:18px;border-color:var(--amber-bd)"><b>Этот экран не открылся</b><div class="small sub" style="line-height:1.5">Пришлите скриншот разработчику: ' + esc(S.view + ': ' + (err && err.message || err)) + '</div><button class="btn" data-go="home">На главную</button></div>';
   }
-  app.innerHTML = side + '<div class="main"><div class="content">' + topStrip() + (S.view !== 'setup' && (S.view === 'home' || S.view === 'settings' || locked()) ? activationCard() : '') + (S.view === 'home' ? (isWide() ? '' : gsButton()) + previewRibbon() + phoneTip() : '') + body + '</div>' + (S.view === 'setup' ? '' : tabbar) + '</div>' + sheet + lockSheetHtml() + tourCard() + addLoadSheet() + draftSheet() + gsOverlay() + viewerSheet();
+  app.innerHTML = side + '<div class="main"><div class="content">' + topStrip() + (S.view !== 'setup' && (S.view === 'home' || S.view === 'settings' || locked()) ? activationCard() : '') + (S.view === 'home' ? (isWide() ? '' : gsButton()) + previewRibbon() + phoneTip() : '') + body + '</div>' + (S.view === 'setup' ? '' : tabbar) + '</div>' + sheet + lockSheetHtml() + tourCard() + addLoadSheet() + draftSheet() + gsOverlay() + viewerSheet() + welcomeSheet();
   if (S.lang !== 'ru') translateDom(app);
   [['etaTruck','truck'],['etaAddr','addr'],['etaAppt','appt']].forEach((x) => { const el = document.getElementById(x[0]); if (el) el.addEventListener('input', (e) => { S.etaF[x[1]] = e.target.value; const mono = el.parentNode.querySelector('.mono'); if (mono) mono.textContent = etaCommand(); }); });
   [['tkWho','who'],['tkTime','time'],['tkNote','note']].forEach((x) => { const el = document.getElementById(x[0]); if (el) el.addEventListener('input', (e) => { S.tkForm[x[1]] = e.target.value; const mono = el.parentNode.querySelector('.mono'); if (mono) mono.textContent = tkCommand(); }); });
+  [['coName', (v) => { if (S.coForm) S.coForm.name = v; }], ['coKey', (v) => { if (S.coForm) S.coForm.key = v; }], ['tmNick', (v) => { S.tmNickV = v; }], ['wlNick', (v) => { S.wlNickV = v; }]].forEach((x) => { const el = document.getElementById(x[0]); if (el) el.addEventListener('input', (e) => x[1](e.target.value)); });
   const se = document.getElementById('suEldName'); if (se) se.addEventListener('input', (e) => { S.su.eldName = e.target.value; const nb = document.querySelector('[data-su="next"]'); if (nb) nb.style.opacity = suCanNext() ? '' : '.45'; });
   const st = document.getElementById('suTeam'); if (st) st.addEventListener('input', (e) => { S.su.team = e.target.value; });
   const ta = document.getElementById('updta');
@@ -3873,6 +4009,7 @@ function onClick(e) {
   if (d.go && S.lockSheet) S.lockSheet = '';
   if (d.su || d.sub || d.sua || d.sue || d.sutz || d.sutzall || d.sum || d.sust || d.sulen || d.sud || d.sugo) { suClick(d); return; }
   if (themeClick(d)) return;
+  if (teamClick(d)) return;
   if (draftClick(d)) return;
   if (dropClick(d)) return;
   if (apiClick(d)) return;
