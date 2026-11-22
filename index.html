@@ -1918,6 +1918,17 @@ function tzStrip() {
 }
 
 
+
+/* top-right strip on every screen: the theme switch (one tap) and who is signed in */
+Object.assign(I, { sun:'<circle cx="12" cy="12" r="4"/><path d="M12 2v2M12 20v2M4.9 4.9l1.4 1.4M17.7 17.7l1.4 1.4M2 12h2M20 12h2M4.9 19.1l1.4-1.4M17.7 6.3l1.4-1.4"/>', moon:'<path d="M20 14.5A8 8 0 0 1 9.5 4a8 8 0 1 0 10.5 10.5z"/>' });
+function topStrip() {
+  if (S.view === 'setup') return '';
+  const light = document.documentElement.dataset.theme === 'light';
+  const me = S.me ? '<span class="xs" style="color:var(--muted)">' + tr3('Вы: ', 'You: ', 'Siz: ') + '<b style="color:var(--text);font-weight:600">' + esc(S.me) + '</b></span>' : '';
+  return '<div class="row" style="justify-content:flex-end;gap:12px;margin:-4px 0 6px;min-height:36px">' + me +
+    '<button data-themeflip="1" class="row" style="gap:8px;height:36px;padding:0 14px 0 10px;border-radius:999px;border:1px solid var(--mint-bd);background:var(--mint-bg);color:var(--text);font-size:13px;font-weight:600;cursor:pointer" aria-label="' + tr3('Переключить оформление', 'Switch appearance', 'Koʻrinishni almashtirish') + '" title="' + tr3('Переключить оформление', 'Switch appearance', 'Koʻrinishni almashtirish') + '">' +
+    '<span class="icon" style="width:24px;height:24px;border-radius:50%;background:var(--mint);color:var(--on-mint)">' + ic(light ? 'sun' : 'moon', 15, 'currentColor', 2.2) + '</span>' + (light ? tr3('Светлая', 'Light', 'Yorugʻ') : tr3('Тёмная', 'Dark', 'Qorongʻi')) + '</button></div>';
+}
 /* ---------------- appearance: dark / light / like Telegram (same choice in the bot: /settings -> Оформление) ---------------- */
 function themeCard() {
   const o = [['d', tr3('Тёмное', 'Dark', 'Qorongʻi')], ['l', tr3('Светлое', 'Light', 'Yorugʻ')], ['a', tr3('Как в Telegram', 'Like Telegram', 'Telegramdagidek')]];
@@ -1925,6 +1936,7 @@ function themeCard() {
     o.map((x) => '<button class="seg' + (THEME === x[0] ? ' on' : '') + '" data-theme="' + x[0] + '" style="height:42px;font-size:13.5px" aria-pressed="' + (THEME === x[0]) + '">' + x[1] + '</button>').join('') + '</div></div>';
 }
 function themeClick(d) {
+  if (d.themeflip) d = { theme: document.documentElement.dataset.theme === 'light' ? 'd' : 'l' };
   if (!d.theme) return false;
   THEME = d.theme; try { localStorage.setItem('mz_theme', THEME); } catch (x) {}
   themeApply(); render();
@@ -3799,7 +3811,7 @@ function renderInner() {
     console.error('view ' + S.view, err);
     body = '<div class="card pad col" style="gap:10px;border-radius:18px;border-color:var(--amber-bd)"><b>Этот экран не открылся</b><div class="small sub" style="line-height:1.5">Пришлите скриншот разработчику: ' + esc(S.view + ': ' + (err && err.message || err)) + '</div><button class="btn" data-go="home">На главную</button></div>';
   }
-  app.innerHTML = side + '<div class="main"><div class="content">' + (S.view !== 'setup' && (S.view === 'home' || S.view === 'settings' || locked()) ? activationCard() : '') + (S.view === 'home' ? (isWide() ? '' : gsButton()) + previewRibbon() + phoneTip() : '') + body + '</div>' + (S.view === 'setup' ? '' : tabbar) + '</div>' + sheet + lockSheetHtml() + tourCard() + addLoadSheet() + draftSheet() + gsOverlay() + viewerSheet();
+  app.innerHTML = side + '<div class="main"><div class="content">' + topStrip() + (S.view !== 'setup' && (S.view === 'home' || S.view === 'settings' || locked()) ? activationCard() : '') + (S.view === 'home' ? (isWide() ? '' : gsButton()) + previewRibbon() + phoneTip() : '') + body + '</div>' + (S.view === 'setup' ? '' : tabbar) + '</div>' + sheet + lockSheetHtml() + tourCard() + addLoadSheet() + draftSheet() + gsOverlay() + viewerSheet();
   if (S.lang !== 'ru') translateDom(app);
   [['etaTruck','truck'],['etaAddr','addr'],['etaAppt','appt']].forEach((x) => { const el = document.getElementById(x[0]); if (el) el.addEventListener('input', (e) => { S.etaF[x[1]] = e.target.value; const mono = el.parentNode.querySelector('.mono'); if (mono) mono.textContent = etaCommand(); }); });
   [['tkWho','who'],['tkTime','time'],['tkNote','note']].forEach((x) => { const el = document.getElementById(x[0]); if (el) el.addEventListener('input', (e) => { S.tkForm[x[1]] = e.target.value; const mono = el.parentNode.querySelector('.mono'); if (mono) mono.textContent = tkCommand(); }); });
