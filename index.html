@@ -871,7 +871,7 @@ function vSettings() {
     '<div class="col" style="gap:10px"><div class="label">Подключения и команда</div><div class="listcard list"><button data-go="groups" class="row" style="justify-content:space-between;width:100%;background:none;border:0;border-bottom:1px solid var(--line2);font-size:15px;text-align:left"><span>Группы водителей</span><span class="row small muted" style="gap:6px">' + (S.plan === 'owner' ? S.used : S.used + ' из ' + S.lim) + ' ' + ic('chev', 16, 'var(--muted)', 2) + '</span></button><div class="row" style="justify-content:space-between"><span>ELD · Samsara</span><span class="small" style="color:var(--mint-t)">Подключено (пример)</span></div><div class="row" style="justify-content:space-between"><span>Борд (Google Sheets)</span><span class="small muted">Update Board</span></div><div class="row" style="justify-content:space-between"><span>Тиммейты</span><span class="small muted">3 человека</span></div><div class="row" style="justify-content:space-between"><span>Amazon Relay</span><span class="chip c-plan">План</span></div></div></div>' +
     '<div class="col" style="gap:10px"><div class="label">Уведомления мне</div><div class="listcard list">' + nl.map((t) => '<div class="row"><span class="col" style="flex:1"><span>' + t[1] + '</span><span class="xs muted">' + t[2] + '</span></span><button class="toggle' + (S.notif[t[0]] ? ' on' : '') + '" data-notif="' + t[0] + '" aria-label="' + t[1] + '"><span></span></button></div>').join('') + '</div></div>' +
     '<div class="col" style="gap:10px"><div class="label">Тариф и оплата</div>' + planCard(true) + '<div class="listcard list">' + [['Пробная неделя','появится позже'],['Оплата','Click · Payme · другие'],['Оферта','готовится']].map((r) => '<div class="row" style="justify-content:space-between"><span>' + r[0] + '</span><span class="small muted">' + r[1] + '</span></div>').join('') + '</div><div class="xs muted">Тарифы отличаются числом водителей и апдейтов в день. Оплата заработает после запуска сервера.</div><div class="xs muted">Или командой в чате, например: /plan pro</div></div>' +
-    '<div class="xs" style="text-align:center;color:var(--faint)">Modenzo AI · версия окна 2026-11-22 10:30</div>';
+    apiBadge() + '<div class="xs" style="text-align:center;color:var(--faint)">Modenzo AI · версия окна 2026-11-22 12:00</div>';
 }
 
 function inTab(l, t) { return t === 'all' || (t === 'risk' ? (l.v === 'late' || l.v === 'tight') && l.st !== 'delivered' : l.st === t); }
@@ -1396,7 +1396,7 @@ const AI_EX = ['Что такое detention и когда его просить?
 Object.assign(I, { refresh:'<path d="M20 11a8 8 0 1 0-2.3 5.7M20 4v7h-7"/>' });
 function vAi() {
   const a = S.ai, trial = S.access !== 'active';
-  return mzHead('AI ассистент', apiOn() ? 'Спросите про вашу работу, грузы или логистику. Ответ появится здесь.' : 'Спросите про вашу работу или логистику. Ответ придёт в чат с ботом.', isWide() ? '' : 'home') + aiLogHtml() + '<div id="aiLogEnd"></div>' +
+  return mzHead('AI ассистент', apiOn() ? 'Спросите про вашу работу, грузы или логистику. Ответ появится здесь.' : 'Спросите про вашу работу или логистику. Ответ придёт в чат с ботом.', isWide() ? '' : 'home') + apiBadge() + aiLogHtml() + '<div id="aiLogEnd"></div>' +
     '<div class="card col" style="padding:16px;border-radius:18px;gap:10px;background:radial-gradient(120% 140% at 100% 0%,#12302A,#0E1626);border-color:var(--mint-bd)"><div class="row" style="gap:12px"><span class="icon" style="width:44px;height:44px;border-radius:13px;background:var(--mint);color:var(--on-mint);flex:none">' + ic('spark', 22, 'currentColor', 2) + '</span><span class="col" style="gap:3px;flex:1;min-width:0"><b style="font-size:15px">Можно просто писать боту в чат</b><span class="xs muted" style="line-height:1.45">Любое сообщение без команды попадёт ассистенту. Он видит только ваши группы водителей и дела из Update Board.</span></span></div>' +
     (trial ? '<span class="chip c-dev" style="align-self:flex-start">До оплаты: 5 вопросов в день</span>' : '') + '</div>' +
     '<div class="row" style="justify-content:space-between;gap:10px;flex-wrap:wrap"><span class="label">За сколько часов</span><span class="row" style="gap:6px">' + [4, 8, 12, 24].map((h) => '<button class="seg' + (a.h === h ? ' on' : '') + '" data-aih="' + h + '" style="height:34px;padding:0 12px;font-size:13px">' + h + ' ч</button>').join('') + '</span></div>' +
@@ -1551,7 +1551,7 @@ function addLoadSheet() {
   const f = a.f, inp = (k, ph, w) => '<input data-alf="' + k + '" placeholder="' + ph + '" value="' + esc(f[k] || '') + '" style="height:44px;padding:0 12px;border-radius:12px;border:1px solid var(--line);background:#0B1220;color:var(--text);font:inherit;font-size:14px;min-width:0;' + (w ? 'grid-column:span 2' : '') + '">';
   const ok = a.mode === 'paste' ? a.text.trim().length > 10 : (f.pu || '').trim() && (f.del || '').trim();
   return '<div style="position:fixed;inset:0;background:#0009;z-index:70;display:flex;align-items:flex-end;justify-content:center" data-act="addclose"><div class="card col" style="width:min(560px,100%);max-height:92vh;overflow:auto;padding:18px;border-radius:22px 22px 0 0;gap:12px;background:#0E1626" data-stop="1" role="dialog" aria-label="Добавить груз">' +
-    '<div class="row" style="justify-content:space-between"><h2 style="font-size:20px">Добавить груз</h2><button class="back" data-act="addclose" aria-label="Закрыть">' + ic('x', 18) + '</button></div>' +
+    '<div class="row" style="justify-content:space-between"><h2 style="font-size:20px">Добавить груз</h2><button class="back" data-act="addclose" aria-label="Закрыть">' + ic('x', 18) + '</button></div>' + apiBadge() +
     '<div class="grid2"><button class="card col" style="padding:12px;border-radius:14px;gap:2px;text-align:left;border-color:var(--mint)"><b style="font-size:14px">Street</b><span class="xs muted">Вы добавляете, бот следит</span></button><div class="card col" style="padding:12px;border-radius:14px;gap:2px;opacity:.55"><b style="font-size:14px">Amazon</b><span class="xs muted">Придут сами из Relay (расширение, позже)</span></div></div>' +
     '<div style="display:grid;grid-template-columns:repeat(3,minmax(0,1fr));gap:8px"><button class="seg' + (a.mode === 'file' ? ' on' : '') + '" data-alm="file" style="height:40px;font-size:13px">📄 Файл</button><button class="seg' + (a.mode === 'paste' ? ' on' : '') + '" data-alm="paste" style="height:40px;font-size:13px">✨ Текст</button><button class="seg' + (a.mode === 'form' ? ' on' : '') + '" data-alm="form" style="height:40px;font-size:13px">Вручную</button></div>' +
     (a.mode === 'file' ? dropZone() + '</div></div>' :
@@ -1900,7 +1900,49 @@ function tzStrip() {
 S.api = ''; S.busy = ''; S.aiLog = []; S.spRes = null; S.addRes = null; S.viewer = null;
 try { const k = new URLSearchParams(location.search).get('k') || ''; if (/^\d{1,15}\.\d{9,11}\.[0-9a-f]{32}$/.test(k)) S.k = k; } catch (e) {}
 try { const a = new URLSearchParams(location.search).get('api') || ''; if (/^https:\/\/[A-Za-z0-9.-]+(:\d+)?(\/[A-Za-z0-9._\/-]*)?$/.test(a)) S.api = a.replace(/\/$/, ''); } catch (e) {}
-function apiOn() { return !!(S.api && ((tg && tg.initData) || S.k)); }
+S.apiState = S.api ? 'check' : 'none';
+/* the last working address is remembered: buttons in old messages carry no address (or an old tunnel), the window still finds the bot */
+function apiKeyOk(k) { const m = /^\d+\.(\d+)\./.exec(k || ''); return !!(m && +m[1] * 1000 > Date.now()); }
+function apiRemember() {
+  try { localStorage.setItem('mz_api', JSON.stringify({ a: S.api, k: S.k || '' })); } catch (e) {}
+  try { if (tg && tg.CloudStorage && tg.initData) tg.CloudStorage.setItem('mz_api', S.api, () => {}); } catch (e) {}
+}
+async function apiPing(a) {
+  try { const c = new AbortController(); const t = setTimeout(() => c.abort(), 6000); const r = await fetch(a + '/api/ping', { signal: c.signal }); clearTimeout(t); const j = await r.json(); return !!(j && j.ok); } catch (e) { return false; }
+}
+async function apiFind() {
+  const tried = {};
+  const tryOne = async (a, src) => {
+    if (!a || tried[a] || !/^https:\/\/[A-Za-z0-9.-]+(:\d+)?(\/[A-Za-z0-9._\/-]*)?$/.test(a)) return false;
+    tried[a] = 1;
+    if (await apiPing(a)) { S.api = a.replace(/\/$/, ''); S.apiState = 'ok'; S.apiSrc = src; apiRemember(); render(); return true; }
+    return false;
+  };
+  if (S.api && await tryOne(S.api, 'link')) return;
+  let saved = null; try { saved = JSON.parse(localStorage.getItem('mz_api') || 'null'); } catch (e) {}
+  if (saved && !S.k && apiKeyOk(saved.k)) S.k = saved.k;
+  if (saved && await tryOne(saved.a, 'saved')) return;
+  try {
+    if (tg && tg.CloudStorage && tg.initData) {
+      const a = await new Promise((res) => { try { tg.CloudStorage.getItem('mz_api', (err, v) => res(err ? '' : v || '')); } catch (e) { res(''); } setTimeout(() => res(''), 3000); });
+      if (await tryOne(a, 'saved')) return;
+    }
+  } catch (e) {}
+  S.apiState = S.api || (saved && saved.a) ? 'down' : 'none'; render();
+}
+function apiAuth() { return !!((tg && tg.initData) || S.k); }
+function apiOn() { return !!(S.api && apiAuth() && S.apiState !== 'down' && S.apiState !== 'none'); }
+/* a visible line: does the window talk to the bot directly, and if not, why */
+function apiBadge() {
+  const st = S.apiState;
+  if (st === 'check') return '<div class="xs row" style="gap:6px;color:var(--sub)"><span class="mzSpin"></span>' + tr3('Проверяю связь с ботом…', 'Checking the link to the bot…', 'Bot bilan aloqa tekshirilmoqda…') + '</div>';
+  if (apiOn()) return '<div class="xs row" style="gap:6px;color:var(--mint-t)">🟢 ' + tr3('Прямая связь с ботом: всё делается здесь, без чата', 'Direct link to the bot: everything happens here, no chat', 'Bot bilan toʻgʻridan-toʻgʻri aloqa: hammasi shu yerda, chatsiz') + '</div>';
+  const why = st === 'down' ? tr3('бот не отвечает (выключен или сменился адрес). Запустите ./start.sh на компьютере и откройте окно кнопкой «Открыть» внизу чата.', 'the bot does not answer (off or a new address). Run ./start.sh on the computer and open the window with the “Open” button at the bottom of the chat.', 'bot javob bermayapti (oʻchgan yoki manzil oʻzgargan). Kompyuterda ./start.sh ni ishga tushiring va oynani chat pastidagi «Ochish» tugmasi bilan oching.')
+    : (S.api && !apiAuth()) ? tr3('окно открыто без ключа. Откройте его кнопкой «Открыть» внизу чата с ботом.', 'the window was opened without a key. Open it with the “Open” button at the bottom of the bot chat.', 'oyna kalitsiz ochilgan. Uni bot chati pastidagi «Ochish» tugmasi bilan oching.')
+    : tr3('окно открыто старой кнопкой или у бота нет адреса. Откройте окно кнопкой «Открыть» внизу чата с ботом.', 'the window was opened from an old button, or the bot has no address. Open the window with the “Open” button at the bottom of the bot chat.', 'oyna eski tugma bilan ochilgan yoki botda manzil yoʻq. Oynani bot chati pastidagi «Ochish» tugmasi bilan oching.');
+  return '<div class="card col" style="padding:10px 12px;border-radius:12px;gap:4px;border-color:#5A4A1E;background:#1E1A0E"><span class="xs" style="color:var(--amber);font-weight:600">⚪ ' + tr3('Нет прямой связи с ботом', 'No direct link to the bot', 'Bot bilan toʻgʻridan-toʻgʻri aloqa yoʻq') + '</span><span class="xs muted" style="line-height:1.45">' + why + '</span><button class="btn" data-act="apirecheck" style="height:32px;padding:0 12px;font-size:12px;align-self:flex-start">' + tr3('Проверить ещё раз', 'Check again', 'Yana tekshirish') + '</button></div>';
+}
+setTimeout(apiFind, 0);
 function apiHeaders() { return tg && tg.initData ? { 'X-Init-Data': tg.initData } : { 'X-Win-Key': S.k || '' }; }
 async function apiCall(path, data, form) {
   const opt = { method: data || form ? 'POST' : 'GET', headers: apiHeaders() };
@@ -2052,7 +2094,7 @@ function dropZone() {
     (msg ? '<span style="font-size:34px">' + msg[0] + '</span><b style="font-size:16px">' + msg[1] + '</b><span class="xs muted" style="word-break:break-all">' + esc(d.name || '') + '</span><span class="xs muted" style="line-height:1.5;max-width:380px">' + msg[2] + '</span>'
       : '<span style="font-size:34px">📄</span><b style="font-size:16px">Перетащите rate con сюда</b><span class="xs muted" style="line-height:1.5;max-width:380px">PDF или фото. Бот прочитает всё: стопы, адреса, PU #, appointment, ставку, брокера и его контакты.</span><div class="wrap" style="justify-content:center;gap:6px"><span class="chip c-done">PDF</span><span class="chip c-done">JPG / PNG</span><span class="chip c-gray">до 10 МБ</span></div><span class="xs" style="color:var(--amber);line-height:1.45">Другие файлы (BOL, POD, счета) не принимаются: проверка бесплатная, ИИ на них не тратится.</span>') +
     '<label class="btn" style="height:40px;padding:0 16px;display:inline-flex;align-items:center;gap:8px;cursor:pointer;font-size:13px">' + ic('plus2', 16, 'currentColor', 2.4) + (msg ? 'Другой файл' : 'Выбрать файл') + '<input id="rcFile" type="file" accept="application/pdf,image/jpeg,image/png" style="display:none"></label></div>' +
-    (d.st === 'ready' ? '<button class="btn primary" style="height:48px;font-size:15px" data-act="rcsend">Добавить на доску</button><div class="xs muted" style="line-height:1.45">' + (canSendData() ? 'Груз уйдёт боту сразу, окно закроется.' : 'Откроется чат с готовым сообщением: останется нажать «Отправить».') + '</div>' : '') +
+    (d.st === 'ready' ? (d.ask && !apiOn() ? apiBadge() + '<button class="btn" style="height:44px;font-size:14px" data-act="rcchat">' + tr3('Всё равно отправить через чат', 'Send through the chat anyway', 'Baribir chat orqali yuborish') + '</button><div class="xs muted" style="line-height:1.45">' + tr3('В чат уйдёт короткий текст rate con, бот покажет детали для проверки.', 'A short rate con text goes to the chat; the bot shows the details to check.', 'Chatga rate con qisqa matni ketadi, bot tekshirish uchun tafsilotlarni koʻrsatadi.') + '</div>' : '<button class="btn primary" style="height:48px;font-size:15px" data-act="rcsend">Добавить на доску</button>') : '') +
     (d.st === 'photo' || d.st === 'scan' ? '<button class="btn primary" style="height:48px;font-size:15px" data-act="addfile">Отправить в чат с ботом</button>' : '');
 }
 function dropAfterRender() {
@@ -2061,17 +2103,22 @@ function dropAfterRender() {
   if (!z) return;
   const on = (e) => { e.preventDefault(); e.stopPropagation(); z.style.background = '#14382B'; }, off = (e) => { e.preventDefault(); z.style.background = '#0E1F19'; };
   z.addEventListener('dragenter', on); z.addEventListener('dragover', on); z.addEventListener('dragleave', off);
-  z.addEventListener('drop', (e) => { off(e); const f = e.dataTransfer && e.dataTransfer.files && e.dataTransfer.files[0]; if (f) takeRcFile(f); });
+  z.addEventListener('drop', (e) => { off(e); e.stopPropagation(); const f = e.dataTransfer && e.dataTransfer.files && e.dataTransfer.files[0]; if (f) takeRcFile(f); });
 }
 /* a file dropped anywhere while "Add load" is open goes to the reader instead of the browser opening it */
 ['dragover', 'drop'].forEach((ev) => window.addEventListener(ev, (e) => { if (!S.addL) return; e.preventDefault(); if (ev === 'drop' && e.dataTransfer && e.dataTransfer.files && e.dataTransfer.files[0]) { if (S.addL.mode !== 'file') { S.addL.mode = 'file'; } takeRcFile(e.dataTransfer.files[0]); } }));
 function dropClick(d) {
   if (d.act === 'rcsend') {
     const t = S.addL && S.addL.drop && S.addL.drop.text; if (!t) return true;
-    if (canSendData()) { try { tg.sendData(JSON.stringify({ v:1, k:'load', tx:t.slice(0, 3900) })); return true; } catch (x) {} }
     if (apiOn()) { apiLoad(t); return true; }
+    S.addL.drop.ask = 1; render(); return true;
+  }
+  if (d.act === 'rcchat') {
+    const t = S.addL && S.addL.drop && S.addL.drop.text; if (!t) return true;
+    if (canSendData()) { try { tg.sendData(JSON.stringify({ v:1, k:'load', tx:t.slice(0, 3900) })); return true; } catch (x) {} }
     S.addL = null; render(); sendText('/load ' + t); return true;
   }
+  if (d.act === 'apirecheck') { S.apiState = 'check'; render(); apiFind(); return true; }
   return false;
 }
 
@@ -2483,7 +2530,7 @@ const EN = {
 "Окно и бот: русский, английский и узбекский. Водителей бот понимает и на турецком и отвечает им на их языке.":"The window and the bot: Russian, English and Uzbek. The bot also understands drivers in Turkish and answers them in their language.","Да, командой /tr: русский текст превращается в короткое английское сообщение водителю, английский переводится на русский. Например: /tr пришли фото BOL":"Yes, with /tr: Russian text becomes a short English message for the driver, English is translated to Russian. Example: /tr пришли фото BOL","Тарифы отличаются числом водителей и апдейтов в день. Оплата заработает после запуска сервера.":"Plans differ by number of drivers and updates a day. Payment works after the server launch.","Русский, английский, узбекский":"Russian, English, Uzbek","Окно, бот и ответы":"Window, bot and answers","Турецкий для водителей":"Turkish for drivers","Бот понимает водителей на турецком и отвечает им по-турецки":"The bot understands drivers in Turkish and answers them in Turkish","Язык окна и бота":"Window and bot language","Окно переключается сразу.":"The window switches right away.","Язык сообщений бота":"Bot messages language","Сменить и в боте":"Change in the bot too","Водителям бот отвечает на их языке, в том числе на турецком.":"The bot answers drivers in their language, Turkish included.","Русский":"Russian","Английский":"English","Узбекский":"Uzbek",
 "Кнопка «Разобрать фото» в /proof":"The “Read the photos” button in /proof","Перерыв 30 мин после 8 ч, отдых 10 ч. Остаток часов из ELD в плане":"30-min break after 8 h, 10-h rest. Hours left from the ELD planned","Пояс по штату готов. Цепочка стопов после подключения борда":"Zone by state is ready. The stop chain after the board is connected","Команда /eta":"The /eta command","Командой или формой в окне, ответ в чате":"By command or the window form, answer in the chat","Другие темы бот вежливо отклоняет, отвечает по вашей базе знаний":"Other topics are politely declined, answers use your knowledge base","Команда /tr: русский → английский для водителя и обратно":"The /tr command: Russian → English for the driver and back","Агенты 24/7":"Agents 24/7","Водитель ждёт ответа, молчит, тревога, стоянка, нет GPS, автоответ":"Driver waiting, silent, alarm, long stop, no GPS, auto-reply","Какой груз и на сколько. После подключения борда":"Which load and by how much. After the board is connected","Сам в конце смены или командой /report":"By itself at shift end or with /report","Утренняя сводка":"Morning summary","Каждое утро в 09:00 в режиме 24/7":"Every morning at 09:00 in 24/7 mode","Фото, сообщения и письмо брокеру при простое":"Photos, messages and a detention email to the broker","Настройки, расписание, тарифы, агенты, рабочее время":"Settings, schedule, plans, agents, working time","Рабочее время и часовой пояс":"Working time and time zone","Смена или 24/7, дни недели, разовые выходные":"Shift or 24/7, weekdays, one-off days off","Экран готов. Данные грузов после подключения борда":"The screen is ready. Load data after the board is connected","Группы и настройки уже отдельно. Свой ELD и шифрование ключей на сервере":"Groups and settings are already separate. Own ELD and key encryption on the server","Тарифы и смена тарифа готовы. Оферта и пробная неделя в плане":"Plans and plan changes are ready. Offer and trial week planned",
 "Расчёт ETA":"ETA calculation","От GPS трака до стопа: пробки, часы водителя, погода":"From truck GPS to the stop: traffic, driver hours, weather","Посчитать ETA":"Calculate ETA","Номер трака, например 2080":"Truck number, for example 2080","Адрес стопа, например PDX9, Troutdale, OR":"Stop address, for example PDX9, Troutdale, OR","Appointment по времени стопа, например 21.11 16:20":"Appointment in stop time, for example 21.11 16:20","Штат в адресе (OR, TX...) нужен, чтобы знать часовой пояс стопа. Appointment можно не писать.":"The state in the address (OR, TX...) tells the stop time zone. The appointment is optional.","Посчитать в чате с ботом":"Calculate in the bot chat","Ответ придёт в чат с ботом.":"The answer comes to the bot chat.","Ответ придёт в чат с ботом. Пока /eta работает только у владельца бота: GPS берётся из его Samsara. У вас заработает после подключения вашего ELD на сервере (в плане).":"The answer comes to the bot chat. For now /eta works only for the bot owner: GPS comes from the owner's Samsara. It works for you after your ELD is connected on the server (planned).","Пример разбора: Load 1042":"Sample breakdown: Load 1042","Напишите номер трака и адрес стопа":"Write the truck number and the stop address","Команда скопирована: вставьте её в чат и отправьте":"Command copied: paste it in the chat and send","Окно и бот переключаются на этот язык":"The window and the bot switch to this language","Написать в поддержку":"Write to support","Все команды бота":"All bot commands",
-"Modenzo AI · версия окна 2026-11-22 10:30":"Modenzo AI · window version 2026-11-22 10:30",
+"Modenzo AI · версия окна 2026-11-22 12:00":"Modenzo AI · window version 2026-11-22 12:00",
 "Это пример. Настоящие черновики приходят в чат с ботом с теми же кнопками: «Отправить», «Изменить», «Пропустить».":"This is an example. Real drafts come to the bot chat with the same buttons: “Send”, “Edit”, “Skip”.","Сохранить текст":"Save text","Отмена":"Cancel","Текст изменён вами":"Text edited by you","Текст сохранён. Нажмите «Отправить»":"Text saved. Tap “Send”",
 "Активация":"Activation","Опрос":"Survey","7 коротких вопросов в чате с ботом":"7 short questions in the bot chat","Выбрать и оплатить":"Pick and pay","Ключ на проверке":"Key being checked","Бот добавлен хотя бы в одну группу":"The bot is in at least one group","Настройки уже можно менять. Апдейты включатся после всех шагов.":"You can change settings already. Updates turn on after all steps.","Отправить ключ заново":"Send the key again","Ключ ELD на проверке":"ELD key being checked","Ключ получен и проверяется. Как только он заработает, апдейты можно будет включить. Если ключ неверный, отправьте новый.":"The key is received and being checked. Once it works you can turn updates on. If the key is wrong, send a new one.","Почему некоторые кнопки с замком?":"Why do some buttons have a lock?","Пока активация не закончена, часть функций закрыта, чтобы ничего не сломать. Шаги: опрос, тариф, ELD, хотя бы одна группа водителя. Нажмите на кнопку с замком: окно подскажет, какой шаг остался, и даст кнопку, чтобы его сделать. Например, ELD подключается командой /eld":"Until activation is finished some features are closed so nothing breaks. Steps: survey, plan, ELD, at least one driver group. Tap a locked button: the window tells you which step is left and gives a button to do it. For example, the ELD is connected with /eld","Ключ, чтобы бот видел, где траки":"A key so the bot sees where trucks are","Пока активация не закончена, окно работает только для просмотра.":"Until activation is finished the window is view-only.","Сначала пройдите опрос":"Finish the survey first","Это 7 коротких вопросов в чате с ботом: борд, грузы, ELD, коллеги, часовой пояс, смена, число водителей. После него функции включатся. Смотреть окно можно и сейчас.":"It is 7 short questions in the bot chat: board, freight, ELD, teammates, time zone, shift, number of drivers. Then features turn on. You can look around the window already.","Выбрать тариф":"Pick a plan","Выберите и оплатите тариф":"Pick and pay for a plan","Функции включатся после оплаты. Смотреть окно, тарифы и инструкцию можно и сейчас.":"Features turn on after payment. You can look at the window, plans and guide already.","Подключите ELD":"Connect your ELD","Подключить ELD":"Connect ELD","Без ELD бот не видит, где траки, и апдейты будут без местоположения. Бот спросит, какой у вас ELD, и проверит ключ. Это пара минут.":"Without an ELD the bot cannot see where trucks are and updates have no location. The bot asks which ELD you have and checks the key. It takes a couple of minutes.","Добавьте бота в группу водителя":"Add the bot to a driver group","Апдейты идут в группы водителей. Добавьте бота хотя бы в одну группу, и он сам проверит, видит ли сообщения.":"Updates go to driver groups. Add the bot to at least one group and it checks by itself whether it can read messages.","Как добавить":"How to add","Пройти опрос":"Take survey","Группы водителей":"Driver groups","Тариф":"Plan","Понятно":"Got it",
 "Окно переключается на этот язык. Язык ответов бота: /start":"The window switches to this language. The bot's reply language: /start","Окно переключается на этот язык":"The window switches to this language",
@@ -3331,7 +3378,7 @@ const UZ = {
 "готовится":"tayyorlanmoqda",
 "Тарифы отличаются только числом водителей. Оплата заработает после запуска сервера.":"Tariflar haydovchilar va kunlik apdeytlar soni bilan farq qiladi. To'lov server ishga tushgandan keyin ishlaydi.",
 "Или командой в чате, например: /plan pro":"Yoki chatda buyruq bilan, masalan: /plan pro",
-"Modenzo AI · версия окна 2026-11-22 10:30":"Modenzo AI · oyna versiyasi 2026-11-22 10:30",
+"Modenzo AI · версия окна 2026-11-22 12:00":"Modenzo AI · oyna versiyasi 2026-11-22 12:00",
 "Все функции и агенты на любом тарифе. Отличаются число водителей, апдейтов в день и режим.":"Barcha funksiyalar va agentlar har qanday tarifda. Haydovchilar, kunlik apdeytlar soni va rejim bilan farq qiladi.",
 "Смена":"Smena",
 "дешевле":"arzonroq",
