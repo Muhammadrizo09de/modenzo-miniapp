@@ -2459,7 +2459,7 @@ function draftClick(d) {
 }
 
 const VIEWS = { map:() => liveCard() + vMap(), team:vTeam, custom:vCustom, ai:vAi, support:vSupport, answers:vAnswers, setup:vSetup, ub:vUb, home:vHome, shift:vShift, updates:vUpdates, eta:vEta, groups:vGroups, features:vFeatures, help:vHelp, settings:vSettings, plans:vPlans, agents:vAgents, work:vWork, tz:vTz, board:vBoard, drivers:vDrivers };
-const TABS = [['home','Главная','home'],['updates','Апдейты','send'],['big','Большой экран','monitor'],['features','Функции','grid'],['settings','Настройки','sliders']];
+const TABS = [['home','Главная','home'],['updates','Апдейты','send'],['big','Большой экран','monitor'],['menu','Меню','menu'],['settings','Настройки','sliders']];
 const NAV = [['home','Главная','home'],['ub','Update Board','bell'],['map','Слежка','map'],['board','Доска грузов','truck'],['drivers','Водители','wheel'],['updates','Апдейты','send'],['eta','Расчёт ETA','pin'],['groups','Группы','users'],['features','Все функции','grid'],['team','Команда','users'],['help','Инструкция','help'],['settings','Настройки','sliders']];
 const TAB_OF = { team:'settings', ai:'home', support:'settings', answers:'settings', map:'home', ub:'home', shift:'home', eta:'home', board:'home', drivers:'home', groups:'home', help:'settings', plans:'settings', agents:'settings', work:'settings', tz:'settings' };
 
@@ -4025,7 +4025,7 @@ function renderInner() {
   document.documentElement.lang = S.lang;
   const active = TAB_OF[S.view] || S.view;
   const side = '<aside class="side"><div class="row" style="gap:10px;padding:0 6px">' + LOGO + '<div><h2 style="font-size:18px">Modenzo AI</h2><div class="xs muted">Расширенный экран</div></div></div>' + gsButton() + '<nav class="col" style="gap:4px" aria-label="Разделы">' +
-    NAV.map((n) => '<button class="navbtn' + (S.view === n[0] ? ' on' : '') + '" data-go="' + n[0] + '">' + ic(n[2], 18) + n[1] + '</button>').join('') + '</nav>' +
+    (typeof navTree === 'function' ? navTree() : NAV.map((n) => '<button class="navbtn' + (S.view === n[0] ? ' on' : '') + '" data-go="' + n[0] + '">' + ic(n[2], 18) + n[1] + '</button>').join('')) + '</nav>' +
     '<div class="col" style="margin-top:auto;gap:8px">' + sideExtra() + windowBar(true) + '<div class="card col" style="padding:12px;border-radius:16px;gap:4px;border-color:' + (S.son ? 'var(--mint-bd)' : 'var(--amber-bd)') + '"><span class="xs" style="font-weight:600;color:' + (S.son ? 'var(--mint-t)' : 'var(--amber)') + '">' + (S.son ? 'Апдейты включены' : 'Апдейты выключены') + '</span><span class="small sub">' + (S.son ? 'Следующий: ' + nextSlot() + ' (' + tzLabel() + ')' : S.slots.slice().sort().join(', ')) + '</span></div><div class="xs" style="color:var(--faint);padding:0 6px">Демо · данные примерные</div></div></aside>';
   const tabbar = '<nav class="tabbar" aria-label="Разделы">' + TABS.map((t) => t[0] === 'big' ? '<button class="tab center" data-act="big" aria-label="Большой экран"><span class="fab">' + ic('monitor', 26, 'currentColor', 2) + '</span>' + t[1] + '</button>' : '<button class="tab' + (active === t[0] ? ' on' : '') + '" data-go="' + t[0] + '">' + ic(t[2], 22, 'currentColor', 1.8) + t[1] + '</button>').join('') + '</nav>';
   const sheet = S.sheet ? '<div class="sheet-bg" data-act="closesheet"><div class="sheet" role="dialog" aria-modal="true" aria-label="Большой экран"><div class="row" style="gap:14px"><span class="icon" style="width:56px;height:56px;border-radius:16px;background:var(--blue-bg);color:var(--blue)">' + ic('monitor', 28, 'currentColor', 1.9) + '</span><div class="col" style="gap:4px"><h2 style="font-size:20px">Нужен экран побольше</h2><span class="small muted">Компьютер, ноутбук или планшет</span></div></div>' +
@@ -4109,6 +4109,7 @@ function onClick(e) {
   if (ltClick(d)) return;
   if (aiClick(d)) return;
   if (newClick(d)) return;
+  if (typeof opsClick === 'function' && opsClick(d)) return;
   if (d.act === 'hidetip') { try { localStorage.setItem('mz_tip', '1'); } catch (x) {} render(); return; }
   const miss = blockedBy(d);
   if (miss) { S.lockSheet = miss; render(); return; }
@@ -4201,6 +4202,437 @@ if (tg && tg.BackButton) { try { tg.BackButton.onClick(() => { if (S.view === 's
 window.addEventListener('resize', () => render());
 if (tg && tg.onEvent) { try { tg.onEvent('fullscreenChanged', render); tg.onEvent('fullscreenFailed', () => { try { tg.showAlert && tg.showAlert('Telegram не дал включить полный экран на этом устройстве'); } catch (x) {} }); } catch (e) {} }
 try { const v = new URLSearchParams(location.search).get('view'); if (v && VIEWS[v]) S.view = v; } catch (e) {}
+try { document.head.insertAdjacentHTML('beforeend', '<style>.navbtn{height:42px;padding:0 12px;border-radius:12px;border:0;background:transparent;display:flex;align-items:center;gap:10px;font-size:15px;color:var(--sub);text-align:left;width:100%}.navbtn.on{background:var(--raised);color:var(--text);font-weight:700}.navbtn svg{flex:none}</style>'); } catch (e) {}
+/* ===== Modenzo OPS: grouped menu, dispatch + templates, gross board, people, papers, broker check ===== */
+Object.assign(I, {
+  money:'<path d="M12 2v20"/><path d="M17 5H9.5a3.5 3.5 0 0 0 0 7h5a3.5 3.5 0 0 1 0 7H6"/>',
+  chart:'<path d="M3 3v18h18"/><rect x="7" y="12" width="3" height="6" rx="1"/><rect x="12" y="8" width="3" height="10" rx="1"/><rect x="17" y="5" width="3" height="13" rx="1"/>',
+  bolt:'<path d="M13 2 4 14h7l-1 8 9-12h-7z"/>',
+  edit:'<path d="M12 20h9"/><path d="M16.5 3.5a2.1 2.1 0 0 1 3 3L7 19l-4 1 1-4z"/>',
+  shield:'<path d="M12 2 4 5v6c0 5 3.4 9.4 8 11 4.6-1.6 8-6 8-11V5z"/><path d="m9 12 2 2 4-4"/>',
+  idcard:'<rect x="3" y="5" width="18" height="14" rx="2"/><circle cx="9" cy="11" r="2"/><path d="M6 16c.6-1.3 1.7-2 3-2s2.4.7 3 2"/><path d="M15 10h3M15 14h3"/>',
+  route:'<circle cx="6" cy="19" r="2"/><circle cx="18" cy="5" r="2"/><path d="M8 19h7a3 3 0 0 0 0-6H9a3 3 0 0 1 0-6h7"/>',
+  spark:'<path d="M12 3l1.8 4.7L18.5 9.5l-4.7 1.8L12 16l-1.8-4.7L5.5 9.5l4.7-1.8z"/><path d="M19 15l.8 2 2 .8-2 .8-.8 2-.8-2-2-.8 2-.8z"/>',
+  copy:'<rect x="9" y="9" width="12" height="12" rx="2"/><path d="M5 15V5a2 2 0 0 1 2-2h10"/>',
+  menu:'<path d="M4 6h16M4 12h16M4 18h16"/>'
+});
+
+const OPS_CITY = {
+  'Fontana, CA':[34.09,-117.43],'Los Angeles, CA':[34.05,-118.24],'Ontario, CA':[34.06,-117.65],'Stockton, CA':[37.96,-121.29],'Sacramento, CA':[38.58,-121.49],'San Diego, CA':[32.72,-117.16],
+  'Phoenix, AZ':[33.45,-112.07],'Tucson, AZ':[32.22,-110.97],'Las Vegas, NV':[36.17,-115.14],'Reno, NV':[39.53,-119.81],'Salt Lake City, UT':[40.76,-111.89],'Denver, CO':[39.74,-104.99],
+  'Portland, OR':[45.52,-122.68],'Seattle, WA':[47.61,-122.33],'Boise, ID':[43.62,-116.2],'Albuquerque, NM':[35.08,-106.65],'El Paso, TX':[31.76,-106.49],'Dallas, TX':[32.78,-96.8],
+  'Fort Worth, TX':[32.76,-97.33],'Houston, TX':[29.76,-95.37],'San Antonio, TX':[29.42,-98.49],'Laredo, TX':[27.51,-99.51],'Oklahoma City, OK':[35.47,-97.52],'Kansas City, MO':[39.1,-94.58],
+  'St. Louis, MO':[38.63,-90.2],'Memphis, TN':[35.15,-90.05],'Nashville, TN':[36.16,-86.78],'Atlanta, GA':[33.75,-84.39],'Savannah, GA':[32.08,-81.09],'Jacksonville, FL':[30.33,-81.66],
+  'Orlando, FL':[28.54,-81.38],'Miami, FL':[25.76,-80.19],'Charlotte, NC':[35.23,-80.84],'Columbus, OH':[39.96,-83],'Indianapolis, IN':[39.77,-86.16],'Chicago, IL':[41.88,-87.63],
+  'Detroit, MI':[42.33,-83.05],'Minneapolis, MN':[44.98,-93.27],'Louisville, KY':[38.25,-85.76],'Pittsburgh, PA':[40.44,-80],'Harrisburg, PA':[40.27,-76.88],'Allentown, PA':[40.6,-75.49],
+  'Newark, NJ':[40.74,-74.17],'Baltimore, MD':[39.29,-76.61],'Richmond, VA':[37.54,-77.44],'Little Rock, AR':[34.75,-92.29],'Omaha, NE':[41.26,-95.93],'Joliet, IL':[41.53,-88.08]
+};
+function opsMiles(a, b) {
+  const A = OPS_CITY[a], B = OPS_CITY[b];
+  if (!A || !B) return null;
+  const R = 3958.8, r = Math.PI / 180, dLa = (B[0] - A[0]) * r, dLo = (B[1] - A[1]) * r;
+  const h = Math.sin(dLa / 2) ** 2 + Math.cos(A[0] * r) * Math.cos(B[0] * r) * Math.sin(dLo / 2) ** 2;
+  return Math.round(2 * R * Math.asin(Math.sqrt(h)) * 1.18); // road factor
+}
+const OPS_TPL_STD = [
+  { id:'driver', name:'Для водителя (без ставки)', body:'🚛 NEW LOAD #{load}\nTruck {unit} · {driver}\n\n{stops}\n\nDeadhead: {dh} mi\nLoaded: {loaded} mi · Total: {total} mi\n{notes}\nPlease confirm 👍' },
+  { id:'full', name:'Полный (со ставкой)', body:'LOAD #{load} · {broker}\nDriver: {driver} · Truck {unit} · Disp: {disp}\n\n{stops}\n\nDH {dh} mi · Loaded {loaded} mi · Total {total} mi\nRate ${rate} · RPM ${rpm} · All-in ${allrpm}\n{notes}' },
+  { id:'short', name:'Коротко', body:'#{load}: {pu_city} → {del_city}\nPU {pu_time} · DEL {del_time}\n{loaded} mi loaded, DH {dh} mi' }
+];
+const OPS_PH = [['load','Номер груза'],['driver','Водитель'],['unit','Трак'],['disp','Диспетчер'],['broker','Брокер'],['stops','Все стопы'],['pu_fac','PU склад'],['pu_city','PU город'],['pu_time','PU время'],['del_fac','DEL склад'],['del_city','DEL город'],['del_time','DEL время'],['dh','Deadhead'],['loaded','Loaded'],['total','Всего миль'],['rate','Ставка'],['rpm','RPM'],['allrpm','All-in RPM'],['notes','Заметки']];
+
+const OPS = (function () {
+  let saved = null;
+  try { saved = JSON.parse(localStorage.getItem('mz_ops1') || 'null'); } catch (e) {}
+  const base = {
+    drivers:[{ n:'Akmal R.', unit:'2080', loc:'Fontana, CA', cdl:'2027-03-14', med:'2026-12-19' },{ n:'Bekzod T.', unit:'2081', loc:'Sacramento, CA', cdl:'2026-12-08', med:'2027-06-02' },{ n:'Jasur K.', unit:'2090', loc:'Phoenix, AZ', cdl:'2028-01-20', med:'2027-01-11' },{ n:'Mike D.', unit:'2102', loc:'Dallas, TX', cdl:'2027-09-30', med:'2026-12-02' },{ n:'Sardor A.', unit:'2115', loc:'Atlanta, GA', cdl:'2029-05-05', med:'2027-08-15' },{ n:'Amir K.', unit:'214', loc:'Portland, OR', cdl:'2027-11-02', med:'2027-04-28' }],
+    disps:['Timur','Dilshod','Kamola'],
+    tpls:OPS_TPL_STD.map((t) => Object.assign({}, t)), tplDef:'driver', tplMode:'ai', showRate:false,
+    goal:45000, extra:[], edits:{}
+  };
+  const o = Object.assign(base, saved || {});
+  o.nav = { g_loads:true }; o.g = { per:'week', by:'all', who:'' }; o.gEdit = ''; o.tplSel = o.tplDef; o.sendSheet = false; o.brk = { mc:'', res:null }; o.addP = '';
+  o.d = opsBlank(o);
+  return o;
+})();
+function opsBlank(o) {
+  o = o || OPS;
+  const dr = o.drivers[0];
+  return { no:'', broker:'', rate:'', driver:dr ? dr.n : '', disp:o.disps[0] || '', from:dr ? dr.loc : '', notes:'',
+    stops:[{ t:'PU', fac:'', city:'', time:'', ref:'' },{ t:'DEL', fac:'', city:'', time:'', ref:'' }], dhO:'', ldO:'', tpl:o.tplMode === 'ai' ? 'ai' : o.tplDef, editId:'' };
+}
+function opsSave() {
+  try { localStorage.setItem('mz_ops1', JSON.stringify({ drivers:OPS.drivers, disps:OPS.disps, tpls:OPS.tpls, tplDef:OPS.tplDef, tplMode:OPS.tplMode, showRate:OPS.showRate, goal:OPS.goal, extra:OPS.extra, edits:OPS.edits })); } catch (e) {}
+}
+const $m = (n) => '$' + Math.round(n).toLocaleString('en-US');
+const $r = (n) => isFinite(n) && n > 0 ? '$' + n.toFixed(2) : '—';
+
+/* ---------- demo gross data (deterministic) ---------- */
+const OPS_DEMO = (function () {
+  let x = 20261126; const rnd = () => (x = (x * 1103515245 + 12345) % 2147483648) / 2147483648;
+  const cities = Object.keys(OPS_CITY), out = [], now = new Date(); now.setHours(12, 0, 0, 0);
+  const brokers = ['CH Robinson','TQL','Coyote','Echo','Arrive','RXO','Amazon Relay','Landstar'];
+  for (let day = 400; day >= 0; day--) {
+    ['Akmal R.','Bekzod T.','Jasur K.','Mike D.','Sardor A.','Amir K.'].forEach((dr, i) => {
+      if (rnd() > 0.34) return;
+      const a = cities[Math.floor(rnd() * cities.length)]; let b = cities[Math.floor(rnd() * cities.length)]; if (b === a) b = cities[(cities.indexOf(a) + 7) % cities.length];
+      const loaded = Math.max(180, opsMiles(a, b) || 600), dh = Math.round(15 + rnd() * (i === 3 ? 260 : 150));
+      const rpm = 1.75 + rnd() * 1.05 + (i === 2 ? 0.25 : 0) - (i === 5 ? 0.2 : 0);
+      const dt = new Date(now.getTime() - day * 864e5);
+      out.push({ id:'L' + (90000 + out.length), date:dt.toISOString().slice(0, 10), driver:dr, disp:['Timur','Dilshod','Kamola'][(i + (day % 3 === 0 ? 1 : 0)) % 3], from:a, to:b, loaded:loaded, dh:dh, rate:Math.round(loaded * rpm / 5) * 5, broker:brokers[Math.floor(rnd() * brokers.length)] });
+    });
+  }
+  return out;
+})();
+function opsLoads() {
+  return OPS_DEMO.concat(OPS.extra).map((l) => Object.assign({}, l, OPS.edits[l.id] || {}));
+}
+
+/* ---------- grouped menu ---------- */
+const NAVTREE = [
+  ['home','Главная','home',null],
+  ['g_loads','Грузы','truck',[['board','Доска грузов','Все грузы и статусы на одном экране'],['dispatch','Диспеч груза','Груз водителю по шаблону, DH и RPM сами','NEW'],['templates','Шаблоны для водителя','Свой шаблон или подскажет ИИ','NEW'],['eta','Расчёт ETA','Честный прогноз прибытия'],['ub','Update Board','Кому и когда слать апдейт'],['updates','Апдейты','Расписание и тексты апдейтов']]],
+  ['g_money','Деньги','money',[['gross','Gross board','Gross за день, неделю, месяц, год','NEW'],['broker','Проверка брокера','MC, факторинг, риски перед диспечем','NEW']]],
+  ['g_fleet','Флот и водители','wheel',[['map','Слежка','Где сейчас каждый трак'],['drivers','Водители','Часы, статус, контакты'],['papers','Документы водителей','CDL и медкарта: у кого скоро истекают','NEW'],['groups','Группы','Telegram-группы водителей']]],
+  ['g_ai','ИИ и агенты','bolt',[['agents','ИИ-агенты','Работают 24/7, пишут только вам','NEW'],['ai','Спросить ИИ','Что было ночью, где трак, итоги дня']]],
+  ['g_team','Команда','users',[['people','Водители и диспетчеры','Добавить людей и назначать на грузы','NEW'],['team','Команда и доступы','Смены, приглашения, роли']]],
+  ['g_set','Настройки','sliders',[['settings','Настройки','Язык, часы, уведомления'],['plans','Тариф','Цена и лимиты'],['help','Инструкция','Как всем пользоваться'],['features','Все функции','Что готово и что в планах']]]
+];
+function navGroupOf(v) { const g = NAVTREE.filter((n) => n[3] && n[3].some((s) => s[0] === v))[0]; return g ? g[0] : ''; }
+function navTree(big) {
+  const act = S.view, ag = navGroupOf(act);
+  return NAVTREE.map((n) => {
+    if (!n[3]) return '<button class="navbtn' + (act === n[0] ? ' on' : '') + '" data-go="' + n[0] + '"' + (big ? ' style="height:52px;font-size:16px"' : '') + '>' + ic(n[2], big ? 20 : 18) + n[1] + '</button>';
+    const open = OPS.nav[n[0]] !== undefined ? OPS.nav[n[0]] : ag === n[0];
+    const newCnt = n[3].filter((s) => s[3]).length;
+    return '<div class="col" style="gap:2px"><button class="navbtn" data-opnav="' + n[0] + '" aria-expanded="' + open + '" style="' + (big ? 'height:52px;font-size:16px;' : '') + (ag === n[0] ? 'color:var(--text);font-weight:600' : '') + '">' + ic(n[2], big ? 20 : 18) +
+      '<span style="flex:1">' + n[1] + '</span>' + (newCnt && !open ? '<span class="chip c-done" style="height:18px;padding:0 6px;font-size:10px">' + newCnt + ' new</span>' : '') +
+      '<span style="display:inline-flex;transition:transform .15s;transform:rotate(' + (open ? 90 : 0) + 'deg)">' + ic('chev', 16, 'var(--muted)', 2) + '</span></button>' +
+      (open ? '<div class="col" style="gap:2px;margin:2px 0 6px 18px;padding-left:10px;border-left:1px solid var(--line)">' + n[3].map((s) =>
+        '<button data-go="' + s[0] + '" style="border:0;text-align:left;background:' + (act === s[0] ? 'var(--raised)' : 'transparent') + ';border-radius:10px;padding:' + (big ? '10px 10px' : '7px 10px') + ';display:flex;flex-direction:column;gap:2px;width:100%' + (act === s[0] ? ';box-shadow:inset 2px 0 0 var(--mint)' : '') + '">' +
+        '<span style="font-size:' + (big ? 15 : 14) + 'px;font-weight:' + (act === s[0] ? 700 : 600) + ';color:' + (act === s[0] ? 'var(--text)' : 'var(--sub)') + ';display:flex;align-items:center;gap:6px">' + s[1] + (s[3] ? '<span style="font-size:9.5px;font-weight:700;color:var(--on-mint);background:var(--mint);border-radius:6px;padding:1px 5px">NEW</span>' : '') + '</span>' +
+        '<span style="font-size:' + (big ? 12.5 : 11.5) + 'px;color:var(--muted);line-height:1.35">' + s[2] + '</span></button>').join('') + '</div>' : '') + '</div>';
+  }).join('');
+}
+function vMenu() {
+  return mzHead('Меню', 'Все разделы. Нажмите на группу, чтобы открыть функции') +
+    '<div class="card col" style="padding:10px;border-radius:20px;gap:4px">' + navTree(true) + '</div>';
+}
+
+/* ---------- dispatch ---------- */
+function opsDriver(n) { return OPS.drivers.filter((d) => d.n === n)[0] || { n:n || '—', unit:'—', loc:'' }; }
+function opsCalc(d) {
+  d = d || OPS.d;
+  const st = d.stops.filter((s) => s.city);
+  let loaded = 0, legsOk = st.length >= 2;
+  for (let i = 1; i < st.length; i++) { const m = opsMiles(st[i - 1].city, st[i].city); if (m == null) legsOk = false; else loaded += m; }
+  const dhAuto = st[0] ? opsMiles(d.from, st[0].city) : null;
+  const ld = d.ldO !== '' ? +d.ldO : (legsOk ? loaded : 0);
+  const dh = d.dhO !== '' ? +d.dhO : (dhAuto == null ? 0 : dhAuto);
+  const rate = +d.rate || 0, total = ld + dh;
+  return { loaded:ld, dh:dh, total:total, rate:rate, rpm:ld ? rate / ld : 0, allrpm:total ? rate / total : 0, dhPct:total ? dh / total * 100 : 0,
+    ldAuto:d.ldO === '' && legsOk, dhAuto:d.dhO === '' && dhAuto != null, hours:total / 50 };
+}
+function opsFleetRpm() {
+  const ls = opsLoads().filter((l) => (Date.now() - new Date(l.date).getTime()) < 30 * 864e5);
+  const r = ls.reduce((a, l) => a + l.rate, 0), m = ls.reduce((a, l) => a + l.loaded, 0);
+  return m ? r / m : 2.2;
+}
+function opsTips(c, d) {
+  const out = [], f = opsFleetRpm();
+  if (c.loaded && c.rate) {
+    const diff = (c.rpm - f) / f * 100;
+    out.push(diff >= 0 ? ['ok', 'RPM ' + $r(c.rpm) + ' выше среднего по флоту (' + $r(f) + ') на ' + Math.round(diff) + '%.'] : ['warn', 'RPM ' + $r(c.rpm) + ' ниже среднего по флоту (' + $r(f) + ') на ' + Math.round(-diff) + '%. Можно попросить у брокера ещё ' + $m(Math.max(0, f * c.loaded - c.rate)) + '.']);
+  }
+  if (c.total && c.dhPct >= 20) out.push(['warn', 'Deadhead ' + Math.round(c.dhPct) + '% от всех миль: это много. Проверьте груз ближе к ' + (d.from || 'траку') + '.']);
+  else if (c.total && c.dh) out.push(['ok', 'Deadhead ' + Math.round(c.dhPct) + '%: нормально.']);
+  if (c.total) out.push([c.hours > 11 ? 'info' : 'ok', 'Езды примерно ' + Math.round(c.hours * 10) / 10 + ' ч' + (c.hours > 11 ? ': понадобится 10-часовой отдых, проверьте окна стопов.' : ': укладывается в 11 часов вождения.')]);
+  if (d.stops.some((s) => s.city && !OPS_CITY[s.city])) out.push(['info', 'Один из городов не в базе демо: впишите мили вручную.']);
+  return out;
+}
+function opsFill(body, d, c) {
+  d = d || OPS.d; c = c || opsCalc(d);
+  const dr = opsDriver(d.driver), st = d.stops.filter((s) => s.city || s.fac);
+  const pu = st.filter((s) => s.t === 'PU'), dl = st.filter((s) => s.t === 'DEL');
+  const stopsTxt = st.map((s, i) => {
+    const k = s.t === 'PU' ? 'PU' : 'DEL', idx = st.filter((x, j) => j <= i && x.t === s.t).length;
+    return k + ' ' + idx + ': ' + (s.fac || '—') + '\n   ' + (s.city || '—') + (s.time ? ' · ' + s.time : '') + (s.ref ? ' · #' + s.ref : '');
+  }).join('\n') || '(добавьте стопы)';
+  const map = { load:d.no || '—', driver:dr.n, unit:dr.unit, disp:d.disp || '—', broker:d.broker || '—', stops:stopsTxt,
+    pu_fac:(pu[0] || {}).fac || '—', pu_city:(pu[0] || {}).city || '—', pu_time:(pu[0] || {}).time || '—',
+    del_fac:(dl[dl.length - 1] || {}).fac || '—', del_city:(dl[dl.length - 1] || {}).city || '—', del_time:(dl[dl.length - 1] || {}).time || '—',
+    dh:c.dh, loaded:c.loaded, total:c.total, rate:c.rate ? c.rate.toLocaleString('en-US') : '—', rpm:c.rpm ? c.rpm.toFixed(2) : '—', allrpm:c.allrpm ? c.allrpm.toFixed(2) : '—', notes:d.notes ? 'Notes: ' + d.notes : '' };
+  return body.replace(/\{(\w+)\}/g, (m, k) => (k in map ? map[k] : m)).replace(/\n{3,}/g, '\n\n').trim();
+}
+function opsAutoTpl(d) {
+  const n = d.stops.filter((s) => s.city).length;
+  return n > 2 ? 'driver' : (OPS.showRate ? 'full' : 'driver');
+}
+function opsTplFor(d) {
+  const id = d.tpl === 'ai' ? opsAutoTpl(d) : d.tpl;
+  return OPS.tpls.filter((t) => t.id === id)[0] || OPS.tpls[0];
+}
+function opsField(label, key, val, ph, extra) {
+  return '<label class="col" style="gap:5px;flex:1 1 140px;min-width:0"><span class="xs muted" style="font-weight:600">' + label + '</span><input data-opf="' + key + '" value="' + esc(val || '') + '" placeholder="' + esc(ph || '') + '"' + (extra || '') + ' style="height:44px;border-radius:12px;border:1px solid var(--line);background:var(--input);padding:0 12px;font-size:15px;width:100%"></label>';
+}
+function opsSelect(label, key, val, opts, addKind) {
+  return '<label class="col" style="gap:5px;flex:1 1 140px;min-width:0"><span class="xs muted" style="font-weight:600">' + label + '</span><select data-ops="' + key + '" style="height:44px;border-radius:12px;border:1px solid var(--line);background:var(--input);padding:0 10px;font-size:15px;width:100%;color:var(--text)">' +
+    opts.map((o) => '<option value="' + esc(o[0]) + '"' + (o[0] === val ? ' selected' : '') + '>' + esc(o[1]) + '</option>').join('') + (addKind ? '<option value="__add_' + addKind + '">+ Добавить…</option>' : '') + '</select></label>';
+}
+function opsCalcHtml() {
+  const d = OPS.d, c = opsCalc(d);
+  const box = (k, v, sub, col, auto) => '<div class="card col" style="padding:12px;border-radius:14px;gap:2px;background:var(--raised)"><span class="xs muted" style="font-weight:600">' + k + (auto ? ' <span style="color:var(--mint-t)">· авто</span>' : '') + '</span><b style="font-size:20px;color:' + (col || 'var(--text)') + '">' + v + '</b>' + (sub ? '<span class="xs muted">' + sub + '</span>' : '') + '</div>';
+  const tips = opsTips(c, d);
+  return '<div class="kpis" style="grid-template-columns:repeat(auto-fit,minmax(110px,1fr));gap:8px">' +
+    box('Deadhead', c.dh + ' mi', Math.round(c.dhPct) + '% от всех', c.dhPct >= 20 ? 'var(--amber)' : '', c.dhAuto) +
+    box('Loaded', c.loaded + ' mi', d.stops.filter((s) => s.city).length + ' стопа', '', c.ldAuto) +
+    box('Всего', c.total + ' mi', '≈ ' + Math.round(c.hours * 10) / 10 + ' ч езды') +
+    box('RPM', $r(c.rpm), 'ставка / loaded', 'var(--mint-t)') +
+    box('All-in RPM', $r(c.allrpm), 'с учётом DH', c.allrpm && c.allrpm < 1.8 ? 'var(--red)' : '') + '</div>' +
+    (tips.length ? '<div class="card col" style="padding:12px 14px;border-radius:14px;gap:8px;border-color:var(--violet-bd);background:var(--violet-bg)"><span class="row" style="gap:6px;font-weight:700;color:var(--violet);font-size:13px">' + ic('spark', 16) + 'Совет ИИ</span>' +
+      tips.map((t) => '<span class="small" style="line-height:1.45;color:var(--sub);display:flex;gap:8px"><span class="dot" style="margin-top:7px;background:' + (t[0] === 'ok' ? 'var(--mint)' : t[0] === 'warn' ? 'var(--amber)' : 'var(--blue)') + '"></span><span>' + esc(t[1]) + '</span></span>').join('') + '</div>' : '');
+}
+function opsPrevHtml() {
+  const d = OPS.d, t = opsTplFor(d);
+  return '<div class="xs muted" style="margin-bottom:6px">Шаблон: <b class="sub">' + esc(t.name) + '</b>' + (d.tpl === 'ai' ? ' · выбрал ИИ' : '') + '</div><div class="mono" id="opsPrevTxt" style="max-height:340px;overflow:auto">' + esc(opsFill(t.body, d)) + '</div>';
+}
+function vDispatch() {
+  const d = OPS.d, cityList = '<datalist id="opsCities">' + Object.keys(OPS_CITY).map((c) => '<option value="' + c + '">').join('') + '</datalist>';
+  const stops = d.stops.map((s, i) => '<div class="card col" style="padding:12px;border-radius:16px;gap:10px;border-color:' + (s.t === 'PU' ? 'var(--blue-bd)' : 'var(--mint-bd)') + '">' +
+    '<div class="row" style="justify-content:space-between"><span class="row" style="gap:8px"><button class="chip ' + (s.t === 'PU' ? 'c-plan' : 'c-done') + '" data-opstop="type:' + i + '" style="height:26px">' + (s.t === 'PU' ? 'Pick up' : 'Delivery') + '</button><span class="xs muted">Стоп ' + (i + 1) + '</span></span>' +
+    (d.stops.length > 2 ? '<button class="back" data-opstop="del:' + i + '" style="width:32px;height:32px;border-radius:10px" aria-label="Удалить стоп">' + ic('x', 16) + '</button>' : '') + '</div>' +
+    '<div class="wrap" style="gap:10px">' + opsField('Склад / facility', 'stop.' + i + '.fac', s.fac, s.t === 'PU' ? 'Walmart DC #6031' : 'Amazon ONT8') + opsField('Город, штат', 'stop.' + i + '.city', s.city, 'Fontana, CA', ' list="opsCities"') + '</div>' +
+    '<div class="wrap" style="gap:10px">' + opsField('Дата и время', 'stop.' + i + '.time', s.time, '11/27 08:00') + opsField(s.t === 'PU' ? 'PU #' : 'Delivery # / ref', 'stop.' + i + '.ref', s.ref, '4471023') + '</div></div>').join('');
+  const drOpts = OPS.drivers.map((x) => [x.n, x.n + ' · ' + x.unit]);
+  const tplChips = [['ai','ИИ выберет']].concat(OPS.tpls.map((t) => [t.id, t.name])).map((t) => '<button class="pill' + (d.tpl === t[0] ? ' on' : '') + '" data-optpl="' + t[0] + '">' + (t[0] === 'ai' ? ic('spark', 14) + ' ' : '') + esc(t[1]) + '</button>').join('');
+  const left = '<div class="col" style="gap:14px;flex:1 1 360px;min-width:0">' +
+    '<div class="row" style="gap:10px;padding:14px;border-radius:16px;border:1.5px dashed var(--mint-bd);background:var(--mint-bg)"><span class="icon" style="background:var(--mint);color:var(--on-mint);width:40px;height:40px">' + ic('doc', 20, 'currentColor', 2) + '</span><span class="col" style="flex:1;gap:2px"><b style="font-size:14px">Есть rate con?</b><span class="xs sub">ИИ сам заполнит форму: брокер, стопы, время, ставка</span></span><button class="btn" data-go="board" style="height:40px;font-size:13px">Загрузить</button></div>' +
+    '<div class="card col" style="padding:14px;border-radius:18px;gap:12px"><div class="label">Груз</div><div class="wrap" style="gap:10px">' + opsField('Load #', 'no', d.no, '1042') + opsField('Брокер', 'broker', d.broker, 'TQL') + opsField('Ставка, $', 'rate', d.rate, '2450', ' inputmode="decimal"') + '</div>' +
+    '<div class="wrap" style="gap:10px">' + opsSelect('Водитель', 'driver', d.driver, drOpts, 'driver') + opsSelect('Диспетчер', 'disp', d.disp, OPS.disps.map((x) => [x, x]), 'disp') + '</div>' +
+    '<div class="wrap" style="gap:10px">' + opsField('Где трак сейчас (для DH)', 'from', d.from, 'по GPS', ' list="opsCities"') + '</div></div>' +
+    '<div class="col" style="gap:10px"><div class="row" style="justify-content:space-between"><div class="label">Стопы</div><span class="row" style="gap:6px"><button class="pill" data-opstop="add:PU">+ PU</button><button class="pill" data-opstop="add:DEL">+ DEL</button></span></div>' + stops + '</div>' +
+    '<div class="card col" style="padding:14px;border-radius:18px;gap:10px"><div class="label">Мили вручную (если нужно)</div><div class="wrap" style="gap:10px">' + opsField('Deadhead, mi', 'dhO', d.dhO, 'авто', ' inputmode="numeric"') + opsField('Loaded, mi', 'ldO', d.ldO, 'авто', ' inputmode="numeric"') + '</div>' + opsField('Заметки водителю', 'notes', d.notes, 'Lumper paid by broker, call 1h before') + '</div></div>';
+  const right = '<div class="col" style="gap:14px;flex:1 1 320px;min-width:0"><div class="col" style="gap:10px"><div class="label">Расчёт</div><div id="opsCalc" class="col" style="gap:10px">' + opsCalcHtml() + '</div></div>' +
+    '<div class="card col" style="padding:14px;border-radius:18px;gap:10px"><div class="row" style="justify-content:space-between"><div class="label">Сообщение водителю</div><button class="pill" data-go="templates" style="height:30px">' + ic('edit', 14) + ' Шаблоны</button></div><div class="wrap" style="gap:6px">' + tplChips + '</div><div id="opsPrev">' + opsPrevHtml() + '</div>' +
+    '<div class="grid2"><button class="btn" data-opact="copy">' + ic('copy', 18) + 'Скопировать</button><button class="btn primary" data-opact="send">' + ic('send', 18, 'currentColor', 2) + 'Отправить</button></div>' +
+    '<span class="xs muted" style="line-height:1.45">Без вашего «Отправить» водитель ничего не получит. Груз сразу попадёт в Gross board.</span></div></div>';
+  return mzHead(d.editId ? 'Редактировать груз' : 'Диспеч груза', 'Заполните груз: мили, RPM и сообщение посчитаются сами', 'home') + cityList +
+    '<div class="row" style="flex-wrap:wrap;gap:18px;align-items:flex-start">' + left + right + '</div>' + opsSendSheet();
+}
+function opsSendSheet() {
+  if (!OPS.sendSheet) return '';
+  const d = OPS.d, dr = opsDriver(d.driver), t = opsTplFor(d);
+  return '<div class="sheet-bg" data-opact="closesend"><div class="sheet" role="dialog" aria-modal="true" aria-label="Отправка водителю"><h2 style="font-size:20px">Отправить водителю?</h2><span class="small sub">В группу водителя <b>' + esc(dr.n) + '</b> · трак ' + esc(dr.unit) + '</span><div class="mono" style="max-height:260px;overflow:auto">' + esc(opsFill(t.body, d)) + '</div>' +
+    '<div class="grid2"><button class="btn" data-opact="closesend">Отмена</button><button class="btn primary" data-opact="dosend">Да, отправить</button></div></div></div>';
+}
+
+/* ---------- templates ---------- */
+function vTemplates() {
+  const t = OPS.tpls.filter((x) => x.id === OPS.tplSel)[0] || OPS.tpls[0];
+  const sample = { no:'1042', broker:'TQL', rate:'2450', driver:OPS.drivers[0].n, disp:OPS.disps[0], from:'Fontana, CA', notes:'Lumper paid by broker', dhO:'', ldO:'', tpl:t.id,
+    stops:[{ t:'PU', fac:'Walmart DC #6031', city:'Fontana, CA', time:'11/27 08:00', ref:'4471023' },{ t:'DEL', fac:'Amazon PHX7', city:'Phoenix, AZ', time:'11/27 19:00', ref:'PO 88213' }] };
+  return mzHead('Шаблоны для водителя', 'Так бот оформит груз в группе водителя', 'dispatch') +
+    '<div class="card col" style="padding:14px;border-radius:18px;gap:10px"><div class="label">Как выбирать шаблон</div>' +
+      [['ai','ИИ подберёт сам','Посмотрит на груз (стопы, мульти-стоп, заметки) и возьмёт лучший шаблон'],['strict','Всегда мой шаблон','Каждый груз строго по шаблону по умолчанию']].map((m) => '<button class="seg' + (OPS.tplMode === m[0] ? ' on' : '') + '" data-optmode="' + m[0] + '" style="height:auto;padding:12px 14px;text-align:left;display:flex;flex-direction:column;gap:3px"><b style="font-size:15px">' + m[1] + '</b><span class="xs" style="font-weight:500;opacity:.8">' + m[2] + '</span></button>').join('') +
+      '<div class="row" style="justify-content:space-between;gap:10px"><span class="small sub">Показывать ставку водителю</span><button class="toggle' + (OPS.showRate ? ' on' : '') + '" data-opact="rate" aria-label="Показывать ставку"><span></span></button></div></div>' +
+    '<div class="wrap" style="gap:6px">' + OPS.tpls.map((x) => '<button class="pill' + (x.id === t.id ? ' on' : '') + '" data-optsel="' + x.id + '">' + esc(x.name) + (x.id === OPS.tplDef ? ' ★' : '') + '</button>').join('') + '<button class="pill" data-opact="newtpl">+ Новый</button><button class="pill" data-opact="aitpl" style="border-color:var(--violet-bd);color:var(--violet)">' + ic('spark', 14) + ' ИИ предложит</button></div>' +
+    '<div class="row" style="flex-wrap:wrap;gap:18px;align-items:flex-start"><div class="col" style="gap:10px;flex:1 1 320px;min-width:0">' +
+      '<input data-optname value="' + esc(t.name) + '" style="height:44px;border-radius:12px;border:1px solid var(--line);background:var(--input);padding:0 12px;font-size:15px;font-weight:600">' +
+      '<textarea id="opsTplBody" data-optbody rows="12" style="border-radius:14px;border:1px solid var(--line);background:var(--input);padding:12px;font-family:\'JetBrains Mono\',ui-monospace,monospace;font-size:13px;line-height:1.6;color:var(--text);resize:vertical">' + esc(t.body) + '</textarea>' +
+      '<div class="xs muted">Нажмите поле, чтобы вставить его в текст:</div><div class="wrap" style="gap:6px">' + OPS_PH.map((p) => '<button class="chip c-gray" data-opph="' + p[0] + '" style="height:28px">' + p[1] + '</button>').join('') + '</div>' +
+      '<div class="grid2"><button class="btn" data-opact="defTpl">' + (t.id === OPS.tplDef ? '★ По умолчанию' : 'Сделать основным') + '</button><button class="btn danger" data-opact="delTpl"' + (OPS.tpls.length < 2 ? ' disabled' : '') + '>Удалить</button></div></div>' +
+    '<div class="col" style="gap:8px;flex:1 1 300px;min-width:0"><div class="label">Так увидит водитель (пример)</div><div class="mono" id="opsTplPrev">' + esc(opsFill(t.body, sample)) + '</div></div></div>';
+}
+
+/* ---------- gross board ---------- */
+const OPS_PER = [['today','Сегодня',1],['3d','3 дня',3],['week','Неделя',7],['month','Месяц',30],['3m','3 месяца',90],['year','Год',365]];
+function opsRange(per, shift) {
+  const days = OPS_PER.filter((p) => p[0] === per)[0][2], end = new Date(); end.setHours(23, 59, 59, 0);
+  const e = new Date(end.getTime() - (shift || 0) * days * 864e5), s = new Date(e.getTime() - days * 864e5 + 1000);
+  return [s, e, days];
+}
+function opsFilter(ls, per, shift) {
+  const r = opsRange(per, shift), g = OPS.g;
+  return ls.filter((l) => { const t = new Date(l.date + 'T12:00:00').getTime(); return t >= r[0].getTime() && t <= r[1].getTime() && (g.by === 'all' || (g.by === 'driver' ? l.driver === g.who : l.disp === g.who)); });
+}
+function opsSum(ls) {
+  const s = { gross:0, n:ls.length, ld:0, dh:0 };
+  ls.forEach((l) => { s.gross += l.rate; s.ld += l.loaded; s.dh += l.dh; });
+  s.rpm = s.ld ? s.gross / s.ld : 0; s.all = (s.ld + s.dh) ? s.gross / (s.ld + s.dh) : 0; s.dhp = (s.ld + s.dh) ? s.dh / (s.ld + s.dh) * 100 : 0;
+  return s;
+}
+function opsBars(ls) {
+  const per = OPS.g.per, r = opsRange(per), buckets = [];
+  if (per === 'year') { for (let i = 11; i >= 0; i--) { const d = new Date(); d.setDate(1); d.setMonth(d.getMonth() - i); buckets.push([d.toLocaleString('ru', { month:'short' }), (l) => l.date.slice(0, 7) === d.toISOString().slice(0, 7)]); } }
+  else if (per === '3m') { for (let i = 12; i >= 0; i--) { const e = new Date(r[1].getTime() - i * 7 * 864e5), s = new Date(e.getTime() - 7 * 864e5); buckets.push([String(e.getDate()) + '.' + (e.getMonth() + 1), (l) => { const t = new Date(l.date + 'T12:00:00'); return t > s && t <= e; }]); } }
+  else { const n = Math.max(r[2], 1); for (let i = n - 1; i >= 0; i--) { const d = new Date(r[1].getTime() - i * 864e5), k = d.toISOString().slice(0, 10); buckets.push([String(d.getDate()), (l) => l.date === k]); } }
+  const vals = buckets.map((b) => ls.filter(b[1]).reduce((a, l) => a + l.rate, 0)), mx = Math.max(1, ...vals), W = 100 / vals.length;
+  const step = Math.ceil(buckets.length / 12);
+  return '<svg viewBox="0 0 100 46" preserveAspectRatio="none" style="width:100%;height:150px;display:block">' + vals.map((v, i) => { const h = v / mx * 40; return '<rect x="' + (i * W + W * 0.15) + '" y="' + (42 - h) + '" width="' + (W * 0.7) + '" height="' + Math.max(h, 0.4) + '" rx="0.8" fill="var(--mint)" opacity="' + (i === vals.length - 1 ? 1 : 0.65) + '"><title>' + $m(v) + '</title></rect>'; }).join('') + '</svg>' +
+    '<div style="display:grid;grid-template-columns:repeat(' + vals.length + ',1fr);font-size:10px;color:var(--muted);text-align:center">' + buckets.map((b, i) => '<span>' + (i % step === 0 ? b[0] : '') + '</span>').join('') + '</div>';
+}
+function opsGrossTips(cur, prev, ls) {
+  const out = [];
+  if (prev.gross) { const ch = (cur.gross - prev.gross) / prev.gross * 100; out.push([ch >= 0 ? 'ok' : 'warn', 'Gross ' + (ch >= 0 ? 'вырос' : 'упал') + ' на ' + Math.abs(Math.round(ch)) + '% к прошлому периоду (' + $m(prev.gross) + ').']); }
+  const by = {}; ls.forEach((l) => { const b = by[l.driver] = by[l.driver] || []; b.push(l); });
+  const arr = Object.keys(by).map((k) => [k, opsSum(by[k])]).filter((x) => x[1].n >= 2);
+  if (arr.length > 1) {
+    arr.sort((a, b) => b[1].rpm - a[1].rpm);
+    out.push(['ok', 'Лучший RPM: ' + arr[0][0] + ' (' + $r(arr[0][1].rpm) + ').']);
+    const low = arr[arr.length - 1]; out.push(['warn', 'Ниже всех RPM у ' + low[0] + ' (' + $r(low[1].rpm) + '). Ищите ему грузы дороже или короче.']);
+    const dh = arr.slice().sort((a, b) => b[1].dhp - a[1].dhp)[0]; if (dh[1].dhp > 14) out.push(['warn', 'Больше всех пустых миль у ' + dh[0] + ': ' + Math.round(dh[1].dhp) + '% deadhead.']);
+  }
+  if (OPS.g.per === 'week' && OPS.g.by === 'all') { const left = OPS.goal - cur.gross; out.push([left <= 0 ? 'ok' : 'info', left <= 0 ? 'Недельная цель ' + $m(OPS.goal) + ' выполнена!' : 'До недельной цели осталось ' + $m(left) + '.']); }
+  return out;
+}
+function vGross() {
+  const g = OPS.g, all = opsLoads(), ls = opsFilter(all, g.per, 0), prev = opsSum(opsFilter(all, g.per, 1)), s = opsSum(ls);
+  const kpi = (k, v, sub, col) => '<div class="card col" style="padding:14px;border-radius:16px;gap:3px"><span class="xs muted" style="font-weight:600">' + k + '</span><b style="font-size:22px;color:' + (col || 'var(--text)') + '">' + v + '</b>' + (sub ? '<span class="xs muted">' + sub + '</span>' : '') + '</div>';
+  const ch = prev.gross ? Math.round((s.gross - prev.gross) / prev.gross * 100) : 0;
+  const whoList = g.by === 'driver' ? OPS.drivers.map((x) => x.n) : g.by === 'disp' ? OPS.disps : [];
+  const board = (key) => { const m = {}; ls.forEach((l) => { (m[l[key]] = m[l[key]] || []).push(l); }); return Object.keys(m).map((k) => [k, opsSum(m[k])]).sort((a, b) => b[1].gross - a[1].gross); };
+  const lb = (title, key, by) => { const rows = board(key), mx = rows.length ? rows[0][1].gross : 1; return '<div class="card col" style="padding:14px;border-radius:18px;gap:10px;flex:1 1 260px;min-width:0"><div class="label">' + title + '</div>' + (rows.length ? rows.map((r) => '<button data-opgw="' + by + ':' + esc(r[0]) + '" style="border:0;background:transparent;text-align:left;padding:0;display:flex;flex-direction:column;gap:5px"><span class="row" style="justify-content:space-between;width:100%"><b style="font-size:14px">' + esc(r[0]) + '</b><b style="font-size:14px">' + $m(r[1].gross) + '</b></span><span style="height:6px;border-radius:3px;background:var(--line2);display:block;width:100%"><span style="display:block;height:6px;border-radius:3px;background:var(--mint);width:' + Math.max(4, r[1].gross / mx * 100) + '%"></span></span><span class="xs muted">' + r[1].n + ' грузов · RPM ' + $r(r[1].rpm) + ' · DH ' + Math.round(r[1].dhp) + '%</span></button>').join('') : '<span class="small muted">Нет грузов за период</span>') + '</div>'; };
+  const rows = ls.slice().sort((a, b) => b.date.localeCompare(a.date)).slice(0, 40);
+  const ed = OPS.gEdit ? all.filter((l) => l.id === OPS.gEdit)[0] : null;
+  const edit = ed ? '<div class="sheet-bg" data-opact="closeedit"><div class="sheet" role="dialog" aria-modal="true" aria-label="Редактировать груз"><h2 style="font-size:20px">Груз ' + esc(ed.id) + '</h2><span class="small muted">' + esc(ed.from + ' → ' + ed.to) + ' · ' + ed.date + '</span>' +
+    '<div class="wrap" style="gap:10px">' + [['rate','Ставка, $',ed.rate],['loaded','Loaded, mi',ed.loaded],['dh','Deadhead, mi',ed.dh]].map((f) => '<label class="col" style="gap:5px;flex:1 1 120px"><span class="xs muted" style="font-weight:600">' + f[1] + '</span><input data-ope="' + f[0] + '" value="' + f[2] + '" inputmode="decimal" style="height:44px;border-radius:12px;border:1px solid var(--line);background:var(--input);padding:0 12px;font-size:15px"></label>').join('') + '</div>' +
+    '<div class="wrap" style="gap:10px"><label class="col" style="gap:5px;flex:1 1 140px"><span class="xs muted" style="font-weight:600">Водитель</span><select data-ope="driver" style="height:44px;border-radius:12px;border:1px solid var(--line);background:var(--input);padding:0 10px;color:var(--text)">' + OPS.drivers.map((x) => '<option' + (x.n === ed.driver ? ' selected' : '') + '>' + esc(x.n) + '</option>').join('') + '</select></label><label class="col" style="gap:5px;flex:1 1 140px"><span class="xs muted" style="font-weight:600">Диспетчер</span><select data-ope="disp" style="height:44px;border-radius:12px;border:1px solid var(--line);background:var(--input);padding:0 10px;color:var(--text)">' + OPS.disps.map((x) => '<option' + (x === ed.disp ? ' selected' : '') + '>' + esc(x) + '</option>').join('') + '</select></label></div>' +
+    '<div class="grid2"><button class="btn" data-opact="closeedit">Отмена</button><button class="btn primary" data-opact="saveedit">Сохранить</button></div></div></div>' : '';
+  return mzHead('Gross board', 'Сколько заработали: вся компания, водитель или диспетчер', 'home') +
+    '<div class="wrap" style="gap:6px">' + OPS_PER.map((p) => '<button class="pill' + (g.per === p[0] ? ' on' : '') + '" data-opper="' + p[0] + '">' + p[1] + '</button>').join('') + '</div>' +
+    '<div class="wrap" style="gap:6px">' + [['all','Вся компания'],['driver','По водителю'],['disp','По диспетчеру']].map((b) => '<button class="seg' + (g.by === b[0] ? ' on' : '') + '" data-opby="' + b[0] + '" style="height:40px;padding:0 14px;font-size:14px">' + b[1] + '</button>').join('') + '</div>' +
+    (whoList.length ? '<div class="wrap" style="gap:6px">' + whoList.map((w) => '<button class="pill' + (g.who === w ? ' on' : '') + '" data-opwho="' + esc(w) + '">' + esc(w) + '</button>').join('') + '</div>' : '') +
+    '<div class="kpis">' + kpi('Gross', $m(s.gross), (ch >= 0 ? '▲ ' : '▼ ') + Math.abs(ch) + '% к прошлому', 'var(--mint-t)') + kpi('Грузов', s.n, s.n ? 'в среднем ' + $m(s.gross / s.n) : '') + kpi('RPM', $r(s.rpm), 'all-in ' + $r(s.all)) + kpi('Loaded', Math.round(s.ld).toLocaleString('en-US') + ' mi', '') + kpi('Deadhead', Math.round(s.dh).toLocaleString('en-US') + ' mi', Math.round(s.dhp) + '% от всех', s.dhp > 15 ? 'var(--amber)' : '') + '</div>' +
+    (g.per === 'week' && g.by === 'all' ? '<div class="card col" style="padding:14px;border-radius:16px;gap:8px"><div class="row" style="justify-content:space-between"><span class="small sub">Цель на неделю</span><span class="row" style="gap:6px"><button class="pill" data-opgoal="-1000" style="height:30px">−</button><b>' + $m(OPS.goal) + '</b><button class="pill" data-opgoal="1000" style="height:30px">+</button></span></div><span style="height:10px;border-radius:5px;background:var(--line2);display:block"><span style="display:block;height:10px;border-radius:5px;background:var(--mint);width:' + Math.min(100, s.gross / OPS.goal * 100) + '%"></span></span><span class="xs muted">' + Math.round(s.gross / OPS.goal * 100) + '% выполнено</span></div>' : '') +
+    '<div class="card col" style="padding:14px;border-radius:18px;gap:8px"><div class="label">Gross по времени</div>' + opsBars(ls) + '</div>' +
+    (function () { const t = opsGrossTips(s, prev, ls); return t.length ? '<div class="card col" style="padding:14px;border-radius:18px;gap:8px;border-color:var(--violet-bd);background:var(--violet-bg)"><span class="row" style="gap:6px;font-weight:700;color:var(--violet);font-size:13px">' + ic('spark', 16) + 'Анализ ИИ</span>' + t.map((x) => '<span class="small" style="line-height:1.45;color:var(--sub);display:flex;gap:8px"><span class="dot" style="margin-top:7px;background:' + (x[0] === 'ok' ? 'var(--mint)' : x[0] === 'warn' ? 'var(--amber)' : 'var(--blue)') + '"></span><span>' + esc(x[1]) + '</span></span>').join('') + '</div>' : ''; })() +
+    '<div class="row" style="flex-wrap:wrap;gap:14px;align-items:flex-start">' + lb('Водители', 'driver', 'driver') + lb('Диспетчеры', 'disp', 'disp') + '</div>' +
+    '<div class="card col" style="padding:6px 0;border-radius:18px"><div class="row" style="justify-content:space-between;padding:10px 16px"><div class="label">Грузы за период</div><button class="pill" data-opact="newload" style="height:32px">+ Диспеч груза</button></div>' +
+      (rows.length ? rows.map((l) => '<div class="row" style="padding:10px 16px;border-top:1px solid var(--line2);gap:10px"><span class="col" style="flex:1;min-width:0;gap:2px"><b style="font-size:14px;white-space:nowrap;overflow:hidden;text-overflow:ellipsis">' + esc(l.from.split(',')[0] + ' → ' + l.to.split(',')[0]) + '</b><span class="xs muted">' + l.date.slice(5).replace('-', '.') + ' · ' + esc(l.driver) + ' · ' + esc(l.disp) + (OPS.edits[l.id] ? ' · изменён' : '') + '</span></span><span class="col" style="align-items:flex-end;gap:2px"><b style="font-size:14px">' + $m(l.rate) + '</b><span class="xs muted">' + $r(l.rate / l.loaded) + '/mi · DH ' + l.dh + '</span></span><button class="back" data-opedit="' + l.id + '" style="width:36px;height:36px;border-radius:10px" aria-label="Редактировать">' + ic('edit', 16) + '</button></div>').join('') : '<div class="small muted" style="padding:14px 16px">Нет грузов за этот период</div>') + '</div>' +
+    '<div class="xs" style="color:var(--faint)">Демо: данные примерные. В рабочей версии gross считается из ваших грузов и rate con.</div>' + edit;
+}
+
+/* ---------- people, papers, broker ---------- */
+function vPeople() {
+  const inp = (id, ph) => '<input id="' + id + '" placeholder="' + ph + '" style="height:44px;border-radius:12px;border:1px solid var(--line);background:var(--input);padding:0 12px;font-size:15px;flex:1 1 120px;min-width:0">';
+  return mzHead('Водители и диспетчеры', 'Кого можно назначать на грузы', 'home') +
+    '<div class="card col" style="padding:14px;border-radius:18px;gap:10px"><div class="label">Водители · ' + OPS.drivers.length + '</div>' + OPS.drivers.map((x, i) => '<div class="row" style="gap:10px;padding:6px 0;border-bottom:1px solid var(--line2)"><span class="icon" style="width:36px;height:36px;border-radius:10px;background:var(--raised)">' + ic('wheel', 18) + '</span><span class="col" style="flex:1;gap:1px"><b style="font-size:14px">' + esc(x.n) + '</b><span class="xs muted">Трак ' + esc(x.unit) + (x.loc ? ' · ' + esc(x.loc) : '') + '</span></span><button class="back" data-opdel="d:' + i + '" style="width:32px;height:32px;border-radius:10px" aria-label="Удалить">' + ic('x', 15) + '</button></div>').join('') +
+      '<div class="wrap" style="gap:8px">' + inp('opsNewDrv', 'Имя водителя') + inp('opsNewUnit', 'Трак #') + '<button class="btn primary" data-opact="adddrv" style="height:44px">Добавить</button></div></div>' +
+    '<div class="card col" style="padding:14px;border-radius:18px;gap:10px"><div class="label">Диспетчеры · ' + OPS.disps.length + '</div>' + OPS.disps.map((x, i) => '<div class="row" style="gap:10px;padding:6px 0;border-bottom:1px solid var(--line2)"><span class="icon" style="width:36px;height:36px;border-radius:10px;background:var(--raised)">' + ic('users', 18) + '</span><b style="flex:1;font-size:14px">' + esc(x) + '</b><button class="back" data-opdel="p:' + i + '" style="width:32px;height:32px;border-radius:10px" aria-label="Удалить">' + ic('x', 15) + '</button></div>').join('') +
+      '<div class="wrap" style="gap:8px">' + inp('opsNewDisp', 'Имя диспетчера') + '<button class="btn primary" data-opact="adddisp" style="height:44px">Добавить</button></div></div>' +
+    '<div class="xs muted">Доступ к окну для диспетчеров выдаётся в разделе «Команда и доступы».</div>';
+}
+function vPapers() {
+  const today = new Date();
+  const left = (d) => Math.round((new Date(d) - today) / 864e5);
+  const chip = (n) => '<span class="chip ' + (n < 30 ? '' : n < 60 ? 'c-dev' : 'c-done') + '" style="' + (n < 30 ? 'background:var(--red-bg);color:var(--red);border-color:var(--red-bd)' : '') + '">' + (n < 0 ? 'истёк' : n + ' дн.') + '</span>';
+  const rows = OPS.drivers.slice().sort((a, b) => Math.min(left(a.cdl), left(a.med)) - Math.min(left(b.cdl), left(b.med)));
+  return mzHead('Документы водителей', 'CDL и медкарта: бот предупредит за 30 дней', 'home') +
+    '<div class="col" style="gap:10px">' + rows.map((x) => '<div class="card col" style="padding:14px 16px;border-radius:18px;gap:10px"><div class="row" style="justify-content:space-between"><b>' + esc(x.n) + ' <span class="muted" style="font-weight:500">· трак ' + esc(x.unit) + '</span></b>' + (Math.min(left(x.cdl), left(x.med)) < 30 ? '<button class="pill" data-opact="remind" style="height:30px">Напомнить</button>' : '') + '</div>' +
+      '<div class="grid2"><div class="row" style="justify-content:space-between"><span class="small sub">CDL до ' + x.cdl.split('-').reverse().join('.') + '</span>' + chip(left(x.cdl)) + '</div><div class="row" style="justify-content:space-between"><span class="small sub">Медкарта до ' + x.med.split('-').reverse().join('.') + '</span>' + chip(left(x.med)) + '</div></div></div>').join('') + '</div>' +
+    '<div class="xs" style="color:var(--faint)">Демо: даты примерные. Водитель сможет прислать фото документа в чат, ИИ прочитает дату.</div>';
+}
+function vBroker() {
+  const r = OPS.brk.res;
+  return mzHead('Проверка брокера', 'Перед диспечем: можно ли с ним работать', 'home') +
+    '<div class="card col" style="padding:14px;border-radius:18px;gap:10px"><div class="wrap" style="gap:8px"><input id="opsMc" value="' + esc(OPS.brk.mc) + '" placeholder="MC или название брокера" inputmode="text" style="height:48px;border-radius:12px;border:1px solid var(--line);background:var(--input);padding:0 14px;font-size:16px;flex:1 1 180px"><button class="btn primary" data-opact="brk">' + ic('search', 18, 'currentColor', 2) + 'Проверить</button></div><span class="xs muted">Или ИИ проверит сам, когда вы загрузите rate con</span></div>' +
+    (r ? '<div class="card col" style="padding:16px;border-radius:18px;gap:12px;border-color:var(--mint-bd)"><div class="row" style="justify-content:space-between"><b style="font-size:17px">' + esc(r.name) + '</b><span class="chip c-done">Можно работать</span></div>' +
+      [['Authority','Active, ' + r.age + ' лет'],['Страховка','На месте'],['Факторинг','Approved (' + r.fac + ')'],['Средняя оплата', r.pay + ' дней'],['Риск двойного брокеринга','Низкий']].map((x) => '<div class="row" style="justify-content:space-between;border-top:1px solid var(--line2);padding-top:10px"><span class="small sub">' + x[0] + '</span><b class="small">' + x[1] + '</b></div>').join('') +
+      '<span class="xs" style="color:var(--amber)">Пример ответа. В рабочей версии данные из FMCSA и факторинговых компаний.</span></div>' : '');
+}
+
+/* ---------- agents added ---------- */
+AGENTS.push(
+  ['dispatcher','Диспеч-агент','Из rate con сам делает груз, считает DH и RPM, готовит сообщение водителю по вашему шаблону. Отправляет только после вашего OK','',[]],
+  ['grossai','Gross-аналитик','Каждый вечер: gross за день, кто отстаёт от цели, у кого высокий deadhead и низкий RPM','',[]],
+  ['papers','Документы водителей','Предупредит за 30 дней до конца CDL и медкарты','',[]],
+  ['brokerchk','Проверка брокера','Перед диспечем проверит брокера по MC и предупредит о риске','',[]],
+  ['translate','Переводчик для брокера','Вы пишете по-русски или по-узбекски, брокер получает чистый английский. И наоборот','',[]],
+  ['nonstop','ИИ без остановки','Если одна модель ИИ перегружена, бот сам переключится на другую и сохранит весь контекст','',[]]
+);
+Object.assign(S.ag.on, { dispatcher:true, grossai:true, papers:true, brokerchk:false, translate:true, nonstop:true });
+Object.assign(VIEWS, { menu:vMenu, dispatch:vDispatch, templates:vTemplates, gross:vGross, people:vPeople, papers:vPapers, broker:vBroker });
+Object.assign(TAB_OF, { menu:'menu', dispatch:'menu', templates:'menu', gross:'menu', people:'menu', papers:'menu', broker:'menu', features:'menu' });
+
+/* ---------- events ---------- */
+function opsRefresh() {
+  const c = document.getElementById('opsCalc'); if (c) c.innerHTML = opsCalcHtml();
+  const p = document.getElementById('opsPrev'); if (p) p.innerHTML = opsPrevHtml();
+}
+function opsClick(d) {
+  if (d.opnav) { const g = d.opnav, cur = OPS.nav[g] !== undefined ? OPS.nav[g] : navGroupOf(S.view) === g; OPS.nav[g] = !cur; render(); return true; }
+  if (d.optpl) { OPS.d.tpl = d.optpl; render(); return true; }
+  if (d.opstop) {
+    const p = d.opstop.split(':'), st = OPS.d.stops;
+    if (p[0] === 'add') { const at = p[1] === 'PU' ? st.filter((s) => s.t === 'PU').length : st.length; st.splice(at, 0, { t:p[1], fac:'', city:'', time:'', ref:'' }); }
+    if (p[0] === 'del') st.splice(+p[1], 1);
+    if (p[0] === 'type') { const s = st[+p[1]]; s.t = s.t === 'PU' ? 'DEL' : 'PU'; }
+    render(); return true;
+  }
+  if (d.optmode) { OPS.tplMode = d.optmode; OPS.d.tpl = d.optmode === 'ai' ? 'ai' : OPS.tplDef; opsSave(); render(); return true; }
+  if (d.optsel) { OPS.tplSel = d.optsel; render(); return true; }
+  if (d.opph) {
+    const ta = document.getElementById('opsTplBody'); const t = OPS.tpls.filter((x) => x.id === OPS.tplSel)[0] || OPS.tpls[0];
+    if (ta) { const a = ta.selectionStart || ta.value.length, v = ta.value; ta.value = v.slice(0, a) + '{' + d.opph + '}' + v.slice(ta.selectionEnd || a); t.body = ta.value; opsSave(); ta.dispatchEvent(new Event('input', { bubbles:true })); ta.focus(); const n = a + d.opph.length + 2; ta.setSelectionRange(n, n); }
+    return true;
+  }
+  if (d.opper) { OPS.g.per = d.opper; render(); return true; }
+  if (d.opby) { OPS.g.by = d.opby; OPS.g.who = d.opby === 'driver' ? OPS.drivers[0].n : d.opby === 'disp' ? OPS.disps[0] : ''; render(); return true; }
+  if (d.opwho) { OPS.g.who = d.opwho; render(); return true; }
+  if (d.opgw) { const p = d.opgw.split(':'); OPS.g.by = p[0]; OPS.g.who = p.slice(1).join(':'); render(); window.scrollTo(0, 0); return true; }
+  if (d.opgoal) { OPS.goal = Math.max(1000, OPS.goal + +d.opgoal); opsSave(); render(); return true; }
+  if (d.opedit) { OPS.gEdit = d.opedit; render(); return true; }
+  if (d.opdel) { const p = d.opdel.split(':'); if (p[0] === 'd' && OPS.drivers.length > 1) OPS.drivers.splice(+p[1], 1); if (p[0] === 'p' && OPS.disps.length > 1) OPS.disps.splice(+p[1], 1); opsSave(); render(); return true; }
+  const a = d.opact; if (!a) return false;
+  if (a === 'copy') { const txt = opsFill(opsTplFor(OPS.d).body, OPS.d); try { navigator.clipboard.writeText(txt); toast('Текст скопирован'); } catch (e) { toast('Не получилось скопировать'); } return true; }
+  if (a === 'send') { const c = opsCalc(); if (!OPS.d.no || OPS.d.stops.filter((s) => s.city).length < 2) { toast('Заполните номер груза и минимум 2 стопа'); return true; } OPS.sendSheet = true; render(); return true; }
+  if (a === 'closesend') { OPS.sendSheet = false; render(); return true; }
+  if (a === 'dosend') {
+    const d0 = OPS.d, c = opsCalc(d0), st = d0.stops.filter((s) => s.city);
+    const rec = { id:d0.editId || ('N' + Date.now().toString(36).toUpperCase()), no:d0.no, date:new Date().toISOString().slice(0, 10), driver:d0.driver, disp:d0.disp, from:st[0].city, to:st[st.length - 1].city, loaded:c.loaded, dh:c.dh, rate:c.rate, broker:d0.broker };
+    OPS.extra = OPS.extra.filter((l) => l.id !== rec.id).concat([rec]); opsSave();
+    OPS.sendSheet = false; OPS.d = opsBlank(); toast('Демо: груз отправлен водителю и добавлен в Gross board'); render(); return true;
+  }
+  if (a === 'rate') { OPS.showRate = !OPS.showRate; opsSave(); render(); return true; }
+  if (a === 'newtpl') { const id = 't' + Date.now().toString(36); OPS.tpls.push({ id:id, name:'Мой шаблон', body:'Load #{load}\n{stops}\nDH {dh} mi · Loaded {loaded} mi' }); OPS.tplSel = id; opsSave(); render(); return true; }
+  if (a === 'aitpl') { const id = 'ai' + Date.now().toString(36); OPS.tpls.push({ id:id, name:'Предложил ИИ', body:'🚛 Load #{load} — {driver} (Truck {unit})\n\n📍 {stops}\n\n🧭 DH {dh} mi → Loaded {loaded} mi (total {total})\n⏰ First stop: {pu_time}\n📝 {notes}\n\nReply 👍 when you start rolling.' }); OPS.tplSel = id; opsSave(); toast('ИИ предложил шаблон: проверьте и поправьте'); render(); return true; }
+  if (a === 'defTpl') { OPS.tplDef = OPS.tplSel; opsSave(); render(); return true; }
+  if (a === 'delTpl') { if (OPS.tpls.length > 1) { OPS.tpls = OPS.tpls.filter((t) => t.id !== OPS.tplSel); if (OPS.tplDef === OPS.tplSel) OPS.tplDef = OPS.tpls[0].id; OPS.tplSel = OPS.tplDef; opsSave(); } render(); return true; }
+  if (a === 'closeedit') { OPS.gEdit = ''; render(); return true; }
+  if (a === 'saveedit') {
+    const e = {}; document.querySelectorAll('[data-ope]').forEach((el) => { const k = el.dataset.ope; e[k] = ['rate','loaded','dh'].indexOf(k) >= 0 ? (+el.value || 0) : el.value; });
+    OPS.edits[OPS.gEdit] = Object.assign({}, OPS.edits[OPS.gEdit] || {}, e); OPS.gEdit = ''; opsSave(); toast('Груз сохранён, gross пересчитан'); render(); return true;
+  }
+  if (a === 'newload') { OPS.d = opsBlank(); S.view = 'dispatch'; render(); window.scrollTo(0, 0); return true; }
+  if (a === 'adddrv') { const n = (document.getElementById('opsNewDrv') || {}).value, u = (document.getElementById('opsNewUnit') || {}).value; if (!n) { toast('Впишите имя'); return true; } OPS.drivers.push({ n:n.trim(), unit:(u || '—').trim(), loc:'', cdl:'2027-12-31', med:'2027-12-31' }); opsSave(); toast('Водитель добавлен'); render(); return true; }
+  if (a === 'adddisp') { const n = (document.getElementById('opsNewDisp') || {}).value; if (!n) { toast('Впишите имя'); return true; } OPS.disps.push(n.trim()); opsSave(); toast('Диспетчер добавлен'); render(); return true; }
+  if (a === 'remind') { toast('Демо: напоминание ушло водителю в группу'); return true; }
+  if (a === 'brk') { const v = ((document.getElementById('opsMc') || {}).value || '').trim(); if (!v) { toast('Впишите MC или название'); return true; } OPS.brk = { mc:v, res:{ name:/^\d+$/.test(v) ? 'MC ' + v : v, age:4 + (v.length % 9), fac:['RTS','Triumph','OTR','WEX'][v.length % 4], pay:18 + (v.length % 15) } }; render(); return true; }
+  return false;
+}
+document.addEventListener('input', (e) => {
+  const el = e.target; if (!el || !el.dataset) return;
+  if (el.dataset.opf) {
+    const k = el.dataset.opf;
+    if (k.indexOf('stop.') === 0) { const p = k.split('.'); OPS.d.stops[+p[1]][p[2]] = el.value; } else OPS.d[k] = el.value;
+    opsRefresh(); return;
+  }
+  if (el.dataset.optbody !== undefined) { const t = OPS.tpls.filter((x) => x.id === OPS.tplSel)[0]; if (t) { t.body = el.value; opsSave(); const pv = document.getElementById('opsTplPrev'); if (pv) { const sample = { no:'1042', broker:'TQL', rate:'2450', driver:OPS.drivers[0].n, disp:OPS.disps[0], from:'Fontana, CA', notes:'Lumper paid by broker', dhO:'', ldO:'', stops:[{ t:'PU', fac:'Walmart DC #6031', city:'Fontana, CA', time:'11/27 08:00', ref:'4471023' },{ t:'DEL', fac:'Amazon PHX7', city:'Phoenix, AZ', time:'11/27 19:00', ref:'PO 88213' }] }; pv.textContent = opsFill(t.body, sample); } } return; }
+  if (el.dataset.optname !== undefined) { const t = OPS.tpls.filter((x) => x.id === OPS.tplSel)[0]; if (t) { t.name = el.value; opsSave(); } }
+});
+document.addEventListener('change', (e) => {
+  const el = e.target; if (!el || !el.dataset || !el.dataset.ops) return;
+  const k = el.dataset.ops, v = el.value;
+  if (v === '__add_driver') { S.view = 'people'; render(); return; }
+  if (v === '__add_disp') { S.view = 'people'; render(); return; }
+  OPS.d[k] = v;
+  if (k === 'driver') { const dr = opsDriver(v); if (dr.loc) OPS.d.from = dr.loc; render(); return; }
+  opsRefresh();
+});
+function opsAfterRender() {}
+try { const v0 = new URLSearchParams(location.search).get('view'); if (v0 && VIEWS[v0]) S.view = v0; } catch (e) {}
+try { window.OPS = OPS; } catch (e) {}
+
 render();
 
 /* for tests only: the app itself uses the private names above */
