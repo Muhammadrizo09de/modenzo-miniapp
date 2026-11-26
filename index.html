@@ -2459,7 +2459,7 @@ function draftClick(d) {
 }
 
 const VIEWS = { map:() => liveCard() + vMap(), team:vTeam, custom:vCustom, ai:vAi, support:vSupport, answers:vAnswers, setup:vSetup, ub:vUb, home:vHome, shift:vShift, updates:vUpdates, eta:vEta, groups:vGroups, features:vFeatures, help:vHelp, settings:vSettings, plans:vPlans, agents:vAgents, work:vWork, tz:vTz, board:vBoard, drivers:vDrivers };
-const TABS = [['home','Главная','home'],['updates','Апдейты','send'],['big','Большой экран','monitor'],['menu','Меню','menu'],['settings','Настройки','sliders']];
+const TABS = [['home','Главная','home'],['updates','Апдейты','send'],['ai','Спросить ИИ','spark'],['gross','Gross','chart'],['menu','Меню','menu']];
 const NAV = [['home','Главная','home'],['ub','Update Board','bell'],['map','Слежка','map'],['board','Доска грузов','truck'],['drivers','Водители','wheel'],['updates','Апдейты','send'],['eta','Расчёт ETA','pin'],['groups','Группы','users'],['features','Все функции','grid'],['team','Команда','users'],['help','Инструкция','help'],['settings','Настройки','sliders']];
 const TAB_OF = { team:'settings', ai:'home', support:'settings', answers:'settings', map:'home', ub:'home', shift:'home', eta:'home', board:'home', drivers:'home', groups:'home', help:'settings', plans:'settings', agents:'settings', work:'settings', tz:'settings' };
 
@@ -4027,7 +4027,7 @@ function renderInner() {
   const side = '<aside class="side"><div class="row" style="gap:10px;padding:0 6px">' + LOGO + '<div><h2 style="font-size:18px">Modenzo AI</h2><div class="xs muted">Расширенный экран</div></div></div>' + gsButton() + '<nav class="col" style="gap:4px" aria-label="Разделы">' +
     (typeof navTree === 'function' ? navTree() : NAV.map((n) => '<button class="navbtn' + (S.view === n[0] ? ' on' : '') + '" data-go="' + n[0] + '">' + ic(n[2], 18) + n[1] + '</button>').join('')) + '</nav>' +
     '<div class="col" style="margin-top:auto;gap:8px">' + sideExtra() + windowBar(true) + '<div class="card col" style="padding:12px;border-radius:16px;gap:4px;border-color:' + (S.son ? 'var(--mint-bd)' : 'var(--amber-bd)') + '"><span class="xs" style="font-weight:600;color:' + (S.son ? 'var(--mint-t)' : 'var(--amber)') + '">' + (S.son ? 'Апдейты включены' : 'Апдейты выключены') + '</span><span class="small sub">' + (S.son ? 'Следующий: ' + nextSlot() + ' (' + tzLabel() + ')' : S.slots.slice().sort().join(', ')) + '</span></div><div class="xs" style="color:var(--faint);padding:0 6px">Демо · данные примерные</div></div></aside>';
-  const tabbar = '<nav class="tabbar" aria-label="Разделы">' + TABS.map((t) => t[0] === 'big' ? '<button class="tab center" data-act="big" aria-label="Большой экран"><span class="fab">' + ic('monitor', 26, 'currentColor', 2) + '</span>' + t[1] + '</button>' : '<button class="tab' + (active === t[0] ? ' on' : '') + '" data-go="' + t[0] + '">' + ic(t[2], 22, 'currentColor', 1.8) + t[1] + '</button>').join('') + '</nav>';
+  const tabbar = '<nav class="tabbar" aria-label="Разделы">' + TABS.map((t) => t[0] === 'ai' ? '<button class="tab center" data-go="ai" aria-label="Спросить ИИ"><span class="fab">' + ic('spark', 26, 'currentColor', 2) + '</span>' + t[1] + '</button>' : '<button class="tab' + (active === t[0] ? ' on' : '') + '" data-go="' + t[0] + '">' + ic(t[2], 22, 'currentColor', 1.8) + t[1] + '</button>').join('') + '</nav>';
   const sheet = S.sheet ? '<div class="sheet-bg" data-act="closesheet"><div class="sheet" role="dialog" aria-modal="true" aria-label="Большой экран"><div class="row" style="gap:14px"><span class="icon" style="width:56px;height:56px;border-radius:16px;background:var(--blue-bg);color:var(--blue)">' + ic('monitor', 28, 'currentColor', 1.9) + '</span><div class="col" style="gap:4px"><h2 style="font-size:20px">Нужен экран побольше</h2><span class="small muted">Компьютер, ноутбук или планшет</span></div></div>' +
     '<div class="small sub" style="line-height:1.55">Расширенный экран с доской грузов работает на компьютере, ноутбуке или планшете. Откройте этого бота в Telegram на компьютере и нажмите ту же кнопку.</div>' +
     '<div class="grid2"><button class="btn" data-act="copylink">Скопировать ссылку</button><button class="btn primary" data-act="closesheet">Понятно</button></div></div></div>' : '';
@@ -4054,6 +4054,7 @@ function renderInner() {
   b2AfterRender();
   dropAfterRender();
   draftAfterRender();
+  if (typeof opsAfterRender2 === 'function') opsAfterRender2();
   if (tg && tg.BackButton) { try { if (S.view !== 'home') tg.BackButton.show(); else tg.BackButton.hide(); } catch (e) {} }
 }
 
@@ -4417,7 +4418,7 @@ function vDispatch() {
     '<div class="wrap" style="gap:10px">' + opsSelect('Водитель', 'driver', d.driver, drOpts, 'driver') + opsSelect('Диспетчер', 'disp', d.disp, OPS.disps.map((x) => [x, x]), 'disp') + '</div>' +
     '<div class="wrap" style="gap:10px">' + opsField('Где трак сейчас (для DH)', 'from', d.from, 'по GPS', ' list="opsCities"') + '</div></div>' +
     '<div class="col" style="gap:10px"><div class="row" style="justify-content:space-between"><div class="label">Стопы</div><span class="row" style="gap:6px"><button class="pill" data-opstop="add:PU">+ PU</button><button class="pill" data-opstop="add:DEL">+ DEL</button></span></div>' + stops + '</div>' +
-    '<div class="card col" style="padding:14px;border-radius:18px;gap:10px"><div class="label">Мили вручную (если нужно)</div><div class="wrap" style="gap:10px">' + opsField('Deadhead, mi', 'dhO', d.dhO, 'авто', ' inputmode="numeric"') + opsField('Loaded, mi', 'ldO', d.ldO, 'авто', ' inputmode="numeric"') + '</div>' + opsField('Заметки водителю', 'notes', d.notes, 'Lumper paid by broker, call 1h before') + '</div></div>';
+    '<div class="card col" style="padding:14px;border-radius:18px;gap:10px">' + opsField('Заметки водителю', 'notes', d.notes, 'Lumper paid by broker, call 1h before') + (OPS.manual || d.dhO || d.ldO ? '<div class="wrap" style="gap:10px">' + opsField('Deadhead вручную, mi', 'dhO', d.dhO, 'авто', ' inputmode="numeric"') + opsField('Loaded вручную, mi', 'ldO', d.ldO, 'авто', ' inputmode="numeric"') + '</div>' : '<button data-opact="manual" style="border:0;background:transparent;padding:0;text-align:left;color:var(--mint-t);font-weight:600;font-size:13px">Мили не те? Вписать вручную ›</button>') + '</div></div>';
   const right = '<div class="col" style="gap:14px;flex:1 1 320px;min-width:0"><div class="col" style="gap:10px"><div class="label">Расчёт</div><div id="opsCalc" class="col" style="gap:10px">' + opsCalcHtml() + '</div></div>' +
     '<div class="card col" style="padding:14px;border-radius:18px;gap:10px"><div class="row" style="justify-content:space-between"><div class="label">Сообщение водителю</div><button class="pill" data-go="templates" style="height:30px">' + ic('edit', 14) + ' Шаблоны</button></div><div class="wrap" style="gap:6px">' + tplChips + '</div><div id="opsPrev">' + opsPrevHtml() + '</div>' +
     '<div class="grid2"><button class="btn" data-opact="copy">' + ic('copy', 18) + 'Скопировать</button><button class="btn primary" data-opact="send">' + ic('send', 18, 'currentColor', 2) + 'Отправить</button></div>' +
@@ -4491,6 +4492,12 @@ function opsGrossTips(cur, prev, ls) {
   if (OPS.g.per === 'week' && OPS.g.by === 'all') { const left = OPS.goal - cur.gross; out.push([left <= 0 ? 'ok' : 'info', left <= 0 ? 'Недельная цель ' + $m(OPS.goal) + ' выполнена!' : 'До недельной цели осталось ' + $m(left) + '.']); }
   return out;
 }
+function opsEditSheet(ed) {
+  return ed ? '<div class="sheet-bg" data-opact="closeedit"><div class="sheet" role="dialog" aria-modal="true" aria-label="Редактировать груз"><h2 style="font-size:20px">Груз ' + esc(ed.id) + '</h2><span class="small muted">' + esc(ed.from + ' → ' + ed.to) + ' · ' + ed.date + '</span>' +
+    '<div class="wrap" style="gap:10px">' + [['rate','Ставка, $',ed.rate],['loaded','Loaded, mi',ed.loaded],['dh','Deadhead, mi',ed.dh]].map((f) => '<label class="col" style="gap:5px;flex:1 1 120px"><span class="xs muted" style="font-weight:600">' + f[1] + '</span><input data-ope="' + f[0] + '" value="' + f[2] + '" inputmode="decimal" style="height:44px;border-radius:12px;border:1px solid var(--line);background:var(--input);padding:0 12px;font-size:15px"></label>').join('') + '</div>' +
+    '<div class="wrap" style="gap:10px"><label class="col" style="gap:5px;flex:1 1 140px"><span class="xs muted" style="font-weight:600">Водитель</span><select data-ope="driver" style="height:44px;border-radius:12px;border:1px solid var(--line);background:var(--input);padding:0 10px;color:var(--text)">' + OPS.drivers.map((x) => '<option' + (x.n === ed.driver ? ' selected' : '') + '>' + esc(x.n) + '</option>').join('') + '</select></label><label class="col" style="gap:5px;flex:1 1 140px"><span class="xs muted" style="font-weight:600">Диспетчер</span><select data-ope="disp" style="height:44px;border-radius:12px;border:1px solid var(--line);background:var(--input);padding:0 10px;color:var(--text)">' + OPS.disps.map((x) => '<option' + (x === ed.disp ? ' selected' : '') + '>' + esc(x) + '</option>').join('') + '</select></label></div>' +
+    '<div class="grid2"><button class="btn" data-opact="closeedit">Отмена</button><button class="btn primary" data-opact="saveedit">Сохранить</button></div></div></div>' : '';
+}
 function vGross() {
   const g = OPS.g, all = opsLoads(), ls = opsFilter(all, g.per, 0), prev = opsSum(opsFilter(all, g.per, 1)), s = opsSum(ls);
   const kpi = (k, v, sub, col) => '<div class="card col" style="padding:14px;border-radius:16px;gap:3px"><span class="xs muted" style="font-weight:600">' + k + '</span><b style="font-size:22px;color:' + (col || 'var(--text)') + '">' + v + '</b>' + (sub ? '<span class="xs muted">' + sub + '</span>' : '') + '</div>';
@@ -4500,10 +4507,7 @@ function vGross() {
   const lb = (title, key, by) => { const rows = board(key), mx = rows.length ? rows[0][1].gross : 1; return '<div class="card col" style="padding:14px;border-radius:18px;gap:10px;flex:1 1 260px;min-width:0"><div class="label">' + title + '</div>' + (rows.length ? rows.map((r) => '<button data-opgw="' + by + ':' + esc(r[0]) + '" style="border:0;background:transparent;text-align:left;padding:0;display:flex;flex-direction:column;gap:5px"><span class="row" style="justify-content:space-between;width:100%"><b style="font-size:14px">' + esc(r[0]) + '</b><b style="font-size:14px">' + $m(r[1].gross) + '</b></span><span style="height:6px;border-radius:3px;background:var(--line2);display:block;width:100%"><span style="display:block;height:6px;border-radius:3px;background:var(--mint);width:' + Math.max(4, r[1].gross / mx * 100) + '%"></span></span><span class="xs muted">' + r[1].n + ' грузов · RPM ' + $r(r[1].rpm) + ' · DH ' + Math.round(r[1].dhp) + '%</span></button>').join('') : '<span class="small muted">Нет грузов за период</span>') + '</div>'; };
   const rows = ls.slice().sort((a, b) => b.date.localeCompare(a.date)).slice(0, 40);
   const ed = OPS.gEdit ? all.filter((l) => l.id === OPS.gEdit)[0] : null;
-  const edit = ed ? '<div class="sheet-bg" data-opact="closeedit"><div class="sheet" role="dialog" aria-modal="true" aria-label="Редактировать груз"><h2 style="font-size:20px">Груз ' + esc(ed.id) + '</h2><span class="small muted">' + esc(ed.from + ' → ' + ed.to) + ' · ' + ed.date + '</span>' +
-    '<div class="wrap" style="gap:10px">' + [['rate','Ставка, $',ed.rate],['loaded','Loaded, mi',ed.loaded],['dh','Deadhead, mi',ed.dh]].map((f) => '<label class="col" style="gap:5px;flex:1 1 120px"><span class="xs muted" style="font-weight:600">' + f[1] + '</span><input data-ope="' + f[0] + '" value="' + f[2] + '" inputmode="decimal" style="height:44px;border-radius:12px;border:1px solid var(--line);background:var(--input);padding:0 12px;font-size:15px"></label>').join('') + '</div>' +
-    '<div class="wrap" style="gap:10px"><label class="col" style="gap:5px;flex:1 1 140px"><span class="xs muted" style="font-weight:600">Водитель</span><select data-ope="driver" style="height:44px;border-radius:12px;border:1px solid var(--line);background:var(--input);padding:0 10px;color:var(--text)">' + OPS.drivers.map((x) => '<option' + (x.n === ed.driver ? ' selected' : '') + '>' + esc(x.n) + '</option>').join('') + '</select></label><label class="col" style="gap:5px;flex:1 1 140px"><span class="xs muted" style="font-weight:600">Диспетчер</span><select data-ope="disp" style="height:44px;border-radius:12px;border:1px solid var(--line);background:var(--input);padding:0 10px;color:var(--text)">' + OPS.disps.map((x) => '<option' + (x === ed.disp ? ' selected' : '') + '>' + esc(x) + '</option>').join('') + '</select></label></div>' +
-    '<div class="grid2"><button class="btn" data-opact="closeedit">Отмена</button><button class="btn primary" data-opact="saveedit">Сохранить</button></div></div></div>' : '';
+  const edit = opsEditSheet(ed);
   return mzHead('Gross board', 'Сколько заработали: вся компания, водитель или диспетчер', 'home') +
     '<div class="wrap" style="gap:6px">' + OPS_PER.map((p) => '<button class="pill' + (g.per === p[0] ? ' on' : '') + '" data-opper="' + p[0] + '">' + p[1] + '</button>').join('') + '</div>' +
     '<div class="wrap" style="gap:6px">' + [['all','Вся компания'],['driver','По водителю'],['disp','По диспетчеру']].map((b) => '<button class="seg' + (g.by === b[0] ? ' on' : '') + '" data-opby="' + b[0] + '" style="height:40px;padding:0 14px;font-size:14px">' + b[1] + '</button>').join('') + '</div>' +
@@ -4547,18 +4551,9 @@ function vBroker() {
       '<span class="xs" style="color:var(--amber)">Пример ответа. В рабочей версии данные из FMCSA и факторинговых компаний.</span></div>' : '');
 }
 
-/* ---------- agents added ---------- */
-AGENTS.push(
-  ['dispatcher','Диспеч-агент','Из rate con сам делает груз, считает DH и RPM, готовит сообщение водителю по вашему шаблону. Отправляет только после вашего OK','',[]],
-  ['grossai','Gross-аналитик','Каждый вечер: gross за день, кто отстаёт от цели, у кого высокий deadhead и низкий RPM','',[]],
-  ['papers','Документы водителей','Предупредит за 30 дней до конца CDL и медкарты','',[]],
-  ['brokerchk','Проверка брокера','Перед диспечем проверит брокера по MC и предупредит о риске','',[]],
-  ['translate','Переводчик для брокера','Вы пишете по-русски или по-узбекски, брокер получает чистый английский. И наоборот','',[]],
-  ['nonstop','ИИ без остановки','Если одна модель ИИ перегружена, бот сам переключится на другую и сохранит весь контекст','',[]]
-);
-Object.assign(S.ag.on, { dispatcher:true, grossai:true, papers:true, brokerchk:false, translate:true, nonstop:true });
-Object.assign(VIEWS, { menu:vMenu, dispatch:vDispatch, templates:vTemplates, gross:vGross, people:vPeople, papers:vPapers, broker:vBroker });
-Object.assign(TAB_OF, { menu:'menu', dispatch:'menu', templates:'menu', gross:'menu', people:'menu', papers:'menu', broker:'menu', features:'menu' });
+/* new agents live in their own list: the bot's /agents payload keeps only the original 6 */
+Object.assign(VIEWS, { menu:vMenu, dispatch:vDispatch, templates:vTemplates, gross:vGross, people:vPeople, papers:vPapers, broker:vBroker, home:vHome2, agents:vAgents2 });
+Object.assign(TAB_OF, { ai:'ai', gross:'gross', updates:'updates', shift:'updates', home:'home', menu:'menu', dispatch:'menu', templates:'menu', people:'menu', papers:'menu', broker:'menu', features:'menu' });
 
 /* ---------- events ---------- */
 function opsRefresh() {
@@ -4589,7 +4584,9 @@ function opsClick(d) {
   if (d.opgoal) { OPS.goal = Math.max(1000, OPS.goal + +d.opgoal); opsSave(); render(); return true; }
   if (d.opedit) { OPS.gEdit = d.opedit; render(); return true; }
   if (d.opdel) { const p = d.opdel.split(':'); if (p[0] === 'd' && OPS.drivers.length > 1) OPS.drivers.splice(+p[1], 1); if (p[0] === 'p' && OPS.disps.length > 1) OPS.disps.splice(+p[1], 1); opsSave(); render(); return true; }
+  if (typeof opsClick2 === 'function' && opsClick2(d)) return true;
   const a = d.opact; if (!a) return false;
+  if (a === 'manual') { OPS.manual = true; render(); return true; }
   if (a === 'copy') { const txt = opsFill(opsTplFor(OPS.d).body, OPS.d); try { navigator.clipboard.writeText(txt); toast('Текст скопирован'); } catch (e) { toast('Не получилось скопировать'); } return true; }
   if (a === 'send') { const c = opsCalc(); if (!OPS.d.no || OPS.d.stops.filter((s) => s.city).length < 2) { toast('Заполните номер груза и минимум 2 стопа'); return true; } OPS.sendSheet = true; render(); return true; }
   if (a === 'closesend') { OPS.sendSheet = false; render(); return true; }
@@ -4638,6 +4635,225 @@ document.addEventListener('change', (e) => {
 function opsAfterRender() {}
 try { const v0 = new URLSearchParams(location.search).get('view'); if (v0 && VIEWS[v0]) S.view = v0; } catch (e) {}
 try { window.OPS = OPS; } catch (e) {}
+
+/* ===== Modenzo OPS v2: new home, AI tab, gross with money-based advice, agents team, clear papers ===== */
+try { document.head.insertAdjacentHTML('beforeend', '<style>' +
+  '@keyframes mzIn{from{opacity:0;transform:translateY(8px)}to{opacity:1;transform:none}}' +
+  '@keyframes mzPulse{0%{box-shadow:0 0 0 0 rgba(61,220,151,.55)}70%{box-shadow:0 0 0 9px rgba(61,220,151,0)}100%{box-shadow:0 0 0 0 rgba(61,220,151,0)}}' +
+  '@keyframes mzGlow{0%,100%{opacity:.55}50%{opacity:1}}' +
+  '.mz-in>*{animation:mzIn .38s ease both}.mz-in>*:nth-child(2){animation-delay:.04s}.mz-in>*:nth-child(3){animation-delay:.08s}.mz-in>*:nth-child(4){animation-delay:.12s}.mz-in>*:nth-child(5){animation-delay:.16s}.mz-in>*:nth-child(6){animation-delay:.2s}.mz-in>*:nth-child(n+7){animation-delay:.24s}' +
+  '.mz-live{width:9px;height:9px;border-radius:50%;background:var(--mint);animation:mzPulse 1.8s infinite;flex:none;display:inline-block}' +
+  '.mz-hero{position:relative;overflow:hidden;border-radius:26px;padding:20px;border:1px solid var(--mint-bd);background:radial-gradient(120% 90% at 100% 0%,rgba(61,220,151,.22) 0%,rgba(61,220,151,0) 55%),radial-gradient(90% 80% at 0% 100%,rgba(157,184,255,.16) 0%,rgba(157,184,255,0) 60%),var(--card)}' +
+  '.mz-hero:after{content:"";position:absolute;inset:0;background:linear-gradient(120deg,transparent 30%,rgba(255,255,255,.05) 50%,transparent 70%);pointer-events:none}' +
+  '.mz-big{font-family:"Space Grotesk",Inter,sans-serif;font-weight:700;letter-spacing:-.02em;line-height:1}' +
+  '.mz-sec{display:flex;align-items:center;justify-content:space-between;margin-top:4px}.mz-sec h3{font-size:17px}.mz-sec a,.mz-sec button{background:none;border:0;color:var(--mint-t);font-weight:600;font-size:13px}' +
+  '.mz-act{border:1px solid var(--line);background:var(--card);border-radius:20px;padding:14px;display:flex;flex-direction:column;gap:10px;text-align:left;position:relative;min-height:112px}' +
+  '.mz-act .ico{width:42px;height:42px;border-radius:14px;display:flex;align-items:center;justify-content:center}' +
+  '.mz-badge{position:absolute;top:12px;right:12px;min-width:22px;height:22px;border-radius:11px;background:var(--red);color:#fff;font-size:12px;font-weight:700;display:flex;align-items:center;justify-content:center;padding:0 6px}' +
+  '.mz-seg{display:flex;gap:4px;padding:4px;border-radius:14px;background:var(--raised);border:1px solid var(--line2);overflow-x:auto;scrollbar-width:none}.mz-seg::-webkit-scrollbar{display:none}' +
+  '.mz-seg button{flex:1 0 auto;height:34px;padding:0 12px;border:0;border-radius:10px;background:transparent;color:var(--muted);font-weight:600;font-size:13px;white-space:nowrap}.mz-seg button.on{background:var(--card);color:var(--text);box-shadow:0 1px 0 var(--line3)}' +
+  '.mz-rec{border:1px solid var(--line);background:var(--card);border-radius:18px;padding:14px;display:flex;gap:12px}' +
+  '.mz-ai{color:var(--violet)}.mz-ai-bg{background:var(--violet-bg);border-color:var(--violet-bd)}' +
+  '.mz-av{width:34px;height:34px;border-radius:11px;display:flex;align-items:center;justify-content:center;font-weight:700;font-size:13px;flex:none}' +
+  '@media (min-width:900px){.app.wide .mz-acts{grid-template-columns:repeat(4,minmax(0,1fr))}}' +
+  '.tab.center .fab{background:linear-gradient(135deg,var(--mint),#7CE7FF)!important}' +
+  '</style>'); } catch (e) {}
+
+const OPS_AG2 = [
+  ['dispatcher','Диспеч-агент','Загрузили rate con: сам заполнит груз, посчитает DH и RPM и подготовит сообщение водителю по шаблону.','Готов груз #1042 для Akmal R.: DH 15 mi, RPM $2.41. Отправить?','truck','var(--mint-bg)','var(--mint-t)'],
+  ['grossai','Gross-аналитик','Каждый вечер в 21:00: gross за день, прогноз недели и где теряются деньги.','Сегодня $8,240. Неделя идёт на $47k из $45k. У Mike D. 24% пустых миль.','chart','var(--violet-bg)','var(--violet)'],
+  ['translate','Переводчик для брокера','Пишете брокеру по-русски или по-узбекски: он получает чистый английский. Ответ переведёт вам.','«Водитель на месте, ждёт док» → "Driver is on site, waiting for a door."','chat','var(--blue-bg)','var(--blue)'],
+  ['papers','Документы водителей','Водитель прислал фото CDL или медкарты: ИИ запомнит дату и напомнит за 30 дней.','У Bekzod T. CDL кончается через 12 дней. Напомнить ему?','idcard','var(--amber-bg)','var(--amber)'],
+  ['brokerchk','Проверка брокера','Перед диспечем проверит брокера по MC: authority, факторинг, жалобы.','Брокер в rate con #1042 без факторинга. Будьте осторожны.','shield','var(--red-bg)','var(--red)'],
+  ['nonstop','ИИ без перебоев','Если одна модель ИИ занята, бот сам переключится на другую и сохранит весь разговор.','Gemini перегружен — переключился на запасную модель. Вы ничего не заметили.','bolt','var(--mint-bg)','var(--mint-t)']
+];
+if (!OPS.agOn) OPS.agOn = { dispatcher:true, grossai:true, translate:true, papers:true, brokerchk:false, nonstop:true };
+OPS.agOpen = '';
+
+/* ---------- helpers ---------- */
+function opsInitials(n) { return String(n).split(/\s+/).map((x) => x[0]).join('').slice(0, 2).toUpperCase(); }
+const OPS_AVC = [['var(--mint-bg)','var(--mint-t)'],['var(--blue-bg)','var(--blue)'],['var(--violet-bg)','var(--violet)'],['var(--amber-bg)','var(--amber)'],['var(--red-bg)','var(--red)']];
+function opsAv(n, i) { const c = OPS_AVC[(i == null ? String(n).length : i) % OPS_AVC.length]; return '<span class="mz-av" style="background:' + c[0] + ';color:' + c[1] + '">' + esc(opsInitials(n)) + '</span>'; }
+function opsSpark(vals, w, h, col) {
+  w = w || 120; h = h || 36; const mx = Math.max(1, ...vals), mn = Math.min(...vals), st = w / Math.max(1, vals.length - 1);
+  const pts = vals.map((v, i) => (i * st).toFixed(1) + ',' + (h - 3 - (v - mn) / Math.max(1, mx - mn) * (h - 8)).toFixed(1));
+  return '<svg width="' + w + '" height="' + h + '" viewBox="0 0 ' + w + ' ' + h + '" style="display:block;overflow:visible"><defs><linearGradient id="mzsg" x1="0" x2="0" y1="0" y2="1"><stop offset="0" stop-color="' + (col || 'var(--mint)') + '" stop-opacity=".35"/><stop offset="1" stop-color="' + (col || 'var(--mint)') + '" stop-opacity="0"/></linearGradient></defs>' +
+    '<polygon points="0,' + h + ' ' + pts.join(' ') + ' ' + w + ',' + h + '" fill="url(#mzsg)"/><polyline points="' + pts.join(' ') + '" fill="none" stroke="' + (col || 'var(--mint)') + '" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"/>' +
+    '<circle cx="' + pts[pts.length - 1].split(',')[0] + '" cy="' + pts[pts.length - 1].split(',')[1] + '" r="3.5" fill="' + (col || 'var(--mint)') + '"/></svg>';
+}
+function opsDaily(n) { const all = opsLoads(), out = []; for (let i = n - 1; i >= 0; i--) { const k = new Date(Date.now() - i * 864e5).toISOString().slice(0, 10); out.push(all.filter((l) => l.date === k).reduce((a, l) => a + l.rate, 0)); } return out; }
+function opsCount(n, pre) { return '<span data-count="' + Math.round(n) + '" data-pre="' + (pre || '') + '">' + (pre || '') + Math.round(n).toLocaleString('en-US') + '</span>'; }
+
+/* ---------- home ---------- */
+function vHome2() {
+  const hr = +(nowParts().hh || new Date().getHours());
+  const hi = hr < 5 ? 'Доброй ночи' : hr < 12 ? 'Доброе утро' : hr < 18 ? 'Добрый день' : 'Добрый вечер';
+  const all = opsLoads(), wk = opsSum(all.filter((l) => (Date.now() - new Date(l.date + 'T12:00:00')) < 7 * 864e5)), pw = opsSum(all.filter((l) => { const d = Date.now() - new Date(l.date + 'T12:00:00'); return d >= 7 * 864e5 && d < 14 * 864e5; }));
+  const ch = pw.gross ? Math.round((wk.gross - pw.gross) / pw.gross * 100) : 0;
+  const late = LOADS.filter((l) => l.v === 'late'), tight = LOADS.filter((l) => l.v === 'tight' || l.v === 'warn');
+  const moving = LOADS.filter((l) => l.st === 'transit').length || LOADS.length;
+  const pl = (n, a, b, c) => { const m = n % 10, h = n % 100; return n + ' ' + (m === 1 && h !== 11 ? a : m >= 2 && m <= 4 && (h < 12 || h > 14) ? b : c); };
+  const summary = pl(moving, 'трак', 'трака', 'траков') + ' в пути. ' + (late.length ? late.length + ' опаздывает (load ' + late[0].id + ', ' + (late[0].verdict || '').replace('Опоздает ', '') + '). ' : 'Опозданий нет. ') + (tight.length ? tight.length + ' впритык. ' : '') + 'Gross за неделю ' + $m(wk.gross) + (ch ? (ch > 0 ? ', на ' + ch + '% больше' : ', на ' + (-ch) + '% меньше') + ' прошлой.' : '.');
+  const pending = S.upd === 'pending' ? 1 : 0;
+  const act = (go, icon, bg, fg, t, sub, badge) => '<button class="mz-act" data-go="' + go + '"><span class="ico" style="background:' + bg + ';color:' + fg + '">' + ic(icon, 22, 'currentColor', 2) + '</span><span class="col" style="gap:2px"><b style="font-size:15px">' + t + '</b><span class="xs muted" style="line-height:1.35">' + sub + '</span></span>' + (badge ? '<span class="mz-badge">' + badge + '</span>' : '') + '</button>';
+  const agOn = AGENTS.filter((a) => S.ag.on[a[0]]).length + OPS_AG2.filter((a) => OPS.agOn[a[0]]).length;
+  const wb = !isWide() ? windowBar() : '';
+  return '<div class="col mz-in" style="gap:16px">' + (wb ? '<div class="wrap">' + wb + '</div>' : '') +
+    '<div class="row" style="justify-content:space-between"><div class="row" style="gap:10px">' + LOGO + '<div><h2 style="font-size:19px">Modenzo AI</h2><div class="xs muted row" style="gap:6px"><span class="mz-live"></span>Онлайн · следит 24/7</div></div></div>' +
+      '<button class="chip ' + (S.son ? 'c-done' : 'c-dev') + '" data-go="shift" style="height:30px">' + (S.son ? 'Апдейты ' + nextSlot() : 'Апдейты выкл.') + '</button></div>' +
+    '<div class="mz-hero col" style="gap:14px"><div class="row" style="justify-content:space-between;align-items:flex-start;gap:12px"><div class="col" style="gap:4px;min-width:0"><span class="xs row mz-ai" style="gap:6px;font-weight:700">' + ic('spark', 15) + 'СВОДКА ИИ · СЕЙЧАС</span><h2 style="font-size:22px">' + hi + '!</h2></div>' +
+      '<div class="col" style="align-items:flex-end;gap:2px"><span class="xs muted">неделя</span><b class="mz-big" style="font-size:24px">' + opsCount(wk.gross, '$') + '</b><span class="xs" style="color:' + (ch >= 0 ? 'var(--mint-t)' : 'var(--red)') + '">' + (ch >= 0 ? '▲ ' : '▼ ') + Math.abs(ch) + '%</span></div></div>' +
+      '<div id="mzType" class="sub" data-full="' + esc(summary) + '" style="font-size:15px;line-height:1.5;min-height:46px">' + esc(summary) + '</div>' +
+      '<div class="row" style="justify-content:space-between;gap:12px;align-items:flex-end"><div style="flex:1;min-width:0">' + opsSpark(opsDaily(14), 200, 40) + '<span class="xs muted">gross за 14 дней</span></div>' +
+      '<button class="btn primary" data-go="ai" style="height:44px;border-radius:14px;font-size:14px;flex:none">' + ic('spark', 17, 'currentColor', 2) + 'Спросить ИИ</button></div></div>' +
+    '<div class="grid2 mz-acts">' + act('dispatch', 'truck', 'var(--mint-bg)', 'var(--mint-t)', 'Диспеч груза', 'DH и RPM сами, текст водителю готов') +
+      act('updates', 'send', 'var(--blue-bg)', 'var(--blue)', 'Апдейты', pending ? 'Ждёт вашего решения' : 'Все решены', pending || '') +
+      act('gross', 'chart', 'var(--violet-bg)', 'var(--violet)', 'Gross board', 'Деньги и советы ИИ') +
+      act('board', 'grid', 'var(--amber-bg)', 'var(--amber)', 'Доска грузов', 'Все грузы и статусы') + '</div>' +
+    '<div class="mz-sec"><h3>Требует внимания</h3><span class="xs muted">пример</span></div>' +
+    '<div class="col" style="gap:10px">' + tkHomeCard() +
+      (late[0] ? alertRow('eta', 'clock', 'var(--red-bg)', 'var(--red)', 'Load ' + late[0].id + ' · ' + esc(late[0].driver), esc(late[0].verdict || 'Опоздает'), 'var(--red)', 'var(--red-bd)') : '') +
+      (tight[0] ? alertRow('eta', 'warn', 'var(--amber-bg)', 'var(--amber)', 'Load ' + tight[0].id + ' · ' + esc(tight[0].driver), esc(tight[0].verdict || 'Впритык'), 'var(--amber)') : '') + '</div>' +
+    '<button class="card row" data-go="agents" style="text-align:left;padding:14px 16px;border-radius:20px;gap:12px"><span class="row" style="gap:0">' + OPS_AG2.slice(0, 4).map((a, i) => '<span class="mz-av" style="width:30px;height:30px;border-radius:10px;margin-left:' + (i ? -8 : 0) + 'px;border:2px solid var(--card);background:' + a[5] + ';color:' + a[6] + '">' + ic(a[4], 15, 'currentColor', 2) + '</span>').join('') + '</span>' +
+      '<span class="col" style="flex:1;gap:2px"><b style="font-size:15px">ИИ-команда: ' + agOn + ' агентов</b><span class="xs muted">Следят за водителями и деньгами, пишут только вам</span></span>' + ic('chev', 18, 'var(--muted)', 2) + '</button>' +
+    (!workingNow() ? '<button class="card row" data-go="work" style="text-align:left;padding:12px 16px;border-radius:16px;gap:12px"><span class="icon" style="width:36px;height:36px;border-radius:10px;background:var(--raised);color:var(--sub)">' + ic('clock', 18, 'currentColor', 2) + '</span><span class="col" style="flex:1;gap:2px"><b style="font-size:14px">Сейчас не рабочее время</b><span class="xs muted">Бот только анализирует. Сводка придёт в начале смены.</span></span></button>' : '') +
+    '</div>';
+}
+
+/* ---------- gross v2 ---------- */
+function opsRecs(ls, s, prev) {
+  const recs = [], g = OPS.g, by = (key) => { const m = {}; ls.forEach((l) => { (m[l[key]] = m[l[key]] || []).push(l); }); return Object.keys(m).map((k) => [k, opsSum(m[k]), m[k]]); };
+  const days = opsRange(g.per)[2];
+  // 1) pace / forecast
+  if (g.per === 'week' && g.by === 'all') {
+    const dow = (new Date().getDay() + 6) % 7 + 1, wtd = opsSum(opsLoads().filter((l) => { const d = new Date(l.date + 'T12:00:00'), m = new Date(); m.setHours(0, 0, 0, 0); m.setDate(m.getDate() - dow + 1); return d >= m; }));
+    const fc = wtd.gross / dow * 7, gap = fc - OPS.goal;
+    recs.push({ k:gap >= 0 ? 'ok' : 'warn', icon:'chart', money:gap, t:gap >= 0 ? 'Неделя закроется выше цели' : 'Не хватает до цели недели', d:'С понедельника ' + $m(wtd.gross) + ' за ' + dow + ' дн. Прогноз на неделю ' + $m(fc) + ' при цели ' + $m(OPS.goal) + '.' + (gap < 0 ? ' Нужно ещё примерно ' + Math.ceil(-gap / Math.max(1, s.gross / Math.max(1, s.n))) + ' груза.' : ''), btn:gap < 0 ? ['Диспеч груза', 'opact', 'newload'] : null });
+  }
+  const drv = by('driver').filter((x) => x[1].n >= 2);
+  if (drv.length > 1 && s.rpm) {
+    // 2) low RPM driver: money if brought to fleet average
+    const low = drv.slice().sort((a, b) => a[1].rpm - b[1].rpm)[0];
+    const gain = (s.rpm - low[1].rpm) * low[1].ld;
+    if (gain > 50) recs.push({ k:'warn', icon:'money', money:gain, t:low[0] + ': низкий RPM', d:'RPM ' + $r(low[1].rpm) + ' против ' + $r(s.rpm) + ' в среднем. Если брать ему грузы по среднему RPM, это ещё ' + $m(gain) + ' за этот период.', btn:['Его грузы', 'opgw', 'driver:' + low[0]] });
+    // 3) deadhead waste
+    const avgDh = s.dhp, hi = drv.slice().sort((a, b) => b[1].dhp - a[1].dhp)[0];
+    const extra = (hi[1].dhp - avgDh) / 100 * (hi[1].ld + hi[1].dh), loss = extra * s.all;
+    if (loss > 50) recs.push({ k:'warn', icon:'route', money:loss, t:hi[0] + ': много пустых миль', d:Math.round(hi[1].dhp) + '% deadhead против ' + Math.round(avgDh) + '% у флота: лишние ~' + Math.round(extra) + ' mi, это примерно ' + $m(loss) + '. Ищите обратный груз рядом с последней выгрузкой.', btn:['Его грузы', 'opgw', 'driver:' + hi[0]] });
+    // 4) idle driver
+    const idle = OPS.drivers.map((d) => [d.n, ls.filter((l) => l.driver === d.n).length]).sort((a, b) => a[1] - b[1])[0];
+    if (idle && idle[1] < Math.max(2, s.n / OPS.drivers.length * 0.6)) recs.push({ k:'info', icon:'wheel', money:s.n ? s.gross / s.n : 0, t:idle[0] + ': мало грузов', d:'Всего ' + idle[1] + ' за период при среднем ' + Math.round(s.n / OPS.drivers.length) + '. Один груз ему добавит около ' + $m(s.n ? s.gross / s.n : 0) + '.', btn:['Дать груз', 'opdisp', idle[0]] });
+  }
+  // 5) best vs worst broker
+  const br = by('broker').filter((x) => x[1].n >= 3).sort((a, b) => b[1].rpm - a[1].rpm);
+  if (br.length > 1) { const b0 = br[0], b1 = br[br.length - 1]; recs.push({ k:'ok', icon:'shield', money:(b0[1].rpm - b1[1].rpm) * b1[1].ld, t:'Лучше платит ' + b0[0], d:b0[0] + ' в среднем ' + $r(b0[1].rpm) + '/mi, ' + b1[0] + ' только ' + $r(b1[1].rpm) + '. Берите у ' + b0[0] + ' в первую очередь, у ' + b1[0] + ' торгуйтесь.', btn:null }); }
+  // 6) best lane (destination)
+  const dest = by('to').filter((x) => x[1].n >= 2).sort((a, b) => b[1].rpm - a[1].rpm)[0];
+  if (dest && days >= 30) recs.push({ k:'ok', icon:'pin', money:0, t:'Самое выгодное направление', d:'Грузы в ' + dest[0] + ': ' + $r(dest[1].rpm) + '/mi (' + dest[1].n + ' грузов). Ищите похожие.', btn:null });
+  if (prev.gross && g.per !== 'week') { const c = (s.gross - prev.gross) / prev.gross * 100; recs.unshift({ k:c >= 0 ? 'ok' : 'warn', icon:'chart', money:s.gross - prev.gross, t:c >= 0 ? 'Растём' : 'Gross упал', d:(c >= 0 ? '+' : '') + Math.round(c) + '% к прошлому периоду (' + $m(prev.gross) + ').', btn:null }); }
+  return recs.sort((a, b) => Math.abs(b.money) - Math.abs(a.money)).slice(0, 5);
+}
+function vGross2() {
+  const g = OPS.g, all = opsLoads(), ls = opsFilter(all, g.per, 0), prev = opsSum(opsFilter(all, g.per, 1)), s = opsSum(ls);
+  const ch = prev.gross ? Math.round((s.gross - prev.gross) / prev.gross * 100) : 0, recs = opsRecs(ls, s, prev);
+  const whoList = g.by === 'driver' ? OPS.drivers.map((x) => x.n) : g.by === 'disp' ? OPS.disps : [];
+  const kpi = (k, v, sub, col) => '<div class="card col" style="padding:12px 14px;border-radius:16px;gap:3px"><span class="xs muted" style="font-weight:600">' + k + '</span><b class="mz-big" style="font-size:20px;color:' + (col || 'var(--text)') + '">' + v + '</b>' + (sub ? '<span class="xs muted">' + sub + '</span>' : '') + '</div>';
+  const board = (key) => { const m = {}; ls.forEach((l) => { (m[l[key]] = m[l[key]] || []).push(l); }); return Object.keys(m).map((k) => [k, opsSum(m[k])]).sort((a, b) => b[1].gross - a[1].gross); };
+  const lb = (title, key) => { const rows = board(key); return '<div class="card col" style="padding:6px 0;border-radius:20px;flex:1 1 280px;min-width:0"><div class="label" style="padding:10px 16px 4px">' + title + '</div>' + (rows.length ? rows.map((r, i) => '<button data-opgw="' + key + ':' + esc(r[0]) + '" class="row" style="border:0;background:transparent;text-align:left;padding:10px 16px;gap:12px;width:100%;border-top:' + (i ? '1px solid var(--line2)' : '0') + '"><span class="xs muted" style="width:14px;font-weight:700">' + (i + 1) + '</span>' + opsAv(r[0], i) + '<span class="col" style="flex:1;min-width:0;gap:2px"><b style="font-size:14px">' + esc(r[0]) + '</b><span class="xs muted">' + r[1].n + ' гр. · RPM ' + $r(r[1].rpm) + ' · DH ' + Math.round(r[1].dhp) + '%</span></span><b style="font-size:15px">' + $m(r[1].gross) + '</b></button>').join('') : '<span class="small muted" style="padding:8px 16px 14px">Нет грузов</span>') + '</div>'; };
+  const rows = ls.slice().sort((a, b) => b.date.localeCompare(a.date)), lim = OPS.gMore ? 60 : 8;
+  const ed = OPS.gEdit ? all.filter((l) => l.id === OPS.gEdit)[0] : null;
+  const recCol = { ok:['var(--mint-bg)','var(--mint-t)'], warn:['var(--amber-bg)','var(--amber)'], info:['var(--blue-bg)','var(--blue)'] };
+  const scope = g.by === 'all' ? 'вся компания' : g.who;
+  return '<div class="col mz-in" style="gap:14px">' + mzHead('Gross board', 'Сколько заработали и где теряем', 'home') +
+    '<div class="mz-seg">' + OPS_PER.map((p) => '<button class="' + (g.per === p[0] ? 'on' : '') + '" data-opper="' + p[0] + '">' + p[1] + '</button>').join('') + '</div>' +
+    '<div class="mz-seg">' + [['all','Компания'],['driver','Водитель'],['disp','Диспетчер']].map((b) => '<button class="' + (g.by === b[0] ? 'on' : '') + '" data-opby="' + b[0] + '">' + b[1] + '</button>').join('') + '</div>' +
+    (whoList.length ? '<div class="row" style="gap:8px;overflow-x:auto;padding-bottom:2px">' + whoList.map((w, i) => '<button data-opwho="' + esc(w) + '" class="row" style="flex:none;gap:8px;height:42px;padding:0 12px 0 4px;border-radius:21px;border:1px solid ' + (g.who === w ? 'var(--mint)' : 'var(--line)') + ';background:' + (g.who === w ? 'var(--mint-bg)' : 'var(--card)') + '">' + opsAv(w, i).replace('mz-av"', 'mz-av" ').replace('width:34px', '') + '<b style="font-size:13px">' + esc(w) + '</b></button>').join('') + '</div>' : '') +
+    '<div class="mz-hero col" style="gap:12px"><div class="row" style="justify-content:space-between;align-items:flex-start"><span class="col" style="gap:6px"><span class="xs muted" style="font-weight:600">GROSS · ' + esc(OPS_PER.filter((p) => p[0] === g.per)[0][1].toUpperCase()) + ' · ' + esc(scope) + '</span><b class="mz-big" style="font-size:40px">' + opsCount(s.gross, '$') + '</b></span>' +
+      '<span class="chip" style="height:28px;background:' + (ch >= 0 ? 'var(--mint-bg)' : 'var(--red-bg)') + ';color:' + (ch >= 0 ? 'var(--mint-t)' : 'var(--red)') + ';border-color:' + (ch >= 0 ? 'var(--mint-bd)' : 'var(--red-bd)') + '">' + (ch >= 0 ? '▲ ' : '▼ ') + Math.abs(ch) + '%</span></div>' + opsBars(ls) +
+      (g.per === 'week' && g.by === 'all' ? '<div class="col" style="gap:6px"><div class="row" style="justify-content:space-between"><span class="xs muted">Цель недели</span><span class="row" style="gap:6px"><button class="pill" data-opgoal="-1000" style="height:28px;padding:0 10px">−</button><b class="small">' + $m(OPS.goal) + '</b><button class="pill" data-opgoal="1000" style="height:28px;padding:0 10px">+</button></span></div><span style="height:8px;border-radius:4px;background:var(--line2);display:block"><span style="display:block;height:8px;border-radius:4px;background:linear-gradient(90deg,var(--mint),#7CE7FF);width:' + Math.min(100, s.gross / OPS.goal * 100) + '%"></span></span></div>' : '') + '</div>' +
+    '<div class="grid2">' + kpi('Грузов', s.n, s.n ? 'средний ' + $m(s.gross / s.n) : '') + kpi('RPM', $r(s.rpm), 'all-in ' + $r(s.all), 'var(--mint-t)') + kpi('Loaded', Math.round(s.ld).toLocaleString('en-US') + ' mi') + kpi('Deadhead', Math.round(s.dhp) + '%', Math.round(s.dh).toLocaleString('en-US') + ' mi', s.dhp > 15 ? 'var(--amber)' : '') + '</div>' +
+    '<div class="mz-sec"><h3 class="row" style="gap:8px"><span class="mz-ai">' + ic('spark', 18) + '</span>Что сделать, чтобы заработать больше</h3></div>' +
+    '<div class="col" style="gap:10px">' + (recs.length ? recs.map((r) => '<div class="mz-rec"><span class="mz-av" style="width:40px;height:40px;border-radius:13px;background:' + recCol[r.k][0] + ';color:' + recCol[r.k][1] + '">' + ic(r.icon, 20, 'currentColor', 2) + '</span><span class="col" style="flex:1;min-width:0;gap:4px"><span class="row" style="justify-content:space-between;gap:8px;align-items:flex-start"><b style="font-size:15px">' + esc(r.t) + '</b>' + (Math.abs(r.money) >= 50 ? '<b style="font-size:14px;white-space:nowrap;color:' + recCol[r.k][1] + '">' + (r.money >= 0 ? '+' : '−') + $m(Math.abs(r.money)) + '</b>' : '') + '</span><span class="small sub" style="line-height:1.45">' + esc(r.d) + '</span>' +
+      (r.btn ? '<span><button class="pill" data-' + r.btn[1] + '="' + esc(r.btn[2]) + '" style="height:32px;margin-top:2px">' + r.btn[0] + ' ›</button></span>' : '') + '</span></div>').join('') : '<div class="small muted">Мало данных за период для советов.</div>') + '</div>' +
+    (g.by === 'all' ? '<div class="row" style="flex-wrap:wrap;gap:14px;align-items:flex-start">' + lb('Водители', 'driver') + lb('Диспетчеры', 'disp') + '</div>' : '') +
+    '<div class="card col" style="padding:6px 0;border-radius:20px"><div class="row" style="justify-content:space-between;padding:10px 16px"><div class="label">Грузы · ' + rows.length + '</div><button class="pill" data-opact="newload" style="height:32px">+ Груз</button></div>' +
+      (rows.length ? rows.slice(0, lim).map((l) => '<div class="row" style="padding:10px 16px;border-top:1px solid var(--line2);gap:10px"><span class="col" style="flex:1;min-width:0;gap:2px"><b style="font-size:14px;white-space:nowrap;overflow:hidden;text-overflow:ellipsis">' + esc(l.from.split(',')[0] + ' → ' + l.to.split(',')[0]) + '</b><span class="xs muted">' + l.date.slice(5).replace('-', '.') + ' · ' + esc(l.driver) + ' · ' + esc(l.disp) + (OPS.edits[l.id] ? ' · изменён' : '') + '</span></span><span class="col" style="align-items:flex-end;gap:2px"><b style="font-size:14px">' + $m(l.rate) + '</b><span class="xs muted">' + $r(l.rate / l.loaded) + '/mi</span></span><button class="back" data-opedit="' + l.id + '" style="width:36px;height:36px;border-radius:10px" aria-label="Редактировать">' + ic('edit', 16) + '</button></div>').join('') +
+        (rows.length > lim ? '<button class="btn ghost" data-opact="more" style="height:44px;border:0;border-top:1px solid var(--line2);border-radius:0;width:100%;color:var(--mint-t)">Показать все ' + rows.length + '</button>' : '') : '<div class="small muted" style="padding:14px 16px">Нет грузов за этот период</div>') + '</div>' +
+    '<div class="xs" style="color:var(--faint)">Демо: данные примерные. В рабочей версии gross считается из ваших грузов и rate con.</div></div>' +
+    (ed ? vGross().split('<div class="sheet-bg" data-opact="closeedit">')[1] ? '<div class="sheet-bg" data-opact="closeedit">' + vGross().split('<div class="sheet-bg" data-opact="closeedit">')[1] : '' : '');
+}
+
+/* ---------- agents v2 ---------- */
+function vAgents2() {
+  const owner = S.plan === 'owner';
+  const watch = AGENTS.map((a) => {
+    const on = S.ag.on[a[0]], note = (a[0] === 'stopped' || a[0] === 'gps') && !owner ? 'После подключения ELD к серверу' : (a[0] === 'late' ? 'Ждёт подключения борда' : '');
+    return '<div class="card col" style="padding:14px 16px;border-radius:18px;gap:10px;' + (on ? 'border-color:var(--mint-bd)' : '') + '"><div class="row" style="gap:12px"><span class="col" style="flex:1;gap:3px;min-width:0"><b style="font-size:15px">' + a[1] + '</b><span class="small sub" style="line-height:1.45">' + a[2] + '</span>' + (note ? '<span class="xs" style="color:var(--blue)">' + note + '</span>' : '') + '</span><button class="toggle' + (on ? ' on' : '') + '" data-agt="' + a[0] + '" aria-label="' + a[1] + '"><span></span></button></div>' +
+      (a[3] && on ? '<div class="row" style="gap:6px;overflow-x:auto"><span class="xs muted" style="flex:none">Через</span>' + (a[4].indexOf(S.ag[a[3]]) >= 0 ? a[4] : a[4].concat([S.ag[a[3]]]).sort((x, y) => x - y)).map((n) => '<button class="pill' + (S.ag[a[3]] === n ? ' on' : '') + '" data-agn="' + a[3] + ':' + n + '" style="height:30px;flex:none">' + n + ' мин</button>').join('') + '</div>' : '') + '</div>';
+  }).join('');
+  const work = OPS_AG2.map((a) => {
+    const on = OPS.agOn[a[0]], open = OPS.agOpen === a[0];
+    return '<div class="card col" style="padding:14px 16px;border-radius:18px;gap:10px;' + (on ? 'border-color:var(--mint-bd)' : '') + '"><div class="row" style="gap:12px"><span class="mz-av" style="width:42px;height:42px;border-radius:14px;background:' + a[5] + ';color:' + a[6] + '">' + ic(a[4], 21, 'currentColor', 2) + '</span><span class="col" style="flex:1;gap:3px;min-width:0"><b style="font-size:15px">' + a[1] + '</b><span class="small sub" style="line-height:1.45">' + a[2] + '</span></span><button class="toggle' + (on ? ' on' : '') + '" data-opag="' + a[0] + '" aria-label="' + a[1] + '"><span></span></button></div>' +
+      '<button data-opagx="' + a[0] + '" style="border:0;background:transparent;padding:0;text-align:left;color:var(--mint-t);font-weight:600;font-size:13px">' + (open ? 'Скрыть пример' : 'Как это выглядит ›') + '</button>' +
+      (open ? '<div class="row" style="gap:8px;align-items:flex-start"><span style="flex:none">' + LOGO.replace(/width="32" height="32"/, 'width="24" height="24"') + '</span><div class="small" style="background:var(--raised);border:1px solid var(--line);border-radius:4px 16px 16px 16px;padding:10px 12px;line-height:1.45">' + esc(a[3]) + '</div></div>' : '') + '</div>';
+  }).join('');
+  const total = AGENTS.filter((a) => S.ag.on[a[0]]).length + OPS_AG2.filter((a) => OPS.agOn[a[0]]).length;
+  return '<div class="col mz-in" style="gap:14px">' + mzHead('ИИ-агенты', 'Ваша команда, которая не спит', 'menu') +
+    '<div class="mz-hero row" style="gap:14px"><span class="mz-big" style="font-size:44px">' + total + '</span><span class="col" style="gap:3px"><b style="font-size:16px">агентов работают</b><span class="small sub">Следят 24/7 и пишут только вам. В группы водителей без вашего OK не пишут.</span></span></div>' +
+    '<div class="mz-sec"><h3>Работают за вас</h3><span class="chip c-plan" style="height:22px">новые · демо</span></div><div class="col" style="gap:10px">' + work + '</div>' +
+    '<div class="mz-sec"><h3>Следят за водителями</h3><span class="chip c-done" style="height:22px">в боте</span></div><div class="col" style="gap:10px">' + watch + '</div>' +
+    '<div class="mz-sec"><h3>Автоответ водителю</h3></div><div class="col" style="gap:8px">' +
+      [['o','Выключен','Только сигнал вам'],['s','Предлагать ответ','Бот пишет черновик, вы нажимаете «Отправить» или «Изменить»'],['a','Авто','Бот отвечает сам, если команда молчит ' + S.ag.waiting + ' мин. Тревожные сообщения не трогает']].map((m) => {
+        const on = S.ag.ar === m[0];
+        return '<button data-agar="' + m[0] + '" class="card row" style="text-align:left;gap:12px;padding:12px 14px;border-radius:16px;' + (on ? 'border-color:var(--mint);background:var(--mint-bg)' : '') + '"><span style="width:20px;height:20px;border-radius:50%;flex:none;border:' + (on ? '6px solid var(--mint)' : '2px solid var(--line3)') + '"></span><span class="col" style="gap:2px"><b style="font-size:15px">' + m[1] + '</b><span class="xs sub">' + m[2] + '</span></span></button>';
+      }).join('') + '</div>' +
+    '<button class="btn primary" style="height:54px;font-size:16px" data-act="saveag">Сохранить в боте</button><span class="xs muted" style="line-height:1.45">«Сохранить» отправляет в бота настройки агентов «Следят за водителями» и автоответа. Новые агенты пока работают в демо окна.</span></div>';
+}
+
+/* ---------- papers v2 ---------- */
+function vPapers2() {
+  const today = new Date(), left = (d) => Math.round((new Date(d) - today) / 864e5);
+  if (!OPS.docsFrom) OPS.docsFrom = {};
+  const chip = (n) => '<span class="chip" style="height:24px;' + (n < 30 ? 'background:var(--red-bg);color:var(--red);border-color:var(--red-bd)' : n < 60 ? 'background:var(--amber-bg);color:var(--amber);border-color:var(--amber-bd)' : 'background:var(--mint-bg);color:var(--mint-t);border-color:var(--mint-bd)') + '">' + (n < 0 ? 'истёк' : n + ' дн.') + '</span>';
+  const rows = OPS.drivers.map((x, i) => {
+    const has = i % 3 !== 2;
+    return '<div class="card col" style="padding:14px 16px;border-radius:18px;gap:10px"><div class="row" style="gap:10px">' + opsAv(x.n, i) + '<span class="col" style="flex:1;gap:1px"><b style="font-size:15px">' + esc(x.n) + '</b><span class="xs muted">трак ' + esc(x.unit) + (has ? ' · из фото в группе' : '') + '</span></span>' +
+      (has ? (Math.min(left(x.cdl), left(x.med)) < 30 ? '<button class="pill" data-opact="remind" style="height:32px">Напомнить</button>' : '') : '<button class="pill on" data-opact="askdoc" style="height:32px">Попросить фото</button>') + '</div>' +
+      (has ? '<div class="grid2"><div class="col" style="gap:4px"><span class="xs muted">CDL до ' + x.cdl.split('-').reverse().join('.') + '</span>' + chip(left(x.cdl)) + '</div><div class="col" style="gap:4px"><span class="xs muted">Медкарта до ' + x.med.split('-').reverse().join('.') + '</span>' + chip(left(x.med)) + '</div></div>' : '<span class="small sub">Дат пока нет. Нажмите «Попросить фото»: бот попросит водителя прислать фото CDL и медкарты в группу.</span>') + '</div>';
+  }).join('');
+  return '<div class="col mz-in" style="gap:14px">' + mzHead('Документы водителей', 'Чтобы трак не встал из-за просроченной CDL', 'menu') +
+    '<div class="card col" style="padding:14px 16px;border-radius:18px;gap:10px"><b style="font-size:15px">Откуда даты</b>' +
+      [['1','Водитель присылает фото CDL и медкарты в свою группу. Один раз, по просьбе бота.'],['2','ИИ читает дату окончания и запоминает.'],['3','За 30 дней бот напомнит водителю и вам.']].map((s) => '<div class="row" style="gap:10px;align-items:flex-start"><span class="mz-av" style="width:24px;height:24px;border-radius:8px;font-size:12px;background:var(--mint-bg);color:var(--mint-t)">' + s[0] + '</span><span class="small sub" style="line-height:1.45">' + s[1] + '</span></div>').join('') + '</div>' +
+    '<div class="col" style="gap:10px">' + rows + '</div><div class="xs" style="color:var(--faint)">Демо: даты примерные.</div></div>';
+}
+
+/* ---------- menu tweak + events v2 ---------- */
+const vMenuOld = vMenu;
+function vMenu2() { return '<div class="col mz-in" style="gap:14px">' + vMenuOld() + (!isWide() ? '<button class="card row" data-act="big" style="text-align:left;padding:14px 16px;border-radius:18px;gap:12px"><span class="icon" style="width:40px;height:40px;background:var(--blue-bg);color:var(--blue)">' + ic('monitor', 20, 'currentColor', 2) + '</span><span class="col" style="flex:1;gap:2px"><b style="font-size:15px">Большой экран</b><span class="xs muted">Доска грузов и Gross на компьютере</span></span>' + ic('chev', 18, 'var(--muted)', 2) + '</button>' : '') + '</div>'; }
+Object.assign(VIEWS, { home:vHome2, gross:vGross2, agents:vAgents2, papers:vPapers2, menu:vMenu2 });
+function opsClick2(d) {
+  if (d.opag) { OPS.agOn[d.opag] = !OPS.agOn[d.opag]; opsSave2(); render(); return true; }
+  if (d.opagx) { OPS.agOpen = OPS.agOpen === d.opagx ? '' : d.opagx; render(); return true; }
+  if (d.opdisp) { OPS.d = opsBlank(); OPS.d.driver = d.opdisp; const dr = opsDriver(d.opdisp); if (dr.loc) OPS.d.from = dr.loc; go('dispatch'); window.scrollTo(0, 0); return true; }
+  if (d.opact === 'more') { OPS.gMore = true; render(); return true; }
+  if (d.opact === 'askdoc') { toast('Демо: бот попросил водителя прислать фото CDL и медкарты'); return true; }
+  return false;
+}
+function opsSave2() { try { localStorage.setItem('mz_ops_ag', JSON.stringify(OPS.agOn)); } catch (e) {} }
+try { const a = JSON.parse(localStorage.getItem('mz_ops_ag') || 'null'); if (a) OPS.agOn = a; } catch (e) {}
+let opsLastView = '';
+function opsAfterRender2() {
+  const fresh = opsLastView !== S.view; opsLastView = S.view;
+  if (!fresh) { document.querySelectorAll('.mz-in').forEach((el) => el.classList.remove('mz-in')); return; }
+  document.querySelectorAll('[data-count]').forEach((el) => {
+    const to = +el.dataset.count, pre = el.dataset.pre || '', t0 = performance.now(), dur = 900;
+    const step = (t) => { const k = Math.min(1, (t - t0) / dur), e = 1 - Math.pow(1 - k, 3); el.textContent = pre + Math.round(to * e).toLocaleString('en-US'); if (k < 1) requestAnimationFrame(step); };
+    requestAnimationFrame(step);
+  });
+  const ty = document.getElementById('mzType');
+  if (ty) { const full = ty.dataset.full || ''; let i = 0; ty.textContent = ''; const tick = () => { i += 2; ty.textContent = full.slice(0, i); if (i < full.length && document.body.contains(ty)) setTimeout(tick, 14); }; tick(); }
+}
+
 
 render();
 
