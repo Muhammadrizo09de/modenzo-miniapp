@@ -1544,7 +1544,7 @@ function vBoard() {
     detail = '<div class="card col" style="flex:1 1 300px;min-width:0;padding:18px;gap:14px"><div class="row" style="justify-content:space-between;align-items:flex-start"><div><h2 style="font-size:22px">Load ' + l.id + '</h2><div class="small muted">' + esc(l.driver) + ' · трак ' + l.truckNo + '</div></div><span class="col" style="align-items:flex-end;gap:6px"><span class="chip c-disp">Amazon</span><span class="chip ' + LST[sel.st][1] + '">' + LST[sel.st][0] + '</span></span></div>' +
       '<div class="grid2"><div style="background:var(--bg);border:1px solid var(--line2);border-radius:14px;padding:10px 12px"><div class="xs muted">Грузовик</div><b style="font-size:14px;color:' + TC(l.truck) + '">' + l.truck + '</b><div class="xs muted">' + esc(l.truckSub) + '</div></div><div style="background:var(--bg);border:1px solid var(--line2);border-radius:14px;padding:10px 12px"><div class="xs muted">Вердикт ETA</div><b style="font-size:14px;color:' + VC[l.v] + '">' + l.verdict + '</b><div class="xs muted">' + l.eta + '</div></div></div>' +
       '<div class="col" style="gap:8px"><div class="label" style="font-size:11px">Стопы</div>' + stopsHtml(l.stops) + '</div>' +
-      '<div class="grid2"><button class="btn primary" style="height:44px;font-size:14px" data-lockgo="updates">Подготовить апдейт</button><button class="btn" style="height:44px;font-size:14px" data-ltt="' + esc(l.truckNo) + '">✉️ Текст брокеру</button></div>' +
+      '<button class="btn primary" style="height:46px;font-size:14px" data-opfrom="amz:' + esc(l.id) + '">' + (l.st === 'upcoming' ? 'Диспеч: назначить водителя' : 'Диспеч / изменить груз') + '</button><div class="grid2"><button class="btn" style="height:44px;font-size:14px" data-lockgo="updates">Подготовить апдейт</button><button class="btn" style="height:44px;font-size:14px" data-ltt="' + esc(l.truckNo) + '">✉️ Текст брокеру</button></div>' +
       '<div class="xs muted" style="line-height:1.45">Amazon грузы придут сами из Relay через расширение для Chrome (последний этап, только чтение). Сейчас это пример.</div></div>';
   } else if (sel) {
     const l = sel.raw, idx = LST_ORDER.indexOf(l.st);
@@ -1552,7 +1552,7 @@ function vBoard() {
       '<div class="small" style="line-height:1.5">' + (l.truck ? '<b>UNIT ' + esc(l.truck) + '</b>' + (l.driver ? ' · ' + esc(l.driver) : '') : '<span class="muted">Трак не назначен</span>') + '</div>' +
       ((l.pun || l.bph) ? '<div class="grid2">' + (l.pun ? '<div style="background:var(--bg);border:1px solid var(--line2);border-radius:12px;padding:8px 10px"><div class="xs muted">PU #</div><b style="font-size:13px;word-break:break-all">' + esc(l.pun) + '</b></div>' : '<div></div>') + (l.bph ? '<a href="tel:' + esc(l.bph.replace(/[^0-9+]/g, '')) + '" style="background:var(--bg);border:1px solid var(--line2);border-radius:12px;padding:8px 10px;color:var(--text);text-decoration:none"><div class="xs muted">Брокер</div><b style="font-size:13px">' + esc(l.bph) + '</b></a>' : '') + '</div>' : '') +
       '<div class="col" style="gap:8px"><div class="row" style="gap:10px;align-items:flex-start"><span class="chip c-gray" style="min-width:42px;justify-content:center">PU</span><span class="col"><b style="font-size:14px">' + esc(l.pu || '—') + '</b><span class="xs muted">' + fdt(l.put) + '</span></span></div><div class="row" style="gap:10px;align-items:flex-start"><span class="chip c-gray" style="min-width:42px;justify-content:center">DEL</span><span class="col"><b style="font-size:14px">' + esc(l.del || '—') + '</b><span class="xs muted">' + fdt(l.dlt) + '</span></span></div></div>' +
-      '<div class="col" style="gap:8px"><div class="label" style="font-size:11px">Статус</div><div style="display:grid;grid-template-columns:repeat(3,minmax(0,1fr));gap:6px">' + LST_ORDER.map((c, i) => '<button class="seg' + (c === l.st ? ' on' : '') + '" data-lst="' + c + '" style="height:38px;font-size:11px;padding:0 4px' + (i < idx ? ';opacity:.55' : '') + '">' + LST[c][0] + '</button>').join('') + '</div>' +
+      '<button class="btn primary" style="height:46px;font-size:14px" data-opfrom="st:' + esc(l.no) + '">' + (l.st === 'ns' ? 'Диспеч: назначить водителя' : 'Изменить груз в диспече') + '</button>' + '<div class="col" style="gap:8px"><div class="label" style="font-size:11px">Статус</div><div style="display:grid;grid-template-columns:repeat(3,minmax(0,1fr));gap:6px">' + LST_ORDER.map((c, i) => '<button class="seg' + (c === l.st ? ' on' : '') + '" data-lst="' + c + '" style="height:38px;font-size:11px;padding:0 4px' + (i < idx ? ';opacity:.55' : '') + '">' + LST[c][0] + '</button>').join('') + '</div>' +
       '<div class="xs muted" style="line-height:1.45">Бот сам двигает статус по словам водителя в группе трака: «at shipper», «loaded», «delivered» и на русском, узбекском, турецком.</div></div>' +
       (l.file && l.dbid ? '<button class="btn" style="height:44px;font-size:14px;border-color:var(--mint-bd)" data-rcopen="' + l.dbid + '">📄 Открыть rate con</button>' : '') +
       '<div class="grid2"><button class="btn" style="height:42px;font-size:13px" data-ltt="' + esc(l.truck || '') + '">✉️ Текст брокеру</button><button class="btn" style="height:42px;font-size:13px;color:var(--red)" data-lst="cx">Отменить груз</button></div></div>';
@@ -4562,6 +4562,7 @@ function opsRefresh() {
   const p = document.getElementById('opsPrev'); if (p) p.innerHTML = opsPrevHtml();
 }
 function opsClick(d) {
+  if (typeof opsClick4 === 'function' && opsClick4(d)) return true;
   if (d.opnav) { const g = d.opnav, cur = OPS.nav[g] !== undefined ? OPS.nav[g] : navGroupOf(S.view) === g; OPS.nav[g] = !cur; render(); return true; }
   if (d.optpl) { OPS.d.tpl = d.optpl; render(); return true; }
   if (d.opstop) {
@@ -4593,7 +4594,7 @@ function opsClick(d) {
   if (a === 'closesend') { OPS.sendSheet = false; render(); return true; }
   if (a === 'dosend') {
     const d0 = OPS.d, c = opsCalc(d0), st = d0.stops.filter((s) => s.city);
-    const rec = { id:d0.editId || ('N' + Date.now().toString(36).toUpperCase()), no:d0.no, date:new Date().toISOString().slice(0, 10), driver:d0.driver, disp:d0.disp, from:st[0].city, to:st[st.length - 1].city, loaded:c.loaded, dh:c.dh, rate:c.rate, broker:d0.broker };
+    const rec = { id:d0.editId || ('N' + Date.now().toString(36).toUpperCase()), src:d0.src || 'broker', no:d0.no, date:new Date().toISOString().slice(0, 10), driver:d0.driver, disp:d0.disp, from:st[0].city, to:st[st.length - 1].city, loaded:c.loaded, dh:c.dh, rate:c.rate, broker:d0.broker };
     OPS.extra = OPS.extra.filter((l) => l.id !== rec.id).concat([rec]); opsSave();
     OPS.sendSheet = false; OPS.d = opsBlank(); toast('Демо: груз отправлен водителю и добавлен в Gross board'); render(); return true;
   }
@@ -4956,6 +4957,79 @@ function vAgentsW() {
 }
 Object.assign(VIEWS, { home:() => (isWide() ? vHomeW() : vHome2()), gross:() => (isWide() ? vGrossW() : vGross2()), agents:() => (isWide() ? vAgentsW() : vAgents2()) });
 function opsAfterRender3() { if (document.getElementById('mzFeed')) opsFeedStart(); }
+/* ===== Modenzo OPS v4: Amazon Relay loads in dispatch, open any board load in dispatch to assign / edit ===== */
+Object.assign(OPS_CITY, { 'Rialto, CA':[34.11,-117.37],'Troutdale, OR':[45.54,-122.39],'Barstow, CA':[34.9,-117.02],'Medford, OR':[42.33,-122.87],'Tracy, CA':[37.74,-121.43],'Moreno Valley, CA':[33.94,-117.23],'Goodyear, AZ':[33.44,-112.36],'Eagan, MN':[44.8,-93.17] });
+const OPS_RELAY = [
+  { id:'T-11RZ7KQ2', st:'Upcoming', pay:1840, eq:"53' Dry Van", stops:[['PU','ONT8','Ontario, CA','11/27 06:00'],['DEL','PHX7','Phoenix, AZ','11/27 14:30']] },
+  { id:'T-11X4M9PD', st:'Upcoming', pay:3120, eq:"53' Dry Van", stops:[['PU','LGB8','Rialto, CA','11/27 21:00'],['DEL','SMF3','Sacramento, CA','11/28 07:00'],['DEL','PDX9','Troutdale, OR','11/28 18:30']] },
+  { id:'T-11W2B6NA', st:'Upcoming', pay:980, eq:"53' Dry Van", stops:[['PU','DFW7','Fort Worth, TX','11/28 05:00'],['DEL','OKC1','Oklahoma City, OK','11/28 10:30']] },
+  { id:'T-11P8J3LC', st:'Upcoming', pay:1650, eq:"53' Reefer", stops:[['PU','MEM1','Memphis, TN','11/28 13:00'],['DEL','BNA2','Nashville, TN','11/28 18:00'],['DEL','ATL6','Atlanta, GA','11/29 04:00']] }
+];
+function opsEnsureDriver(name, unit) {
+  if (!name) return;
+  if (!OPS.drivers.some((d) => d.n === name)) { OPS.drivers.push({ n:name, unit:unit || '—', loc:'', cdl:'2027-12-31', med:'2027-12-31' }); opsSave(); }
+}
+function opsSplitFac(txt) {
+  const m = String(txt || '').match(/^([A-Z]{3,4}\d{1,2})\s+(.+)$/);
+  return m ? [m[1], m[2]] : ['', txt || ''];
+}
+function opsTakeRelay(id) {
+  const r = OPS_RELAY.filter((x) => x.id === id)[0]; if (!r) return;
+  const keep = { driver:OPS.d.driver, disp:OPS.d.disp, from:OPS.d.from, tpl:OPS.d.tpl };
+  OPS.d = Object.assign(opsBlank(), keep, { src:'amazon', relay:r.id, no:r.id, broker:'Amazon Relay', rate:String(r.pay), notes:r.eq,
+    stops:r.stops.map((s) => ({ t:s[0], fac:s[1], city:s[2], time:s[3], ref:s[0] === 'PU' ? r.id : '' })) });
+}
+function opsFromBoard(key) {
+  const p = key.split(':'), kind = p[0], id = p.slice(1).join(':');
+  if (kind === 'amz') {
+    const l = LOADS.filter((x) => x.id === id)[0]; if (!l) return false;
+    opsEnsureDriver(l.driver, l.truckNo);
+    const n = (l.stops || []).length;
+    OPS.d = Object.assign(opsBlank(), { src:'amazon', board:key, no:l.id, broker:'Amazon Relay', rate:'', driver:l.driver, from:(l.truckSub || '').split('·').pop().trim(),
+      stops:(l.stops || []).map((s, i) => { const f = opsSplitFac(s[0]); return { t:i === 0 ? 'PU' : 'DEL', fac:f[0] || f[1], city:f[1], time:s[1] && /\d/.test(s[1]) ? s[1] : '', ref:'' }; }) });
+    if (n < 2) OPS.d.stops.push({ t:'DEL', fac:'', city:'', time:'', ref:'' });
+  } else {
+    const l = STREET.filter((x) => x.no === id)[0]; if (!l) return false;
+    opsEnsureDriver(l.driver, l.truck);
+    const t = (v) => v ? v.slice(5, 10).replace('-', '/') + ' ' + v.slice(11, 16) : '';
+    OPS.d = Object.assign(opsBlank(), { src:'broker', board:key, no:l.no, broker:l.broker || '', rate:l.rate ? String(l.rate) : '', driver:l.driver || OPS.d.driver,
+      stops:[{ t:'PU', fac:'', city:l.pu || '', time:t(l.put), ref:l.pun || '' },{ t:'DEL', fac:'', city:l.del || '', time:t(l.dlt), ref:'' }] });
+  }
+  const dr = opsDriver(OPS.d.driver); if (!OPS.d.from && dr.loc) OPS.d.from = dr.loc;
+  return true;
+}
+function opsRelayPanel() {
+  const taken = (id) => OPS.extra.some((l) => l.no === id) || OPS.d.relay === id;
+  return '<div class="card col" style="padding:14px;border-radius:18px;gap:10px;border-color:var(--violet-bd)"><div class="row" style="justify-content:space-between"><span class="row" style="gap:8px"><span class="chip c-disp">Amazon Relay</span><b style="font-size:14px">Upcoming</b></span><span class="xs muted">из расширения Relay · пример</span></div>' +
+    OPS_RELAY.map((r) => { const t = taken(r.id), sel = OPS.d.relay === r.id;
+      return '<div class="row" style="gap:12px;padding:10px 12px;border-radius:14px;border:1px solid ' + (sel ? 'var(--violet)' : 'var(--line2)') + ';background:' + (sel ? 'var(--violet-bg)' : 'var(--raised)') + '"><span class="col" style="flex:1;min-width:0;gap:3px"><b style="font-size:14px">' + r.stops.map((s) => s[1]).join(' → ') + '</b><span class="xs muted">' + esc(r.id) + ' · ' + r.stops.length + ' стопа · PU ' + esc(r.stops[0][3]) + '</span></span><span class="col" style="align-items:flex-end;gap:4px"><b style="font-size:14px">' + $m(r.pay) + '</b>' +
+        (t && !sel ? '<span class="chip c-done" style="height:22px">Назначен</span>' : '<button class="pill' + (sel ? ' on' : '') + '" data-oprelay="' + r.id + '" style="height:30px">' + (sel ? 'Выбран' : 'Взять') + '</button>') + '</span></div>'; }).join('') +
+    '<span class="xs muted" style="line-height:1.45">Нажмите «Взять»: Trip ID, склады, время и payout встанут сами. Дальше выберите водителя и диспетчера.</span></div>';
+}
+function vDispatch4() {
+  const d = OPS.d, amz = d.src === 'amazon', base = vDispatch();
+  const cut = base.indexOf('<div class="row" style="flex-wrap:wrap;gap:18px;align-items:flex-start">');
+  const sw = '<div class="mz-seg" style="max-width:520px">' + [['broker','Брокер / rate con'],['amazon','Amazon Relay']].map((x) => '<button class="' + ((d.src || 'broker') === x[0] ? 'on' : '') + '" data-opsrc="' + x[0] + '">' + x[1] + '</button>').join('') + '</div>';
+  const from = d.board ? '<div class="row" style="gap:10px;padding:10px 14px;border-radius:14px;border:1px solid var(--blue-bd);background:var(--blue-bg)"><span class="small" style="flex:1;color:var(--blue)">Груз с доски: <b>' + esc(d.no) + '</b>. Назначьте водителя и диспетчера, поправьте и отправьте.</span><button class="pill" data-go="board" style="height:30px">На доску</button></div>' : '';
+  let body = base.slice(cut);
+  if (amz) body = body.replace(/<div class="row" style="gap:10px;padding:14px;border-radius:16px;border:1.5px dashed[\s\S]*?<\/button><\/div>/, '');
+  if (amz) body = body.replace('Ставка, $</span>', 'Payout, $</span>').replace('>Брокер</span>', '>Источник</span>').replace('Есть rate con?', 'Груз из Relay').replace('ИИ сам заполнит форму: брокер, стопы, время, ставка', 'Выберите из Upcoming выше или впишите Trip ID');
+  return base.slice(0, cut).replace(/<h1 class="title"[^>]*>[^<]*<\/h1>/, (m) => d.board ? m.replace(/>[^<]*</, '>Диспеч и правка груза<') : m) + sw + from + (amz ? opsRelayPanel() : '') + body;
+}
+VIEWS.dispatch = vDispatch4;
+try { window.OPS_T = { street:() => STREET, loads:() => LOADS }; } catch (e) {}
+function opsClick4(d) {
+  if (d.opsrc) { OPS.d.src = d.opsrc; if (d.opsrc === 'amazon' && !OPS.d.broker) OPS.d.broker = 'Amazon Relay'; if (d.opsrc === 'broker' && OPS.d.broker === 'Amazon Relay') OPS.d.broker = ''; render(); return true; }
+  if (d.oprelay) { opsTakeRelay(d.oprelay); render(); return true; }
+  if (d.opfrom) { if (opsFromBoard(d.opfrom)) { go('dispatch'); window.scrollTo(0, 0); } return true; }
+  if (d.opact === 'dosend' && OPS.d.board) {
+    const p = OPS.d.board.split(':'), dr = opsDriver(OPS.d.driver);
+    if (p[0] === 'amz') { const l = LOADS.filter((x) => x.id === p[1])[0]; if (l) { l.driver = dr.n; l.truckNo = dr.unit; if (l.st === 'upcoming') l.st = 'dispatched'; } }
+    else { const l = STREET.filter((x) => x.no === p.slice(1).join(':'))[0]; if (l) { l.driver = dr.n; l.truck = dr.unit; if (+OPS.d.rate) l.rate = +OPS.d.rate; if (l.st === 'ns') l.st = 'dp'; } }
+  }
+  return false;
+}
+
 
 
 render();
