@@ -4055,6 +4055,7 @@ function renderInner() {
   dropAfterRender();
   draftAfterRender();
   if (typeof opsAfterRender2 === 'function') opsAfterRender2();
+  if (typeof opsAfterRender3 === 'function') opsAfterRender3();
   if (tg && tg.BackButton) { try { if (S.view !== 'home') tg.BackButton.show(); else tg.BackButton.hide(); } catch (e) {} }
 }
 
@@ -4853,6 +4854,108 @@ function opsAfterRender2() {
   const ty = document.getElementById('mzType');
   if (ty) { const full = ty.dataset.full || ''; let i = 0; ty.textContent = ''; const tick = () => { i += 2; ty.textContent = full.slice(0, i); if (i < full.length && document.body.contains(ty)) setTimeout(tick, 14); }; tick(); }
 }
+
+/* ===== Modenzo OPS v3: wide-screen dashboards (command center, gross dashboard, agents grid, live AI feed) ===== */
+try { document.head.insertAdjacentHTML('beforeend', '<style>' +
+  '.mzw-row{display:grid;gap:16px;align-items:start}' +
+  '.mzw-tile{border:1px solid var(--line);background:var(--card);border-radius:18px;padding:14px 16px;display:flex;flex-direction:column;gap:4px}' +
+  '.mzw-feed{display:flex;flex-direction:column}.mzw-feed>div{display:flex;gap:10px;padding:10px 0;border-top:1px solid var(--line2)}.mzw-feed>div:first-child{border-top:0}' +
+  '.mzw-feed .new{animation:mzIn .5s ease both;background:linear-gradient(90deg,rgba(61,220,151,.08),transparent);border-radius:10px}' +
+  '.mzw-tbl{width:100%;border-collapse:collapse;font-size:13.5px}.mzw-tbl th{font-size:11px;font-weight:600;color:var(--muted);text-transform:uppercase;letter-spacing:.06em;text-align:left;padding:10px 12px;border-bottom:1px solid var(--line)}' +
+  '.mzw-tbl td{padding:10px 12px;border-bottom:1px solid var(--line2);white-space:nowrap}.mzw-tbl tr:hover td{background:var(--raised)}.mzw-tbl td.r,.mzw-tbl th.r{text-align:right}' +
+  '.mzw-ag{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:12px}' +
+  '@media (min-width:1300px){.mzw-ag{grid-template-columns:repeat(3,minmax(0,1fr))}}' +
+  '.app.wide .navbtn.on,.app.wide .side button[data-go][style*="box-shadow"]{background:linear-gradient(90deg,rgba(61,220,151,.16),rgba(61,220,151,.02))!important}' +
+  '</style>'); } catch (e) {}
+
+/* live AI feed (demo events) */
+const OPS_FEED = [
+  ['dispatcher','truck','var(--mint-bg)','var(--mint-t)','Диспеч-агент','Rate con #1187 прочитан: TQL, Dallas → Atlanta, $2,850. Черновик для Mike D. готов.'],
+  ['translate','chat','var(--blue-bg)','var(--blue)','Переводчик','Перевёл брокеру Coyote: "Driver is at the shipper, waiting for a door."'],
+  ['risk','warn','var(--red-bg)','var(--red)','Тревожные слова','Unit 2081 написал «шина спустила». Сообщил вам, водителю ничего не отвечал.'],
+  ['grossai','chart','var(--violet-bg)','var(--violet)','Gross-аналитик','Неделя идёт на 104% от цели. Лучший RPM сегодня у Sardor A.'],
+  ['waiting','clock','var(--amber-bg)','var(--amber)','Водитель ждёт ответа','Bekzod T. ждёт ответ про lumper 15 мин. Подготовил ответ.'],
+  ['papers','idcard','var(--amber-bg)','var(--amber)','Документы','У Mike D. медкарта кончается через 5 дней. Напомнить ему?'],
+  ['brokerchk','shield','var(--mint-bg)','var(--mint-t)','Проверка брокера','RXO: authority активна, факторинг approved. Можно брать.'],
+  ['late','pin','var(--red-bg)','var(--red)','Опоздание','Load 1042 опоздает ~45 мин. Текст брокеру готов: нажмите «Отправить».'],
+  ['silent','users','var(--blue-bg)','var(--blue)','Водитель молчит','Jasur K. не отвечает 45 мин после вопроса диспетчера.'],
+  ['nonstop','bolt','var(--mint-bg)','var(--mint-t)','ИИ без перебоев','Основная модель занята: переключился на запасную, контекст сохранён.']
+];
+let opsFeedN = 5, opsFeedTimer = null;
+function opsFeedItem(e, ago, fresh) {
+  return '<div' + (fresh ? ' class="new"' : '') + '><span class="mz-av" style="width:34px;height:34px;border-radius:11px;background:' + e[2] + ';color:' + e[3] + '">' + ic(e[1], 17, 'currentColor', 2) + '</span><span class="col" style="flex:1;min-width:0;gap:2px"><span class="row" style="justify-content:space-between;gap:8px"><b style="font-size:13px">' + e[4] + '</b><span class="xs muted" style="flex:none">' + ago + '</span></span><span class="small sub" style="line-height:1.4">' + esc(e[5]) + '</span></span></div>';
+}
+function opsFeedHtml() {
+  const out = [];
+  for (let i = 0; i < 6; i++) { const idx = (opsFeedN - i + OPS_FEED.length * 10) % OPS_FEED.length; out.push(opsFeedItem(OPS_FEED[idx], i === 0 ? 'сейчас' : (i * 3 + 1) + ' мин', false)); }
+  return out.join('');
+}
+function opsFeedStart() {
+  if (opsFeedTimer) return;
+  opsFeedTimer = setInterval(() => {
+    const box = document.getElementById('mzFeed'); if (!box) { clearInterval(opsFeedTimer); opsFeedTimer = null; return; }
+    opsFeedN++; const e = OPS_FEED[opsFeedN % OPS_FEED.length];
+    box.insertAdjacentHTML('afterbegin', opsFeedItem(e, 'сейчас', true));
+    const kids = box.children; for (let i = 1; i < kids.length; i++) { const t = kids[i].querySelector('.xs.muted'); if (t) t.textContent = (i * 3 - 2) + ' мин'; }
+    while (box.children.length > 6) box.removeChild(box.lastChild);
+  }, 5500);
+}
+
+/* ---------- home: command center ---------- */
+function vHomeW() {
+  const base = vHome2();
+  // reuse pieces: hero is the first .mz-hero block of the phone home
+  const heroStart = base.indexOf('<div class="mz-hero'), actsStart = base.indexOf('<div class="grid2 mz-acts">'), secStart = base.indexOf('<div class="mz-sec"><h3>Требует внимания');
+  const agStart = base.indexOf('<button class="card row" data-go="agents"');
+  const head = base.slice(0, heroStart), hero = base.slice(heroStart, actsStart), acts = base.slice(actsStart, secStart);
+  const attention = base.slice(secStart, agStart), agents = base.slice(agStart, base.lastIndexOf('</div>'));
+  const all = opsLoads(), today = new Date().toISOString().slice(0, 10), td = opsSum(all.filter((l) => l.date === today));
+  const late = LOADS.filter((l) => l.v === 'late').length, moving = LOADS.filter((l) => l.st === 'transit').length || LOADS.length;
+  const tile = (k, v, sub, col, go) => '<button class="mzw-tile" data-go="' + go + '" style="text-align:left"><span class="xs muted" style="font-weight:600">' + k + '</span><b class="mz-big" style="font-size:28px;color:' + (col || 'var(--text)') + '">' + v + '</b><span class="xs muted">' + sub + '</span></button>';
+  const ls = opsFilter(all, 'week', 0), recs = opsRecs(ls, opsSum(ls), opsSum(opsFilter(all, 'week', 1))).slice(0, 2);
+  return '<div class="col mz-in" style="gap:18px">' + head +
+    '<div class="mzw-row" style="grid-template-columns:minmax(0,1.7fr) minmax(0,1fr)">' + hero +
+      '<div class="grid2" style="gap:12px">' + tile('Gross сегодня', opsCount(td.gross, '$'), td.n + ' грузов', 'var(--mint-t)', 'gross') + tile('В пути', moving, 'траков сейчас', '', 'board') + tile('Опаздывают', late, late ? 'нужен апдейт брокеру' : 'всё по плану', late ? 'var(--red)' : '', 'eta') + tile('Апдейты', S.upd === 'pending' ? 1 : 0, 'ждут решения', S.upd === 'pending' ? 'var(--amber)' : '', 'updates') + '</div></div>' +
+    acts +
+    '<div class="mzw-row" style="grid-template-columns:minmax(0,1fr) minmax(0,1fr) minmax(0,1fr)">' +
+      '<div class="col" style="gap:10px">' + attention + agents + '</div>' +
+      '<div class="card col" style="padding:14px 16px;border-radius:20px;gap:6px"><div class="row" style="justify-content:space-between"><b class="row" style="gap:8px;font-size:15px"><span class="mz-live"></span>Лента ИИ</b><span class="xs muted">пример · обновляется</span></div><div id="mzFeed" class="mzw-feed">' + opsFeedHtml() + '</div></div>' +
+      '<div class="col" style="gap:10px"><div class="mz-sec"><h3 class="row" style="gap:8px"><span class="mz-ai">' + ic('spark', 17) + '</span>Совет ИИ на неделю</h3><button data-go="gross">Все ›</button></div>' +
+        recs.map((r) => '<div class="mz-rec" style="flex-direction:column;gap:6px"><span class="row" style="justify-content:space-between;gap:8px"><b style="font-size:14px">' + esc(r.t) + '</b>' + (Math.abs(r.money) >= 50 ? '<b style="font-size:14px;color:var(--mint-t)">' + (r.money >= 0 ? '+' : '−') + $m(Math.abs(r.money)) + '</b>' : '') + '</span><span class="small sub" style="line-height:1.45">' + esc(r.d) + '</span></div>').join('') +
+        '<div class="card col" style="padding:14px 16px;border-radius:20px;gap:8px"><div class="row" style="justify-content:space-between"><span class="xs muted" style="font-weight:600">GROSS ЗА 30 ДНЕЙ</span><b class="small">' + $m(opsDaily(30).reduce((a, b) => a + b, 0)) + '</b></div>' + opsSpark(opsDaily(30), 360, 70) + '</div></div>' +
+    '</div></div>';
+}
+
+/* ---------- gross: dashboard ---------- */
+function vGrossW() {
+  const g = OPS.g, all = opsLoads(), ls = opsFilter(all, g.per, 0), prev = opsSum(opsFilter(all, g.per, 1)), s = opsSum(ls);
+  const phone = vGross2();
+  const cut = (a, b) => { const i = phone.indexOf(a), j = b ? phone.indexOf(b, i + 1) : phone.length; return i < 0 ? '' : phone.slice(i, j < 0 ? phone.length : j); };
+  const segs = cut('<div class="mz-seg">', '<div class="mz-hero');
+  const hero = cut('<div class="mz-hero', '<div class="grid2">');
+  const kpis = cut('<div class="grid2">', '<div class="mz-sec">');
+  const recs = cut('<div class="mz-sec">', '<div class="row" style="flex-wrap:wrap;gap:14px;align-items:flex-start">');
+  const boards = g.by === 'all' ? cut('<div class="row" style="flex-wrap:wrap;gap:14px;align-items:flex-start">', '<div class="card col" style="padding:6px 0;border-radius:20px"><div class="row" style="justify-content:space-between;padding:10px 16px"><div class="label">Грузы') : '';
+  const recsOnly = g.by === 'all' ? recs : cut('<div class="mz-sec">', '<div class="card col" style="padding:6px 0;border-radius:20px"><div class="row" style="justify-content:space-between;padding:10px 16px"><div class="label">Грузы');
+  const sheetI = phone.indexOf('<div class="sheet-bg" data-opact="closeedit">'), sheet = sheetI >= 0 ? phone.slice(sheetI) : '';
+  const rows = ls.slice().sort((a, b) => b.date.localeCompare(a.date)), lim = OPS.gMore ? 200 : 15;
+  const table = '<div class="card col" style="padding:6px 0;border-radius:20px"><div class="row" style="justify-content:space-between;padding:10px 16px"><div class="label">Грузы за период · ' + rows.length + '</div><button class="pill" data-opact="newload" style="height:34px">+ Диспеч груза</button></div><div style="overflow-x:auto"><table class="mzw-tbl"><thead><tr><th>Дата</th><th>Маршрут</th><th>Водитель</th><th>Диспетчер</th><th>Брокер</th><th class="r">Ставка</th><th class="r">Loaded</th><th class="r">DH</th><th class="r">RPM</th><th></th></tr></thead><tbody>' +
+    rows.slice(0, lim).map((l) => { const rpm = l.rate / l.loaded; return '<tr><td>' + l.date.slice(5).replace('-', '.') + '</td><td><b>' + esc(l.from.split(',')[0]) + '</b> → <b>' + esc(l.to.split(',')[0]) + '</b>' + (OPS.edits[l.id] ? ' <span class="chip c-plan" style="height:18px;font-size:10px">изменён</span>' : '') + '</td><td>' + esc(l.driver) + '</td><td>' + esc(l.disp) + '</td><td class="muted">' + esc(l.broker || '—') + '</td><td class="r"><b>' + $m(l.rate) + '</b></td><td class="r">' + l.loaded + '</td><td class="r" style="color:' + (l.dh / (l.dh + l.loaded) > 0.18 ? 'var(--amber)' : 'inherit') + '">' + l.dh + '</td><td class="r" style="color:' + (rpm >= s.rpm ? 'var(--mint-t)' : 'var(--sub)') + '">' + $r(rpm) + '</td><td class="r"><button class="back" data-opedit="' + l.id + '" style="width:32px;height:32px;border-radius:10px;display:inline-flex" aria-label="Редактировать">' + ic('edit', 15) + '</button></td></tr>'; }).join('') +
+    '</tbody></table></div>' + (rows.length > lim ? '<button class="btn ghost" data-opact="more" style="height:44px;border:0;border-top:1px solid var(--line2);border-radius:0;width:100%;color:var(--mint-t)">Показать все ' + rows.length + '</button>' : '') + '</div>';
+  return '<div class="col mz-in" style="gap:16px"><div class="row" style="justify-content:space-between;flex-wrap:wrap;gap:12px">' + mzHead('Gross board', 'Сколько заработали и где теряем', 'home') + '<div class="col" style="gap:8px;min-width:520px">' + segs + '</div></div>' +
+    '<div class="mzw-row" style="grid-template-columns:minmax(0,1.8fr) minmax(0,1fr)">' + hero + '<div class="col" style="gap:12px">' + kpis + '</div></div>' +
+    '<div class="mzw-row" style="grid-template-columns:minmax(0,1.2fr) minmax(0,1fr)"><div class="col" style="gap:10px">' + recsOnly + '</div><div class="col" style="gap:14px">' + boards.replace('flex-wrap:wrap', 'flex-direction:column;flex-wrap:nowrap').split('flex:1 1 280px;min-width:0').join('width:100%') + '</div></div>' +
+    table + '<div class="xs" style="color:var(--faint)">Демо: данные примерные. В рабочей версии gross считается из ваших грузов и rate con.</div></div>' + sheet;
+}
+
+/* ---------- agents: grid on wide ---------- */
+function vAgentsW() {
+  return vAgents2().replace('<div class="mz-sec"><h3>Работают за вас</h3><span class="chip c-plan" style="height:22px">новые · демо</span></div><div class="col" style="gap:10px">', '<div class="mz-sec"><h3>Работают за вас</h3><span class="chip c-plan" style="height:22px">новые · демо</span></div><div class="mzw-ag">')
+    .replace('<div class="mz-sec"><h3>Следят за водителями</h3><span class="chip c-done" style="height:22px">в боте</span></div><div class="col" style="gap:10px">', '<div class="mz-sec"><h3>Следят за водителями</h3><span class="chip c-done" style="height:22px">в боте</span></div><div class="mzw-ag">')
+    .replace('<div class="mz-sec"><h3>Автоответ водителю</h3></div><div class="col" style="gap:8px">', '<div class="mz-sec"><h3>Автоответ водителю</h3></div><div class="mzw-ag">');
+}
+Object.assign(VIEWS, { home:() => (isWide() ? vHomeW() : vHome2()), gross:() => (isWide() ? vGrossW() : vGross2()), agents:() => (isWide() ? vAgentsW() : vAgents2()) });
+function opsAfterRender3() { if (document.getElementById('mzFeed')) opsFeedStart(); }
 
 
 render();
