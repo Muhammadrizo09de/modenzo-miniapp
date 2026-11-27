@@ -5790,6 +5790,109 @@ if (OPS.agOn.trial === undefined) OPS.agOn.trial = true;
 OPS_FEED.unshift(['pricing', 'tag', 'var(--violet-bg)', 'var(--violet)', 'ИИ-консультант по тарифу', 'Вы работаете только в смену: режим «Только в смену» сэкономит около 25%.']);
 try { const v0 = new URLSearchParams(location.search).get('view'); if (v0 === 'pick') { S.view = 'pick'; } } catch (e) {}
 try { window.OPS_T = Object.assign(window.OPS_T || {}, { pkCost:pkCost, cpPrice:cpPrice }); } catch (e) {}
+/* ===== Modenzo OPS v9: fair bill — pay only for drivers that worked each day; pause = cheaper from today; unused money = discount ===== */
+function cpRaw(c) {   // the price before rounding (for proportional daily charges)
+  const k = c.m === 'shift' ? (CP_SHIFT_K[c.h || 12] || CP_COSTS.shift) : 1;
+  let cost = CP_COSTS.base + CP_COSTS.driver * c.n * k + CP_COSTS.update * c.n * c.u * 30;
+  CP_EXTRAS.forEach((e, i) => { if (c.f & (1 << i)) cost += e[3] + e[4] * c.n * k; });
+  cost += CP_COSTS.seat * Math.max(0, (c.t || 1) - (c.m === 'shift' ? 3 : 6));
+  return cost * 1.6 / (1 - CP_COSTS.fees);
+}
+S.bill = (function () {
+  try {
+    const q = new URLSearchParams(location.search);
+    if (!q.get('bp')) return null;
+    return { paid:+q.get('bp'), used:+q.get('bu') || 0, forecast:+q.get('bf') || 0, credit:+q.get('cr') || 0, active:+q.get('ua') || 0, left:+q.get('bl') || 0,
+      days:(q.get('bh') || '').split('.').filter(Boolean).map(Number), h:+q.get('cph') || 12, t:+q.get('cpt') || 1, live:true };
+  } catch (e) { return null; }
+})();
+function billPlan() {   // the client's plan for the math; demo: 60 drivers, everything on, 24/7
+  if (S.bill && S.bill.live) return { n:Math.max(5, S.lim || 60), u:S.cpu || 4, m:S.pm === 'shift' ? 'shift' : 'full', h:S.bill.h, t:S.bill.t, f:S.cpf !== undefined ? S.cpf : (1 << CP_EXTRAS.length) - 1 };
+  return { n:60, u:4, m:'full', h:24, t:1, f:(1 << CP_EXTRAS.length) - 1 };
+}
+function billPrice(c) { return cpPrice(c); }
+function billDay(c, a, price) { return price / 30 * cpRaw(Object.assign({}, c, { n:Math.max(5, Math.min(a, c.n)) })) / cpRaw(c); }
+function billData() {
+  if (S.bill && S.bill.live) return S.bill;
+  const c = billPlan(), price = billPrice(c), days = [];
+  for (let d = 0; d < 18; d++) days.push(d < 10 ? 60 : d < 15 ? 40 : 45);
+  const used = days.reduce((s, a) => s + billDay(c, a, price), 0), left = 12;
+  return { paid:price, used:used, forecast:used + billDay(c, 45, price) * left, credit:0, active:45, left:left, days:days, live:false };
+}
+function billBars(days, hi) {
+  if (!days.length) return '<span class="xs muted">Данные появятся с первого оплаченного дня.</span>';
+  const w = 300, h = 74, bw = w / Math.max(days.length, 10);
+  return '<svg viewBox="0 0 ' + w + ' ' + (h + 14) + '" style="width:100%;height:auto" role="img" aria-label="Водителей в работе по дням">' +
+    days.map((a, i) => { const bh = Math.max(3, a / Math.max(hi, 1) * h); return '<rect x="' + (i * bw + 1).toFixed(1) + '" y="' + (h - bh).toFixed(1) + '" width="' + Math.max(2, bw - 3).toFixed(1) + '" height="' + bh.toFixed(1) + '" rx="2.5" fill="' + (a >= hi ? 'var(--violet)' : 'var(--mint)') + '" opacity="' + (i === days.length - 1 ? 1 : .8) + '"><title>День ' + (i + 1) + ': ' + a + ' водителей</title></rect>'; }).join('') +
+    '<line x1="0" x2="' + w + '" y1="0.5" y2="0.5" stroke="var(--line3)" stroke-dasharray="3 3"/><text x="' + (w - 2) + '" y="10" text-anchor="end" font-size="9" fill="var(--muted)">до ' + hi + '</text>' +
+    '<text x="0" y="' + (h + 12) + '" font-size="9" fill="var(--muted)">день 1</text><text x="' + w + '" y="' + (h + 12) + '" text-anchor="end" font-size="9" fill="var(--muted)">сегодня</text></svg>';
+}
+function billWhatIf(a) {
+  const c = billPlan(), b = billData(), price = b.live ? b.paid : billPrice(c);
+  const f = b.used + billDay(c, a, price) * Math.max(0, b.left), save = Math.max(0, b.paid - f);
+  return { f:Math.min(b.paid, f), save:save, day:billDay(c, a, price) };
+}
+function vBilling() {
+  const c = billPlan(), b = billData(), pct = Math.min(100, b.used / Math.max(1, b.paid) * 100), fpct = Math.min(100, b.forecast / Math.max(1, b.paid) * 100);
+  const nextPrice = b.live ? (+S.cpp || Math.round(b.paid)) : billPrice(c), disc = Math.max(0, b.paid - b.forecast), next = Math.max(0, nextPrice - b.credit - disc);
+  const wi = billWhatIf(b.active), a0 = b.active;
+  const ex = (function () { const cc = { n:60, u:4, m:'full', h:24, t:1, f:(1 << CP_EXTRAS.length) - 1 }, pr = billPrice(cc); let u = 0; for (let d = 0; d < 30; d++) u += billDay(cc, d < 10 ? 60 : 40, pr); return { pr:pr, u:u, s:pr - u }; })();
+  return '<div class="col mz-in" style="gap:14px">' + mzHead('Оплата и честный счёт', 'Платите только за водителей, которые работали', 'menu') +
+    (!b.live ? '<div class="card row" style="padding:12px 14px;border-radius:16px;gap:10px;border-color:var(--violet-bd);background:var(--violet-bg)"><span class="mz-ai">' + ic('spark', 18) + '</span><span class="small" style="flex:1;line-height:1.45">Пример: тариф до 60 водителей. 10 дней работали 60, потом 20 ушли (поставили на паузу), через 5 дней пришли 5 новых. Ваши цифры появятся после первой оплаты.</span></div>' : '') +
+    '<div class="mz-hero col" style="gap:12px"><span class="xs row mz-ai" style="gap:6px;font-weight:700">' + ic('tag', 15) + 'ЭТОТ МЕСЯЦ</span>' +
+      '<div class="row" style="align-items:baseline;gap:8px;flex-wrap:wrap"><b class="mz-big" style="font-size:40px">$' + b.used.toFixed(2) + '</b><span class="muted">использовано из $' + b.paid.toFixed(2) + '</span></div>' +
+      '<div style="position:relative;height:12px;border-radius:6px;background:var(--line);overflow:hidden"><span style="position:absolute;left:0;top:0;bottom:0;width:' + fpct + '%;background:var(--mint-bg);border-right:2px dashed var(--mint)"></span><span style="position:absolute;left:0;top:0;bottom:0;width:' + pct + '%;background:var(--mint);border-radius:6px"></span></div>' +
+      '<div class="row" style="gap:8px;flex-wrap:wrap"><span class="chip c-done">в работе сейчас: ' + b.active + ' из ' + c.n + '</span><span class="chip c-plan">до конца месяца ' + Math.round(b.left) + ' дн.</span>' + (b.credit ? '<span class="chip" style="background:var(--violet-bg);color:var(--violet);border-color:var(--violet-bd)">скидка на счету $' + b.credit.toFixed(2) + '</span>' : '') + '</div>' +
+      '<span class="small sub" style="line-height:1.45">Прогноз до конца месяца: <b>$' + b.forecast.toFixed(2) + '</b>. Не использовано ≈ <b style="color:var(--mint-t)">$' + disc.toFixed(2) + '</b>: это пойдёт скидкой в следующий счёт.</span></div>' +
+    opsCard('<div class="row" style="justify-content:space-between"><b style="font-size:15px">Водителей в работе по дням</b><span class="xs muted">считаем максимум за день</span></div>' + billBars(b.days, c.n)) +
+    opsCard('<b style="font-size:15px">Что если с сегодня в работе будет…</b><div class="row" style="gap:12px;align-items:center"><input id="bl_a" type="range" min="0" max="' + c.n + '" value="' + a0 + '" style="flex:1;accent-color:var(--mint)" aria-label="Водителей в работе"><b id="bl_n" class="mz-big" style="font-size:24px;min-width:42px;text-align:right">' + a0 + '</b></div>' +
+      '<div id="bl_out" class="small sub" style="line-height:1.5">' + billWhatText(a0) + '</div>' +
+      '<div class="grid2"><button class="btn" data-go="groups" style="height:44px">Поставить на паузу</button><button class="btn primary" data-go="pick" style="height:44px">Нужно больше</button></div>') +
+    opsCard('<b style="font-size:15px">Следующий счёт</b><div class="row" style="justify-content:space-between;padding:6px 0;border-top:1px solid var(--line2)"><span class="small sub">Цена тарифа</span><b class="small">$' + nextPrice + '</b></div>' +
+      '<div class="row" style="justify-content:space-between;padding:6px 0;border-top:1px solid var(--line2)"><span class="small sub">Скидка за неиспользованное (прогноз)</span><b class="small" style="color:var(--mint-t);white-space:nowrap">−$' + (disc + b.credit).toFixed(2) + '</b></div>' +
+      '<div class="row" style="justify-content:space-between;padding:8px 0;border-top:1px solid var(--line2)"><b class="small">К оплате</b><b style="font-size:17px">$' + next.toFixed(2) + (S.fx ? ' <span class="xs muted">≈ ' + uzs(next) + '</span>' : '') + '</b></div>' +
+      '<span class="xs muted">Счёт придёт в Click. Ничего не спишется само.</span>') +
+    opsHowTo(['В начале месяца вы платите за свой диапазон, например до 60 водителей.', 'Каждый день бот считает, сколько групп водителей было «в работе». Поставили водителя на паузу, и он не считается с этого же дня.', 'Пришли новые водители: добавьте бота в их группы, они считаются с того дня, как начали работать. Больше верхней границы: новые встанут на паузу, а расширить диапазон можно с доплатой только за оставшиеся дни.', 'В конце месяца неиспользованное становится скидкой в следующий счёт. Пример: 60 водителей 10 дней, потом 40 до конца месяца: из $' + ex.pr + ' использовано ≈ $' + ex.u.toFixed(2) + ', скидка ≈ $' + ex.s.toFixed(2) + '.']) +
+    opsCard('<b style="font-size:15px">Частые вопросы</b>' + [['Деньги возвращаются на карту?', 'Нет, неиспользованное становится скидкой в следующий счёт. Так проще и без комиссий.'], ['Пауза удаляет водителя?', 'Нет. История и фото сохраняются, бот продолжает сохранять сообщения. Не будет только апдейтов и агентов. Вернуть можно одной кнопкой.'], ['Кто считается «в работе»?', 'Группа водителя, которая хоть раз за день была включена. Счёт по дням, а не по часам.'], ['Бот сам подскажет?', 'Да. Если в группе 3 дня нет сообщений от водителя, бот предложит поставить её на паузу и покажет, сколько сэкономите.']].map((q) => '<div class="col" style="gap:3px;padding:8px 0;border-top:1px solid var(--line2)"><b class="small">' + q[0] + '</b><span class="xs sub" style="line-height:1.45">' + q[1] + '</span></div>').join('')) + '</div>';
+}
+function billWhatText(a) {
+  const w = billWhatIf(a);
+  return a + ' водителей → ≈ $' + w.day.toFixed(2) + ' в день. Прогноз месяца $' + w.f.toFixed(2) + ', в скидку пойдёт ≈ <b style="color:var(--mint-t)">$' + w.save.toFixed(2) + '</b>.';
+}
+document.addEventListener('input', (e) => {
+  if (e.target && e.target.id === 'bl_a') { const a = +e.target.value, n = document.getElementById('bl_n'), o = document.getElementById('bl_out'); if (n) n.textContent = a; if (o) o.innerHTML = billWhatText(a); }
+});
+function fairNote(small) {
+  return '<div class="row" style="gap:10px;padding:10px 12px;border-radius:12px;background:var(--mint-bg);align-items:flex-start"><span style="color:var(--mint-t);flex:none">' + ic('check', 16, 'currentColor', 3) + '</span><span class="xs" style="line-height:1.45;flex:1"><b>Честный счёт.</b> ' + (small || 'Платите за диапазон, но считаем по факту: водителей стало меньше или кого-то поставили на паузу, разница уйдёт скидкой в следующий счёт.') + ' <button data-go="billing" style="background:none;border:0;padding:0;color:var(--mint-t);font:inherit;font-weight:700;text-decoration:underline;cursor:pointer">Как это работает</button></span></div>';
+}
+
+/* wiring: screen, menu, notes in the consultant, groups screen and plans; agent */
+VIEWS.billing = vBilling; TAB_OF.billing = 'menu';
+(function () { const g = NAVTREE.filter((n) => n[0] === 'g_set')[0]; if (g) { const i = g[3].findIndex((x) => x[0] === 'pick'); g[3].splice(i < 0 ? 0 : i + 1, 0, ['billing', 'Оплата и честный счёт', 'Платите только за работавших водителей', 'NEW']); } })();
+const pkStep0V8 = pkStep0, pkStep3V8 = pkStep3;
+pkStep0 = function (p) { const h = pkStep0V8(p), mark = '<span class="xs muted" style="line-height:1.45">Водителей станет больше'; return h.indexOf(mark) >= 0 ? h.replace(mark, fairNote() + mark) : h; };
+pkStep3 = function (p) {
+  const h = pkStep3V8(p);
+  if (OPS.pkBusy > Date.now()) return h;
+  const mark = '<b style="font-size:15px">Оплата через Click</b>';
+  return h.replace('<span class="chip c-plan">без автосписаний</span>', '<span class="chip c-plan">без автосписаний</span><span class="chip c-done">честный счёт</span>')
+    .replace(mark, mark + fairNote('Если водителей станет меньше, например было ' + p.hi + ', осталось ' + Math.max(5, p.hi - 20) + ', с этого дня считаем меньше, а разница уйдёт скидкой в следующий месяц.'));
+};
+if (VIEWS.groups) {
+  const vGroupsV8 = VIEWS.groups;
+  VIEWS.groups = function () {
+    const h = vGroupsV8(), c = billPlan(), b = billData(), d1 = billDay(c, b.active, b.paid), d0 = billDay(c, Math.max(0, b.active - 1), b.paid);
+    const card = '<div class="card col" style="padding:12px 14px;border-radius:16px;gap:6px;border-color:var(--mint-bd)"><b style="font-size:14px">Пауза = дешевле с сегодняшнего дня</b><span class="xs sub" style="line-height:1.45">Сейчас в работе ' + b.active + ' водителей ≈ $' + d1.toFixed(2) + ' в день. Поставите одного на паузу: ≈ −$' + Math.max(0, d1 - d0).toFixed(2) + ' в день до конца месяца. История сохранится.</span><button data-go="billing" class="pill" style="height:32px;align-self:flex-start">Мой счёт за месяц</button></div>';
+    const i = h.indexOf('</h1>'), j = i >= 0 ? h.indexOf('</div></div>', i) : -1;
+    return j > 0 ? h.slice(0, j + 12) + card + h.slice(j + 12) : card + h;
+  };
+}
+const customCardV8 = customCard;
+customCard = function () { return customCardV8() + '<button class="card row" data-go="billing" style="text-align:left;padding:14px 16px;border-radius:18px;gap:12px"><span class="mz-av" style="width:42px;height:42px;border-radius:13px;background:var(--mint-bg);color:var(--mint-t);flex:none">' + ic('tag', 20, 'currentColor', 2) + '</span><span class="col" style="flex:1;gap:2px;min-width:0"><b style="font-size:15px">Оплата и честный счёт</b><span class="xs muted">Сколько использовано за месяц, прогноз и скидка в следующий счёт</span></span>' + ic('chev', 18, 'var(--muted)', 2) + '</button>'; };
+OPS_AG2.unshift(['fairbill', 'Агент честного счёта', 'Каждый день считает водителей в работе. Если в группе 3 дня нет сообщений от водителя, предлагает поставить её на паузу и показывает, сколько сэкономите.', 'UNIT 1042 и UNIT 2210 молчат 4 дня. Поставить на паузу? До конца месяца это ≈ $9.80 скидки.', 'tag', 'var(--mint-bg)', 'var(--mint-t)']);
+if (OPS.agOn.fairbill === undefined) OPS.agOn.fairbill = true;
+OPS_FEED.unshift(['fairbill', 'tag', 'var(--mint-bg)', 'var(--mint-t)', 'Агент честного счёта', '20 водителей на паузе с 10-го числа: в следующий счёт пойдёт скидка ≈ $16.']);
+try { const v1 = new URLSearchParams(location.search).get('view'); if (v1 === 'billing') S.view = 'billing'; } catch (e) {}
 
 render();
 
