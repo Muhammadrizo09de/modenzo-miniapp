@@ -5537,14 +5537,14 @@ function ngShow(i) {
 function ngClose() { const el = document.getElementById('mzNudge'); if (el) el.remove(); }
 
 /* ---------- AI tariff consultant: drivers range (gap up to 15), how you work, features with price hints, then the result ---------- */
-CP_EXTRAS.push(['voice', 'Голос и переводы голосовых', 'Голосовые водителей в текст и перевод', 0, 0.30],
+CP_EXTRAS.push(['voice', 'Голосовые в текст', 'Водитель прислал голосовое, вы читаете текст, слушать не нужно', 0, 0.30],
   ['relay', 'Amazon Relay: новости и скоркард', 'Отмены, новые грузы, rejects и рейтинг компании', 0.3, 0],
   ['grossai', 'ИИ-советы по деньгам', 'Где теряете деньги и что поменять в Gross', 0.3, 0],
   ['eta', 'ETA с пробками и часами', 'Точное время до стопа с учётом HOS', 0, 0.02],
   ['photos', 'Разбор фото', 'BOL, пломба, номер трейлера из фото водителя', 0, 0.05],
   ['proof', 'Детеншен и папка-доказательство', 'Время на складе, фото и письмо брокеру', 0, 0.02],
   ['handoff', 'Передача смены и сводка', 'Что передать следующему диспетчеру, утренняя сводка', 0.3, 0],
-  ['translate', 'Перевод для водителей', 'Русский, узбекский, турецкий ↔ английский', 0, 0.03],
+  ['translate', 'Перевод с водителем', 'Вы пишете по-русски или по-узбекски, водитель получает на английском, и обратно', 0, 0.03],
   ['roads', 'Погода и опасные дороги', 'Шторма, снег и закрытия на маршруте', 0, 0.01]);
 const PK_KEYS = CP_EXTRAS.map((e) => e[0]), PK_BIT = (k) => 1 << PK_KEYS.indexOf(k);
 const PK_GROUPS = [['ИИ-помощники', ['ai', 'auto', 'grossai', 'handoff']], ['Водители и связь', ['voice', 'translate', 'photos', 'broker']], ['Слежение и ETA', ['map', 'eta', 'roads', 'relay']], ['Отчёты и порядок', ['reports', 'ub', 'proof', 'prio']]];
@@ -5618,19 +5618,24 @@ function pkStep0(p) {
     (S.used ? '<div class="row" style="gap:8px;padding:10px 12px;border-radius:12px;background:var(--violet-bg)"><span class="mz-ai">' + ic('spark', 16) + '</span><span class="xs" style="line-height:1.45">Сейчас к боту подключено групп водителей: <b>' + S.used + '</b>. ' + (S.used > p.hi ? 'Это больше верхней границы: лишние встанут на паузу.' : S.used < p.lo ? 'Это меньше нижней границы: можно взять диапазон ниже и сэкономить.' : 'Диапазон подходит.') + '</span></div>' : '') +
     '<span class="xs muted" style="line-height:1.45">Водителей станет больше верхней границы: новые группы встанут на паузу, и бот предложит расширить диапазон. Ничего не отключится внезапно.</span>') + pkBar(p) + pkNav(p, 'Дальше');
 }
+function pkEx(text, from, to) {
+  return '<div class="col" style="gap:8px;padding:10px 12px;border-radius:12px;background:var(--raised);margin-top:-2px"><span class="xs sub" style="line-height:1.45">' + text + '</span><div class="row" style="gap:8px;align-items:center;flex-wrap:wrap"><span class="chip c-gray" style="height:auto;min-height:26px;white-space:normal;padding:4px 10px">' + from + '</span>' + ic('chev', 14, 'var(--muted)', 2) + '<span class="chip c-done" style="height:auto;min-height:26px;white-space:normal;padding:4px 10px">' + to + '</span></div></div>';
+}
 function pkSeg(p, k, v, label, sub) { return '<button class="seg' + (p[k] === v ? ' on' : '') + '" data-pks="' + k + ':' + v + '" style="min-height:56px;display:flex;flex-direction:column;align-items:center;justify-content:center;gap:2px;font-size:14px;padding:6px 4px"><b>' + label + '</b>' + (sub ? '<span class="xs">' + sub + '</span>' : '') + '</button>'; }
 function pkStep1(p) {
   const modeSeg = (m, h, label, sub) => '<button class="seg' + (p.m === m && (m === 'full' || p.h === h) ? ' on' : '') + '" data-pkm="' + m + ':' + h + '" style="min-height:56px;display:flex;flex-direction:column;align-items:center;justify-content:center;gap:2px;font-size:14px;padding:6px 4px"><b>' + label + '</b><span class="xs">' + sub + '</span></button>';
   const free = p.m === 'shift' ? 3 : 6;
   return opsCard('<b style="font-size:17px">Как вы работаете?</b>' +
-    '<span class="label">Какие грузы</span><div style="display:grid;grid-template-columns:repeat(3,minmax(0,1fr));gap:8px">' + pkSeg(p, 'kind', 'amazon', 'Amazon') + pkSeg(p, 'kind', 'street', 'Street') + pkSeg(p, 'kind', 'both', 'Оба') + '</div>' +
+    '<span class="label">Какие грузы</span><span class="xs muted" style="margin-top:-4px;line-height:1.45">Нужно, чтобы советовать правильные функции: для Amazon — Relay и скоркард, для Street — тексты брокеру и детеншен.</span><div style="display:grid;grid-template-columns:repeat(3,minmax(0,1fr));gap:8px">' + pkSeg(p, 'kind', 'amazon', 'Amazon') + pkSeg(p, 'kind', 'street', 'Street') + pkSeg(p, 'kind', 'both', 'Оба') + '</div>' +
     '<span class="label">Когда бот пишет в группы</span><div style="display:grid;grid-template-columns:repeat(4,minmax(0,1fr));gap:8px">' + modeSeg('full', 24, '24/7', 'всегда') + modeSeg('shift', 12, 'Смена', '12 ч') + modeSeg('shift', 10, 'Смена', '10 ч') + modeSeg('shift', 8, 'Смена', '8 ч') + '</div>' +
     '<span class="xs muted" style="margin-top:-4px">Короче смена — дешевле: вне смены бот только следит и копит сводку.</span>' +
     '<span class="label">Апдейтов водителю в день</span><div style="display:grid;grid-template-columns:repeat(5,minmax(0,1fr));gap:6px">' + [3, 4, 5, 6, 7, 8, 9, 10, 11, 12].map((u) => pkSeg(p, 'u', u, String(u), '~' + (Math.round(24 / u * 10) / 10) + ' ч')).join('') + '</div>' +
     '<span class="xs muted" style="margin-top:-4px">Каждый апдейт чуть дороже: бот считает маршрут и пробки для каждого водителя. Между апдейтами не меньше 2 часов.</span>' +
     '<div class="row" style="justify-content:space-between;gap:10px;flex-wrap:wrap"><span class="col" style="gap:2px"><span class="label">Сколько человек работает в окне</span><span class="xs muted">' + free + ' бесплатно, дальше меньше $1 за человека</span></span>' + pkStepper('t', p.t, 1, 30, 'людей в окне') + '</div>' +
-    '<span class="label">Водители часто шлют голосовые?</span><div class="grid2">' + pkSeg(p, 'voice', true, 'Да, часто') + pkSeg(p, 'voice', false, 'Редко') + '</div>' +
-    '<span class="label">Вы пишете водителям не на английском?</span><div class="grid2">' + pkSeg(p, 'trn', true, 'Да, нужен перевод') + pkSeg(p, 'trn', false, 'Нет, на английском') + '</div>') + pkBar(p) + pkNav(p, 'Дальше');
+    '<span class="label">Водители присылают голосовые сообщения?</span>' + pkEx('Бот сам переведёт голосовое в текст, слушать не нужно.', '🎤 голосовое 0:40', 'Стою на погрузке, жду документы, выеду через час') +
+    '<div class="grid2">' + pkSeg(p, 'voice', true, 'Да, часто', 'включить') + pkSeg(p, 'voice', false, 'Редко или нет', 'не нужно') + '</div>' +
+    '<span class="label">Нужен перевод между вами и водителем?</span>' + pkEx('Вы пишете на своём языке, водитель получает на английском. Он отвечает по-английски, вы читаете на своём.', 'Вы: «Скинь фото BOL»', 'Водителю: «Please send a photo of the BOL»') +
+    '<div class="grid2">' + pkSeg(p, 'trn', true, 'Да, переводить', 'пишу по-русски / узбекски') + pkSeg(p, 'trn', false, 'Нет', 'сам пишу по-английски') + '</div>') + pkBar(p) + pkNav(p, 'Дальше');
 }
 function pkStep2(p) {
   const rec = pkRecommend(p), trial = inTrial();
