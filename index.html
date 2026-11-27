@@ -5484,7 +5484,9 @@ S.trialUntil = (function () {
   if (S.fromBot) return 0;
   try { let t = +localStorage.getItem('mz_trial_demo'); if (!t) { t = Date.now() + TRIAL_D * 864e5; localStorage.setItem('mz_trial_demo', String(t)); } return t; } catch (e) { return Date.now() + TRIAL_D * 864e5; }
 })();
-function inTrial() { return S.plan !== 'owner' && S.trialUntil > Date.now(); }
+function inTrial() { return S.plan !== 'owner' && S.access !== 'survey' && S.trialUntil > Date.now(); }
+S.fx = (function () { try { const v = +new URLSearchParams(location.search).get('fx'); return v > 1000 ? v : 0; } catch (e) { return 0; } })();
+function uzs(usd) { return S.fx ? (Math.ceil(usd * S.fx / 1000) * 1000).toLocaleString('ru-RU').replace(/\u00a0/g, ' ') + ' сум' : ''; }
 function trialLeft() {
   const ms = Math.max(0, S.trialUntil - Date.now()), d = Math.floor(ms / 864e5), h = Math.floor(ms % 864e5 / 36e5), m = Math.floor(ms % 36e5 / 6e4);
   return d ? d + ' д ' + h + ' ч' : h ? h + ' ч ' + m + ' мин' : m + ' мин';
@@ -5492,10 +5494,12 @@ function trialLeft() {
 const TRIAL_ON = ['Диспеч, шаблоны, DH и RPM', 'Gross-борд и советы', 'Грузы, борд, Amazon-фасилити', 'Детеншен, обещания, передача смены', 'Карта и Update Board', 'ИИ-помощник: 20 вопросов в день', 'Отчёты за смену'];
 const TRIAL_OFF = [['Автоответчик водителям', 'ИИ отвечает водителям сам, это самая дорогая часть'], ['Голос и переводы голосовых', 'распознавание речи платное'], ['Тексты брокеру (ИИ)', 'длинные ответы ИИ'], ['Поддержка в приоритете', 'для платных тарифов']];
 function trialBanner() {
+  if (S.access === 'survey' && S.plan !== 'owner') return '<button class="card row" data-go="setup" style="text-align:left;padding:14px 16px;border-radius:18px;gap:12px;width:100%;border-color:var(--violet-bd);background:radial-gradient(120% 140% at 100% 0%,var(--violet-bg),var(--card))"><span class="mz-av" style="width:42px;height:42px;border-radius:13px;background:var(--violet-bg);color:var(--violet)">' + ic('gift', 21, 'currentColor', 2) + '</span><span class="col" style="flex:1;gap:2px;min-width:0"><b style="font-size:15px">3 дня бесплатно после короткого опроса</b><span class="xs muted">7 вопросов, около 2 минут. Пробные дни начнутся только после опроса.</span></span>' + ic('chev', 18, 'var(--muted)', 2) + '</button>';
   if (inTrial()) {
+    const a = S.act || {}, todo = [!a.e ? 'подключите ELD' : '', !a.g ? 'добавьте бота в группу водителя' : ''].filter(Boolean);
     const pct = Math.max(4, Math.min(100, (S.trialUntil - Date.now()) / (TRIAL_D * 864e5) * 100));
     return '<button class="card col" data-go="pick" style="text-align:left;padding:14px 16px;border-radius:18px;gap:10px;width:100%;border-color:var(--violet-bd);background:radial-gradient(120% 140% at 100% 0%,var(--violet-bg),var(--card))">' +
-      '<span class="row" style="gap:12px;width:100%"><span class="mz-av" style="width:42px;height:42px;border-radius:13px;background:var(--violet-bg);color:var(--violet)">' + ic('gift', 21, 'currentColor', 2) + '</span><span class="col" style="flex:1;gap:2px;min-width:0"><b style="font-size:15px">Пробный период · осталось ' + trialLeft() + '</b><span class="xs muted">ИИ-консультант подберёт цену под ваших водителей за 1 минуту</span></span>' + ic('chev', 18, 'var(--muted)', 2) + '</span>' +
+      '<span class="row" style="gap:12px;width:100%"><span class="mz-av" style="width:42px;height:42px;border-radius:13px;background:var(--violet-bg);color:var(--violet)">' + ic('gift', 21, 'currentColor', 2) + '</span><span class="col" style="flex:1;gap:2px;min-width:0"><b style="font-size:15px">Пробный период · осталось ' + trialLeft() + '</b><span class="xs muted">' + (todo.length ? 'Чтобы пробные дни прошли с пользой: ' + todo.join(' и ') + '.' : 'ИИ-консультант подберёт цену под ваших водителей за 1 минуту') + '</span></span>' + ic('chev', 18, 'var(--muted)', 2) + '</span>' +
       '<span style="display:block;width:100%;height:6px;border-radius:3px;background:var(--line);overflow:hidden"><span style="display:block;height:100%;width:' + pct + '%;background:var(--violet);border-radius:3px"></span></span></button>';
   }
   if (S.access === 'unpaid' && S.plan !== 'owner') return '<button class="card row" data-go="pick" style="text-align:left;padding:14px 16px;border-radius:18px;gap:12px;width:100%;border-color:var(--amber-bd,var(--line3))"><span class="mz-av" style="width:42px;height:42px;border-radius:13px;background:var(--amber-bg,var(--raised));color:var(--amber)">' + ic('clock', 21, 'currentColor', 2) + '</span><span class="col" style="flex:1;gap:2px;min-width:0"><b style="font-size:15px">Пробный период закончился</b><span class="xs muted">Данные сохранены. Подберите тариф: после оплаты всё включится снова.</span></span>' + ic('chev', 18, 'var(--muted)', 2) + '</button>';
@@ -5634,6 +5638,7 @@ function pkStep3(p) {
   const sent = p.sent && Date.now() - p.sent < 7 * 864e5;
   return '<div class="mz-hero col" style="gap:12px"><span class="xs row mz-ai" style="gap:6px;font-weight:700">' + ic('spark', 15) + 'ИИ-КОНСУЛЬТАНТ РЕКОМЕНДУЕТ</span>' +
       '<div class="row" style="align-items:baseline;gap:8px"><b class="mz-big" style="font-size:52px;letter-spacing:-.03em">$' + price + '</b><span class="muted">/ мес</span></div>' +
+      (S.fx ? '<span class="small" style="margin-top:-6px">≈ ' + uzs(price) + ' в месяц по курсу ЦБ</span>' : '') +
       '<span class="small sub">до ' + p.hi + ' водителей · ' + p.u + ' апдейта в день · ' + (p.m === 'full' ? '24/7' : 'только в смену') + '</span>' +
       '<span class="row" style="gap:8px;flex-wrap:wrap"><span class="chip c-done">$' + per + ' за водителя</span><span class="chip c-plan">без автосписаний</span>' + (inTrial() ? '<span class="chip" style="background:var(--violet-bg);color:var(--violet);border-color:var(--violet-bd)">+ ' + trialLeft() + ' пробных к месяцу</span>' : '') + '</span></div>' +
     opsCard('<b style="font-size:15px">Почему такая цена</b>' + pkWhy(p).map((t) => '<div class="row small sub" style="gap:8px;align-items:flex-start;line-height:1.45"><span style="color:var(--violet)">•</span><span>' + t + '</span></div>').join('')) +
@@ -5641,9 +5646,9 @@ function pkStep3(p) {
     opsCard('<b style="font-size:15px">Что входит</b><div class="wrap" style="gap:6px">' + PK_CORE.concat(on).map((c) => '<span class="chip c-done" style="height:28px">' + ic('check', 13, 'currentColor', 3) + ' ' + c + '</span>').join('') + '</div>') +
     opsCard('<b style="font-size:15px">Оплата через Click</b><span class="small sub" style="line-height:1.45">Укажите номер, к которому привязан Click. Счёт придёт в приложение Click, оплачиваете там. Тариф включится, как только владелец увидит оплату.</span>' +
       '<input id="pkPhone" type="tel" inputmode="tel" autocomplete="tel" placeholder="+998 90 123 45 67" value="' + esc(p.phone || '') + '" style="height:50px;border-radius:14px;border:1px solid var(--line3);background:var(--raised);color:var(--text);font:inherit;font-size:17px;padding:0 14px" aria-label="Номер Click">' +
-      '<button class="btn primary" data-pk="send" style="height:52px;font-size:16px">' + (sent ? 'Отправить заявку ещё раз' : 'Получить счёт в Click · $' + price + '/мес') + '</button>' +
+      '<button class="btn primary" data-pk="send" style="height:52px;font-size:16px">' + (sent ? 'Отправить заявку ещё раз' : 'Получить счёт в Click · ' + (S.fx ? '≈ ' + uzs(price) : '$' + price + '/мес')) + '</button>' +
       (sent ? '<span class="xs" style="color:var(--mint-t)">✓ Заявка отправлена. Счёт придёт в Click.</span>' : '') +
-      '<span class="xs muted" style="line-height:1.45">Сумма в счёте будет в сумах по курсу на день оплаты.' + (inTrial() ? ' Оплатите сейчас, и оставшиеся пробные дни добавятся к месяцу.' : '') + '</span>') +
+      '<span class="xs muted" style="line-height:1.45">Сумма в счёте в сумах по курсу ЦБ на день заявки.' + (inTrial() ? ' Оплатите сейчас, и оставшиеся пробные дни добавятся к месяцу.' : '') + '</span>') +
     '<button class="btn" data-pk="restart" style="height:46px">Изменить ответы</button>';
 }
 function vPick() {
