@@ -4313,12 +4313,13 @@ const NAVTREE = [
   ['g_team','Команда','users',[['people','Водители и диспетчеры','Добавить людей и назначать на грузы','NEW'],['team','Команда и доступы','Смены, приглашения, роли']]],
   ['g_set','Настройки','sliders',[['settings','Настройки','Язык, часы, уведомления'],['plans','Подписка','Цена и лимиты'],['help','Инструкция','Как всем пользоваться'],['features','Все функции','Что готово и что в планах']]]
 ];
+function navStore() { return isWide() ? (OPS.navW || (OPS.navW = {})) : (OPS.nav || (OPS.nav = {})); }
 function navGroupOf(v) { const g = NAVTREE.filter((n) => n[3] && n[3].some((s) => s[0] === v))[0]; return g ? g[0] : ''; }
 function navTree(big) {
   const act = S.view, ag = navGroupOf(act);
   return NAVTREE.map((n) => {
     if (!n[3]) return '<button class="navbtn' + (act === n[0] ? ' on' : '') + '" data-go="' + n[0] + '"' + (big ? ' style="height:52px;font-size:16px"' : '') + '>' + ic(n[2], big ? 20 : 18) + n[1] + '</button>';
-    const open = OPS.nav[n[0]] !== undefined ? OPS.nav[n[0]] : ag === n[0];
+    const st = navStore(), open = st[n[0]] !== undefined ? st[n[0]] : (isWide() || ag === n[0]);  // expanded version: all groups open
     const newCnt = n[3].filter((s) => s[3]).length;
     return '<div class="col" style="gap:2px"><button class="navbtn" data-opnav="' + n[0] + '" aria-expanded="' + open + '" style="' + (big ? 'height:52px;font-size:16px;' : '') + (ag === n[0] ? 'color:var(--text);font-weight:600' : '') + '">' + ic(n[2], big ? 20 : 18) +
       '<span style="flex:1">' + n[1] + '</span>' + (newCnt && !open ? '<span class="chip c-done" style="height:18px;padding:0 6px;font-size:10px">' + newCnt + ' new</span>' : '') +
@@ -4575,7 +4576,7 @@ function opsClick(d) {
   if (typeof opsClick4 === 'function' && opsClick4(d)) return true;
   if (typeof opsClick5 === 'function' && opsClick5(d)) return true;
   if (typeof opsClick6 === 'function' && opsClick6(d)) return true;
-  if (d.opnav) { const g = d.opnav, cur = OPS.nav[g] !== undefined ? OPS.nav[g] : navGroupOf(S.view) === g; OPS.nav[g] = !cur; render(); return true; }
+  if (d.opnav) { const g = d.opnav, st = navStore(), cur = st[g] !== undefined ? st[g] : (isWide() || navGroupOf(S.view) === g); st[g] = !cur; render(); return true; }
   if (d.optpl) { OPS.d.tpl = d.optpl; render(); return true; }
   if (d.opstop) {
     const p = d.opstop.split(':'), st = OPS.d.stops;
@@ -5409,7 +5410,8 @@ if (!I.phone) I.phone = '<rect x="7" y="2" width="10" height="20" rx="2"/><path 
 /* ===== Modenzo OPS v7: menu groups start closed (remembered), device-bound window, devices & security, live Relay scorecard ===== */
 /* menu: all groups closed by default; the group of the open screen opens by itself; your choice is remembered */
 OPS.nav = (function () { try { return JSON.parse(localStorage.getItem('mz_nav') || '{}'); } catch (e) { return {}; } })();
-function opsNavSave() { try { localStorage.setItem('mz_nav', JSON.stringify(OPS.nav)); } catch (e) {} }
+OPS.navW = (function () { try { return JSON.parse(localStorage.getItem('mz_navw') || '{}'); } catch (e) { return {}; } })();  // the expanded version keeps its own: all open at first
+function opsNavSave() { try { localStorage.setItem('mz_nav', JSON.stringify(OPS.nav)); localStorage.setItem('mz_navw', JSON.stringify(OPS.navW)); } catch (e) {} }
 
 /* security view: devices that may open the window */
 OPS.dev = null; OPS.devBusy = false;
@@ -5468,7 +5470,7 @@ OPS_AG2.unshift(['security','Агент безопасности','Следит,
 if (OPS.agOn.security === undefined) OPS.agOn.security = true;
 OPS_FEED.unshift(['security','shield','var(--red-bg)','var(--red)','Агент безопасности','Окно открыли на новом устройстве (Chrome · Windows). Сообщил вам: отключить можно одной кнопкой.']);
 function opsClick7(d) {
-  if (d.opnav) { const g = d.opnav, cur = OPS.nav[g] !== undefined ? OPS.nav[g] : navGroupOf(S.view) === g; OPS.nav[g] = !cur; opsNavSave(); render(); return true; }
+  if (d.opnav) { const g = d.opnav, st = navStore(), cur = st[g] !== undefined ? st[g] : (isWide() || navGroupOf(S.view) === g); st[g] = !cur; opsNavSave(); render(); return true; }
   if (d.opdev) {
     if (!apiOn()) { toast('Демо: в рабочей версии устройство будет отключено'); return true; }
     apiCall('/api/devices/remove', { device:d.opdev }).then(() => { OPS.dev = null; toast('Отключено'); render(); }).catch(apiFail);
@@ -6094,7 +6096,7 @@ function authOldCard() {
 const MODE_HIDE = { a: ['broker'], s: ['scorecard'] };
 const MODE_HIDE_AG = { a: ['brokerchk', 'translate', 'dispatcher'], s: ['relay', 'score'] };
 const SIMPLE_KEEP = ['home', 'board', 'updates', 'eta', 'ub', 'dispatch', 'drivers', 'map', 'gross', 'ai', 'agents', 'settings', 'pick', 'billing', 'legal', 'botall', 'help'];
-const NAV_ALL = NAVTREE.map((g) => [g[0], g[1], g[2], (g[3] || []).slice()].concat(g.slice(4)));
+const NAV_ALL = NAVTREE.map((g) => [g[0], g[1], g[2], g[3] ? g[3].slice() : undefined].concat(g.slice(4)));
 const AG_ALL = OPS_AG2.slice();
 function workMode() { try { const v = localStorage.getItem('mz_mode'); if (v === 'a' || v === 's' || v === 'b') return v; } catch (e) {} try { const bd = new URLSearchParams(location.search).get('bd'); if (bd === 'a' || bd === 's' || bd === 'b') return bd; } catch (e) {} return (S.so && S.so.a) || 'b'; }
 function simpleOn() { try { return localStorage.getItem('mz_simple') === '1'; } catch (e) { return false; } }
@@ -6102,8 +6104,9 @@ function applyMode() {
   const m = workMode(), hide = MODE_HIDE[m] || [], simple = simpleOn();
   NAVTREE.length = 0;
   NAV_ALL.forEach((g) => {
+    if (!g[3]) { NAVTREE.push(g.slice()); return; }  // a single item like "Главная": stays a plain button
     const items = g[3].filter((x) => hide.indexOf(x[0]) < 0 && (!simple || SIMPLE_KEEP.indexOf(x[0]) >= 0));
-    if (g[0] === 'home' || items.length) { const ng = g.slice(); ng[3] = items; NAVTREE.push(ng); }
+    if (items.length) { const ng = g.slice(); ng[3] = items; NAVTREE.push(ng); }
   });
   const hideAg = MODE_HIDE_AG[m] || [];
   OPS_AG2.length = 0; AG_ALL.forEach((a) => { if (hideAg.indexOf(a[0]) < 0) OPS_AG2.push(a); });
