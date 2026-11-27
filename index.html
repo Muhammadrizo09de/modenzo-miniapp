@@ -6092,7 +6092,7 @@ const MODE_HIDE_AG = { a: ['brokerchk', 'translate', 'dispatcher'], s: ['relay',
 const SIMPLE_KEEP = ['home', 'board', 'updates', 'eta', 'ub', 'dispatch', 'drivers', 'map', 'gross', 'ai', 'agents', 'settings', 'pick', 'billing', 'legal', 'botall', 'help'];
 const NAV_ALL = NAVTREE.map((g) => [g[0], g[1], g[2], (g[3] || []).slice()].concat(g.slice(4)));
 const AG_ALL = OPS_AG2.slice();
-function workMode() { try { const v = localStorage.getItem('mz_mode'); if (v === 'a' || v === 's' || v === 'b') return v; } catch (e) {} return (S.so && S.so.a) || 'b'; }
+function workMode() { try { const v = localStorage.getItem('mz_mode'); if (v === 'a' || v === 's' || v === 'b') return v; } catch (e) {} try { const bd = new URLSearchParams(location.search).get('bd'); if (bd === 'a' || bd === 's' || bd === 'b') return bd; } catch (e) {} return (S.so && S.so.a) || 'b'; }
 function simpleOn() { try { return localStorage.getItem('mz_simple') === '1'; } catch (e) { return false; } }
 function applyMode() {
   const m = workMode(), hide = MODE_HIDE[m] || [], simple = simpleOn();
