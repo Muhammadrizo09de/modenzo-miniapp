@@ -2165,6 +2165,9 @@ function liveCard() {
 /* ---------------- direct link to the bot (API): everything happens inside the window when the bot has an address ---------------- */
 S.api = ''; S.busy = ''; S.aiLog = []; S.spRes = null; S.addRes = null; S.viewer = null;
 try { const k = new URLSearchParams(location.search).get('k') || ''; if (/^\d{1,15}\.\d{9,11}\.[0-9a-f]{32}$/.test(k)) S.k = k; } catch (e) {}
+/* the window key never stays in the address bar: a copied link carries nothing (the key is bound to this device on the bot) */
+S.dev = (function () { try { let d = localStorage.getItem('mz_dev'); if (!/^[A-Za-z0-9]{16,40}$/.test(d || '')) { d = Array.from(crypto.getRandomValues(new Uint8Array(12))).map((b) => b.toString(36).padStart(2, '0')).join('').replace(/[^A-Za-z0-9]/g, 'x').slice(0, 24); localStorage.setItem('mz_dev', d); } return d; } catch (e) { return ''; } })();
+try { const q0 = new URLSearchParams(location.search); if (q0.get('k')) { if (S.k) { try { const sv = JSON.parse(localStorage.getItem('mz_api') || 'null') || {}; sv.k = S.k; if (!sv.a) sv.a = q0.get('api') || ''; localStorage.setItem('mz_api', JSON.stringify(sv)); } catch (e) {} } q0.delete('k'); history.replaceState(null, '', location.pathname + (q0.toString() ? '?' + q0.toString() : '') + location.hash); } } catch (e) {}
 try { const a = new URLSearchParams(location.search).get('api') || ''; if (/^https:\/\/[A-Za-z0-9.-]+(:\d+)?(\/[A-Za-z0-9._\/-]*)?$/.test(a)) S.api = a.replace(/\/$/, ''); } catch (e) {}
 S.apiState = S.api ? 'check' : 'none';
 /* the last working address is remembered: buttons in old messages carry no address (or an old tunnel), the window still finds the bot */
@@ -2209,7 +2212,7 @@ function apiBadge() {
   return '<div class="card col" style="padding:10px 12px;border-radius:12px;gap:4px;border-color:var(--amber-bd);background:var(--amber-bg)"><span class="xs" style="color:var(--amber);font-weight:600">⚪ ' + tr3('Нет прямой связи с ботом', 'No direct link to the bot', 'Bot bilan toʻgʻridan-toʻgʻri aloqa yoʻq') + '</span><span class="xs muted" style="line-height:1.45">' + why + '</span><button class="btn" data-act="apirecheck" style="height:32px;padding:0 12px;font-size:12px;align-self:flex-start">' + tr3('Проверить ещё раз', 'Check again', 'Yana tekshirish') + '</button></div>';
 }
 setTimeout(apiFind, 0);
-function apiHeaders() { return tg && tg.initData ? { 'X-Init-Data': tg.initData } : { 'X-Win-Key': S.k || '' }; }
+function apiHeaders() { return tg && tg.initData ? { 'X-Init-Data': tg.initData } : { 'X-Win-Key': S.k || '', 'X-Device': S.dev || '' }; }
 async function apiCall(path, data, form) {
   const opt = { method: data || form ? 'POST' : 'GET', headers: apiHeaders() };
   if (form) opt.body = form;
@@ -2220,7 +2223,7 @@ async function apiCall(path, data, form) {
   if (!r.ok && !j.texts) throw new Error(j.error || ('HTTP ' + r.status));
   return j;
 }
-function apiFail(e) { S.busy = ''; render(); toast(String(e && e.message) === 'slow' ? 'Слишком часто. Подождите минуту' : 'Нет связи с ботом. Попробуйте ещё раз'); }
+function apiFail(e) { const em = String(e && e.message); if (em === 'device' || em === 'limit') { S.busy = ''; render(); toast(em === 'device' ? 'Эта ссылка уже открыта на другом устройстве. Откройте окно своей кнопкой в боте' : 'Окно уже открыто на 3 устройствах. Отключите лишнее в «Устройства и безопасность»'); return; } S.busy = ''; render(); toast(String(e && e.message) === 'slow' ? 'Слишком часто. Подождите минуту' : 'Нет связи с ботом. Попробуйте ещё раз'); }
 /* fresh data from the bot without leaving the window */
 async function refreshState() {
   try {
@@ -4563,6 +4566,7 @@ function opsRefresh() {
   const p = document.getElementById('opsPrev'); if (p) p.innerHTML = opsPrevHtml();
 }
 function opsClick(d) {
+  if (typeof opsClick7 === 'function' && opsClick7(d)) return true;
   if (typeof opsClick4 === 'function' && opsClick4(d)) return true;
   if (typeof opsClick5 === 'function' && opsClick5(d)) return true;
   if (typeof opsClick6 === 'function' && opsClick6(d)) return true;
@@ -5391,6 +5395,78 @@ document.addEventListener('input', (e) => {
   if (!e.target || e.target.id !== 'opsVoice') return;
   OPS.voiceIn = e.target.value; const o = document.getElementById('opsVoiceOut'); if (o) o.textContent = opsVoiceToEn(OPS.voiceIn || '3011 едет, 120 миль, будет к 6');
 });
+if (!I.phone) I.phone = '<rect x="7" y="2" width="10" height="20" rx="2"/><path d="M11 18h2"/>';
+/* ===== Modenzo OPS v7: menu groups start closed (remembered), device-bound window, devices & security, live Relay scorecard ===== */
+/* menu: all groups closed by default; the group of the open screen opens by itself; your choice is remembered */
+OPS.nav = (function () { try { return JSON.parse(localStorage.getItem('mz_nav') || '{}'); } catch (e) { return {}; } })();
+function opsNavSave() { try { localStorage.setItem('mz_nav', JSON.stringify(OPS.nav)); } catch (e) {} }
+
+/* security view: devices that may open the window */
+OPS.dev = null; OPS.devBusy = false;
+function opsDevLoad() {
+  if (OPS.devBusy || !apiOn()) return;
+  OPS.devBusy = true;
+  apiCall('/api/devices').then((j) => { OPS.dev = (j && j.devices) || []; }).catch(() => { OPS.dev = 'err'; }).then(() => { OPS.devBusy = false; if (S.view === 'security') render(); });
+}
+function vSecurity() {
+  const live = apiOn(), list = live ? OPS.dev : [
+    { device:'demo1', ua:'Chrome · Mac', first:Date.now() / 1000 - 9 * 86400, last:Date.now() / 1000 - 60, current:true },
+    { device:'demo2', ua:'Telegram · iPhone', first:Date.now() / 1000 - 20 * 86400, last:Date.now() / 1000 - 3 * 3600, current:false }
+  ];
+  if (live && OPS.dev === null) opsDevLoad();
+  const ago = (t) => { const m = Math.round((Date.now() / 1000 - t) / 60); return m < 2 ? 'сейчас' : m < 60 ? m + ' мин назад' : m < 1440 ? Math.round(m / 60) + ' ч назад' : Math.round(m / 1440) + ' дн. назад'; };
+  const rows = Array.isArray(list) ? list.map((d) => '<div class="row" style="gap:12px;padding:12px 0;border-top:1px solid var(--line2)"><span class="mz-av" style="width:40px;height:40px;border-radius:13px;background:' + (d.current ? 'var(--mint-bg)' : 'var(--raised)') + ';color:' + (d.current ? 'var(--mint-t)' : 'var(--sub)') + '">' + ic(/iphone|android|telegram/i.test(d.ua || '') ? 'phone' : 'monitor', 19, 'currentColor', 2) + '</span>' +
+    '<span class="col" style="flex:1;min-width:0;gap:2px"><b style="font-size:15px">' + esc(d.ua || 'Браузер') + (d.current ? ' <span class="chip c-done" style="height:20px">это устройство</span>' : '') + '</b><span class="xs muted">впервые ' + ago(d.first) + ' · последний раз ' + ago(d.last) + '</span></span>' +
+    (d.current ? '' : '<button class="pill" data-opdev="' + esc(d.device) + '" style="height:32px">Отключить</button>') + '</div>').join('') : (list === 'err' ? '<span class="small muted">Не удалось загрузить список.</span>' : '<span class="small muted">Загружаю…</span>');
+  return '<div class="col mz-in" style="gap:14px">' + mzHead('Устройства и безопасность', 'Окно открывается только на ваших устройствах', 'menu') +
+    '<div class="mz-hero col" style="gap:10px"><span class="row" style="gap:10px"><span class="mz-av" style="width:44px;height:44px;border-radius:14px;background:var(--mint);color:var(--on-mint)">' + ic('shield', 22, 'currentColor', 2) + '</span><span class="col" style="gap:2px"><b style="font-size:17px">Чужой не войдёт незаметно</b><span class="small sub">Окно работает максимум на 3 ваших устройствах. О каждом новом входе бот сразу пишет вам.</span></span></span></div>' +
+    opsCard('<div class="row" style="justify-content:space-between"><b style="font-size:15px">Где открыто окно</b><span class="xs muted">до 3 устройств</span></div>' + rows +
+      (Array.isArray(list) && list.length > 1 ? '<button class="btn danger" data-opdev="others" style="height:44px">Отключить все, кроме этого</button>' : '')) +
+    opsHowTo(['Ссылку на окно бот даёт только вам, в вашем чате.', 'Адрес в браузере больше не содержит ключа: скопировать ссылку сверху и отправить другому не выйдет.', 'Новое устройство: бот пишет вам. Четвёртое устройство окно не пустит. Лишнее отключаете здесь одной кнопкой.']) +
+    (!live ? '<div class="xs" style="color:var(--faint)">Демо: список примерный. Настоящий появится, когда окно связано с ботом.</div>' : '') + '</div>';
+}
+
+/* live scorecard from the Relay extension (through the bot); demo when there is no data yet */
+OPS.score = null; OPS.scoreBusy = false;
+function opsScoreLoad() {
+  if (OPS.scoreBusy || !apiOn()) return;
+  OPS.scoreBusy = true;
+  apiCall('/api/relay/score/view').then((j) => { OPS.score = (j && j.score) || 'none'; }).catch(() => { OPS.score = 'none'; }).then(() => { OPS.scoreBusy = false; if (S.view === 'scorecard') render(); });
+}
+const vScorecardDemo = vScorecard;
+function vScorecard7() {
+  if (apiOn() && OPS.score === null) opsScoreLoad();
+  const sc = OPS.score && OPS.score !== 'none' ? OPS.score : null;
+  let html = vScorecardDemo();
+  if (sc) {
+    const tierCol = /FANTASTIC|GREAT/i.test(sc.tier || '') ? 'var(--mint-t)' : /FAIR/i.test(sc.tier || '') ? 'var(--amber)' : 'var(--red)';
+    const upd = sc.at ? new Date(sc.at * 1000).toLocaleString('ru-RU', { day:'2-digit', month:'2-digit', hour:'2-digit', minute:'2-digit' }) : '';
+    const metrics = Object.keys(sc.metrics || {}).slice(0, 8).map((k) => '<div class="row" style="justify-content:space-between;padding:8px 0;border-top:1px solid var(--line2)"><span class="small sub">' + esc(k) + '</span><b class="small">' + esc(String(sc.metrics[k])) + '</b></div>').join('');
+    const live = '<div class="mz-hero col" style="gap:12px"><div class="row" style="justify-content:space-between;align-items:flex-start"><span class="col" style="gap:4px"><span class="xs muted" style="font-weight:600">ИЗ AMAZON RELAY' + (sc.period ? ' · ' + esc(sc.period) : '') + '</span><b class="mz-big" style="font-size:40px;color:' + tierCol + '">' + esc(sc.tier || '—') + '</b></span><span class="chip c-done"><span class="mz-live" style="width:7px;height:7px"></span>&nbsp;живые данные</span></div>' +
+      '<div class="grid2">' + [['On-time', sc.onTime], ['Reject', sc.reject]].map((m) => '<div class="card col" style="padding:12px 14px;border-radius:14px;gap:2px;background:var(--raised)"><span class="xs muted">' + m[0] + '</span><b class="mz-big" style="font-size:24px">' + (m[1] != null && m[1] !== '' ? esc(String(m[1])) + (String(m[1]).indexOf('%') < 0 ? '%' : '') : '—') + '</b></div>').join('') + '</div>' +
+      (metrics ? '<div class="col">' + metrics + '</div>' : '') + '<span class="xs muted">Обновлено ' + upd + ' · из расширения Relay</span></div>';
+    html = html.replace(/<div class="mz-hero col" style="gap:14px">[\s\S]*?<\/div><\/div>(?=<div class="col" style="gap:10px">)/, live + '<div class="mz-sec"><h3>Грузы, которые важно спасти</h3><span class="xs muted">пример</span></div>');
+  } else {
+    html = html.replace('<div class="mz-hero col" style="gap:14px">', '<div class="card row" style="padding:12px 14px;border-radius:16px;gap:10px;border-color:var(--violet-bd);background:var(--violet-bg)"><span class="mz-ai">' + ic('spark', 18) + '</span><span class="small" style="flex:1;line-height:1.45">Ниже пример. Включите расширение Modenzo Relay Reader и откройте страницу Scorecard в Relay: настоящие цифры придут сюда сами.</span></div><div class="mz-hero col" style="gap:14px">');
+  }
+  return html;
+}
+VIEWS.scorecard = vScorecard7;
+VIEWS.security = vSecurity; TAB_OF.security = 'menu';
+NAVTREE.filter((n) => n[0] === 'g_set')[0][3].splice(1, 0, ['security','Устройства и безопасность','Окно только на ваших устройствах','NEW']);
+OPS_AG2.unshift(['security','Агент безопасности','Следит, где открыто ваше окно: максимум 3 устройства, о каждом новом входе сразу пишет вам. Лишнее отключаете одной кнопкой.','Ваше окно открыли на новом устройстве: Chrome · Windows. Если это не вы, отключите его.','shield','var(--red-bg)','var(--red)']);
+if (OPS.agOn.security === undefined) OPS.agOn.security = true;
+OPS_FEED.unshift(['security','shield','var(--red-bg)','var(--red)','Агент безопасности','Окно открыли на новом устройстве (Chrome · Windows). Сообщил вам: отключить можно одной кнопкой.']);
+function opsClick7(d) {
+  if (d.opnav) { const g = d.opnav, cur = OPS.nav[g] !== undefined ? OPS.nav[g] : navGroupOf(S.view) === g; OPS.nav[g] = !cur; opsNavSave(); render(); return true; }
+  if (d.opdev) {
+    if (!apiOn()) { toast('Демо: в рабочей версии устройство будет отключено'); return true; }
+    apiCall('/api/devices/remove', { device:d.opdev }).then(() => { OPS.dev = null; toast('Отключено'); render(); }).catch(apiFail);
+    return true;
+  }
+  return false;
+}
+
 
 
 
