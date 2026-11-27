@@ -4565,6 +4565,7 @@ function opsRefresh() {
 function opsClick(d) {
   if (typeof opsClick4 === 'function' && opsClick4(d)) return true;
   if (typeof opsClick5 === 'function' && opsClick5(d)) return true;
+  if (typeof opsClick6 === 'function' && opsClick6(d)) return true;
   if (d.opnav) { const g = d.opnav, cur = OPS.nav[g] !== undefined ? OPS.nav[g] : navGroupOf(S.view) === g; OPS.nav[g] = !cur; render(); return true; }
   if (d.optpl) { OPS.d.tpl = d.optpl; render(); return true; }
   if (d.opstop) {
@@ -4715,9 +4716,9 @@ function vHome2() {
       act('gross', 'chart', 'var(--violet-bg)', 'var(--violet)', 'Gross board', 'Деньги и советы ИИ') +
       act('board', 'grid', 'var(--amber-bg)', 'var(--amber)', 'Доска грузов', 'Все грузы и статусы') + '</div>' +
     '<div class="mz-sec"><h3>Требует внимания</h3><span class="xs muted">пример</span></div>' +
-    '<div class="col" style="gap:10px">' + tkHomeCard() +
+    '<div class="col" style="gap:10px" data-tour-attn>' + tkHomeCard() + (typeof opsHomeAlerts === 'function' ? opsHomeAlerts() : '') +
       (late[0] ? alertRow('eta', 'clock', 'var(--red-bg)', 'var(--red)', 'Load ' + late[0].id + ' · ' + esc(late[0].driver), esc(late[0].verdict || 'Опоздает'), 'var(--red)', 'var(--red-bd)') : '') +
-      (tight[0] ? alertRow('eta', 'warn', 'var(--amber-bg)', 'var(--amber)', 'Load ' + tight[0].id + ' · ' + esc(tight[0].driver), esc(tight[0].verdict || 'Впритык'), 'var(--amber)') : '') + '</div>' +
+      '</div>' +
     '<button class="card row" data-go="agents" style="text-align:left;padding:14px 16px;border-radius:20px;gap:12px"><span class="row" style="gap:0">' + OPS_AG2.slice(0, 4).map((a, i) => '<span class="mz-av" style="width:30px;height:30px;border-radius:10px;margin-left:' + (i ? -8 : 0) + 'px;border:2px solid var(--card);background:' + a[5] + ';color:' + a[6] + '">' + ic(a[4], 15, 'currentColor', 2) + '</span>').join('') + '</span>' +
       '<span class="col" style="flex:1;gap:2px"><b style="font-size:15px">ИИ-команда: ' + agOn + ' агентов</b><span class="xs muted">Следят за водителями и деньгами, пишут только вам</span></span>' + ic('chev', 18, 'var(--muted)', 2) + '</button>' +
     (!workingNow() ? '<button class="card row" data-go="work" style="text-align:left;padding:12px 16px;border-radius:16px;gap:12px"><span class="icon" style="width:36px;height:36px;border-radius:10px;background:var(--raised);color:var(--sub)">' + ic('clock', 18, 'currentColor', 2) + '</span><span class="col" style="flex:1;gap:2px"><b style="font-size:14px">Сейчас не рабочее время</b><span class="xs muted">Бот только анализирует. Сводка придёт в начале смены.</span></span></button>' : '') +
@@ -5153,6 +5154,244 @@ OPS_AG2.unshift(
 );
 ['facility','relay'].forEach((k) => { if (OPS.agOn[k] === undefined) OPS.agOn[k] = true; });
 OPS_FEED.splice(1, 0, ['facility','pin','var(--violet-bg)','var(--violet)','Агент складов','Груз #1187: вписан код LGB8, адрес и ZIP подставлены. Водителю добавил правило check-in.'], ['relay','truck','var(--violet-bg)','var(--violet)','Relay-агент','В Upcoming новый T-11W2B6NA (DFW7 → OKC1, $980) без водителя. Ближе всех Mike D.']);
+/* ===== Modenzo OPS v6: detention, promises, voice, Amazon scorecard, weather & roads, shift handoff, guided tour ===== */
+const OPS_NOW = Date.now();
+const OPS_DET = [
+  { id:'d1', unit:'2081', driver:'Bekzod T.', load:'1187', fac:'Walmart DC #6031', city:'Fontana, CA', broker:'TQL', arr:OPS_NOW - 3.4 * 36e5, out:0 },
+  { id:'d2', unit:'2102', driver:'Mike D.', load:'1190', fac:'Home Depot RDC', city:'Dallas, TX', broker:'Coyote', arr:OPS_NOW - 1.3 * 36e5, out:0 },
+  { id:'d3', unit:'2090', driver:'Jasur K.', load:'1162', fac:'Kroger DC', city:'Phoenix, AZ', broker:'RXO', arr:OPS_NOW - 30 * 36e5, out:OPS_NOW - 25.2 * 36e5, sent:true }
+];
+const OPS_PROM = [
+  { id:'p1', who:'Bekzod T.', role:'водитель', what:'Скинуть lumper receipt', src:'«скину чек через час»', due:OPS_NOW - 25 * 6e4, st:'open' },
+  { id:'p2', who:'TQL (Sarah)', role:'брокер', what:'Перезвонить по detention для 1187', src:'«I\'ll call you back at 3»', due:OPS_NOW + 40 * 6e4, st:'open' },
+  { id:'p3', who:'Вы', role:'диспетчер', what:'Отправить апдейт по 1042 брокеру', src:'«ок, сейчас отправлю»', due:OPS_NOW + 10 * 6e4, st:'open' },
+  { id:'p4', who:'Mike D.', role:'водитель', what:'Выехать после 10-часового отдыха', src:'«поеду в 5 утра»', due:OPS_NOW + 4 * 36e5, st:'open' },
+  { id:'p5', who:'Jasur K.', role:'водитель', what:'Прислать фото BOL', src:'«сейчас сфоткаю»', due:OPS_NOW - 3 * 36e5, st:'done' }
+];
+const OPS_ROADS = [
+  { unit:'2081', driver:'Bekzod T.', road:'I-80 · Donner Pass, CA', kind:'Цепи обязательны (R2)', miles:92, delay:120, lvl:'red', icon:'warn' },
+  { unit:'214', driver:'Amir K.', road:'I-5 · Siskiyou Summit, OR', kind:'Снег, скорость до 35 mph', miles:140, delay:45, lvl:'amber', icon:'clock' },
+  { unit:'2090', driver:'Jasur K.', road:'I-10 · Phoenix, AZ', kind:'Сильный ветер, ограничение для пустых трейлеров', miles:30, delay:20, lvl:'amber', icon:'route' },
+  { unit:'2115', driver:'Sardor A.', road:'I-75 · Atlanta, GA', kind:'Дорога чистая', miles:0, delay:0, lvl:'ok', icon:'shield' }
+];
+if (!OPS.detRate) OPS.detRate = 50;
+OPS.voiceIn = OPS.voiceIn || '';
+OPS.handoff = false;
+
+function opsHM(ms) { const m = Math.max(0, Math.round(ms / 6e4)); return Math.floor(m / 60) + ' ч ' + String(m % 60).padStart(2, '0') + ' мин'; }
+function opsDue(ms) { const m = Math.round((ms - Date.now()) / 6e4); if (m < 0) return 'просрочено на ' + (m > -60 ? -m + ' мин' : Math.round(-m / 60) + ' ч'); return m < 60 ? 'через ' + m + ' мин' : 'через ' + Math.round(m / 60) + ' ч'; }
+function opsDetMoney(d) { const end = d.out || Date.now(), h = (end - d.arr) / 36e5 - 2; return Math.max(0, Math.ceil(h * 4) / 4) * OPS.detRate; }
+function opsCard(inner, extra) { return '<div class="card col" style="padding:14px 16px;border-radius:18px;gap:10px;' + (extra || '') + '">' + inner + '</div>'; }
+function opsHowTo(steps) { return opsCard('<b style="font-size:14px">Как это работает</b>' + steps.map((s, i) => '<div class="row" style="gap:10px;align-items:flex-start"><span class="mz-av" style="width:24px;height:24px;border-radius:8px;font-size:12px;background:var(--mint-bg);color:var(--mint-t)">' + (i + 1) + '</span><span class="small sub" style="line-height:1.45">' + s + '</span></div>').join('')); }
+function opsMsgBox(id, text) { return '<div class="mono" id="' + id + '" style="white-space:pre-wrap">' + esc(text) + '</div><div class="grid2"><button class="btn" data-opcopy="' + id + '">' + ic('copy', 17) + 'Скопировать</button><button class="btn primary" data-opact="demosend">' + ic('send', 17, 'currentColor', 2) + 'Отправить</button></div>'; }
+
+/* ---------- 1. detention ---------- */
+function opsDetText(d) {
+  const end = d.out || Date.now(), t = (x) => new Date(x).toLocaleTimeString('en-US', { hour:'2-digit', minute:'2-digit' });
+  return 'Hi ' + d.broker + ' team,\nload #' + d.load + ': our truck ' + d.unit + ' arrived at ' + d.fac + ' (' + d.city + ') at ' + t(d.arr) + (d.out ? ' and departed at ' + t(d.out) : ' and is still waiting') + '.\nTotal time on site: ' + opsHM(end - d.arr).replace(' ч ', 'h ').replace(' мин', 'm') + ' (2h free).\nDetention: ' + $m(opsDetMoney(d)) + ' at $' + OPS.detRate + '/h. GPS check-in/out and driver messages attached.\nPlease confirm. Thank you!';
+}
+function vDetention() {
+  const run = OPS_DET.filter((d) => !d.out), done = OPS_DET.filter((d) => d.out), week = done.reduce((a, d) => a + opsDetMoney(d), 0) + 290;
+  const row = (d) => { const el = (d.out || Date.now()) - d.arr, over = el > 2 * 36e5, pct = Math.min(100, el / (2 * 36e5) * 100);
+    return opsCard('<div class="row" style="justify-content:space-between;gap:10px"><span class="col" style="gap:2px;min-width:0"><b style="font-size:15px">' + esc(d.fac) + '</b><span class="xs muted">' + esc(d.city) + ' · трак ' + d.unit + ' · ' + esc(d.driver) + ' · load ' + d.load + '</span></span>' +
+      (d.out ? '<span class="chip c-done">' + (d.sent ? 'Запрос отправлен' : 'Выехал') + '</span>' : '<span class="chip" style="background:' + (over ? 'var(--red-bg)' : 'var(--amber-bg)') + ';color:' + (over ? 'var(--red)' : 'var(--amber)') + ';border-color:' + (over ? 'var(--red-bd)' : 'var(--amber-bd)') + '"><span class="mz-live" style="width:7px;height:7px;background:currentColor"></span>&nbsp;' + (over ? 'Detention идёт' : 'Бесплатное время') + '</span>') + '</div>' +
+      '<div class="row" style="justify-content:space-between"><b class="mz-big" style="font-size:26px">' + opsHM(el) + '</b><b class="mz-big" style="font-size:22px;color:' + (opsDetMoney(d) ? 'var(--mint-t)' : 'var(--muted)') + '">' + $m(opsDetMoney(d)) + '</b></div>' +
+      '<span style="height:8px;border-radius:4px;background:var(--line2);display:block"><span style="display:block;height:8px;border-radius:4px;width:' + pct + '%;background:' + (over ? 'var(--red)' : 'var(--amber)') + '"></span></span>' +
+      '<span class="xs muted">Прибыл ' + new Date(d.arr).toLocaleTimeString('ru-RU', { hour:'2-digit', minute:'2-digit' }) + ' по GPS · 2 ч бесплатно · дальше $' + OPS.detRate + '/ч</span>' +
+      (opsDetMoney(d) ? '<button class="btn primary" data-opdet="' + d.id + '" style="height:44px">' + (OPS.detOpen === d.id ? 'Скрыть запрос' : 'Запрос на detention брокеру') + '</button>' : '') +
+      (OPS.detOpen === d.id ? opsMsgBox('detTxt', opsDetText(d)) : ''), over && !d.out ? 'border-color:var(--red-bd)' : ''); };
+  return '<div class="col mz-in" style="gap:14px">' + mzHead('Detention', 'Бот считает простой и готовит запрос на деньги', 'menu') +
+    '<div class="mz-hero row" style="gap:16px;flex-wrap:wrap"><span class="col" style="gap:2px"><span class="xs muted" style="font-weight:600">ВЕРНУЛИ ЗА НЕДЕЛЮ</span><b class="mz-big" style="font-size:38px;color:var(--mint-t)">' + opsCount(week, '$') + '</b></span><span class="col" style="gap:2px"><span class="xs muted" style="font-weight:600">ИДЁТ СЕЙЧАС</span><b class="mz-big" style="font-size:38px">' + run.length + '</b></span>' +
+      '<span class="row" style="gap:6px;margin-left:auto"><span class="xs muted">Ставка</span><button class="pill" data-opdr="-5" style="height:30px">−</button><b>$' + OPS.detRate + '/ч</b><button class="pill" data-opdr="5" style="height:30px">+</button></span></div>' +
+    '<div class="mz-sec"><h3>Сейчас на складах</h3></div><div class="col" style="gap:10px">' + run.map(row).join('') + '</div>' +
+    '<div class="mz-sec"><h3>Готово к оплате</h3></div><div class="col" style="gap:10px">' + done.map(row).join('') + '</div>' +
+    opsHowTo(['Трак заехал на склад: GPS отметил время прибытия.', 'Через 2 часа включается таймер detention, и бот пишет вам.', 'Трак выехал: бот собирает время, GPS и сообщения водителя и готовит запрос брокеру. Отправляете вы.']) +
+    '<div class="xs" style="color:var(--faint)">Демо: склады и время примерные. В рабочей версии время берётся из GPS вашего ELD.</div></div>';
+}
+
+/* ---------- 2. promises ---------- */
+function vPromises() {
+  const open = OPS_PROM.filter((p) => p.st === 'open').sort((a, b) => a.due - b.due), done = OPS_PROM.filter((p) => p.st === 'done');
+  const late = open.filter((p) => p.due < Date.now()).length;
+  const row = (p) => { const over = p.st === 'open' && p.due < Date.now(), soon = p.st === 'open' && !over && p.due - Date.now() < 36e5;
+    return '<div class="card row" style="padding:12px 14px;border-radius:16px;gap:12px;align-items:flex-start;' + (over ? 'border-color:var(--red-bd)' : '') + (p.st === 'done' ? 'opacity:.6' : '') + '">' + opsAv(p.who, p.who.length) +
+      '<span class="col" style="flex:1;min-width:0;gap:3px"><b style="font-size:15px;' + (p.st === 'done' ? 'text-decoration:line-through' : '') + '">' + esc(p.what) + '</b><span class="xs muted">' + esc(p.who) + ' · ' + p.role + ' · ' + esc(p.src) + '</span>' +
+      '<span class="xs" style="font-weight:700;color:' + (p.st === 'done' ? 'var(--mint-t)' : over ? 'var(--red)' : soon ? 'var(--amber)' : 'var(--muted)') + '">' + (p.st === 'done' ? '✓ Выполнено' : opsDue(p.due)) + '</span>' +
+      (p.st === 'open' ? '<span class="row" style="gap:6px;margin-top:4px"><button class="pill" data-opprom="remind:' + p.id + '" style="height:30px">Напомнить</button><button class="pill on" data-opprom="done:' + p.id + '" style="height:30px">Выполнено</button></span>' : '') + '</span></div>'; };
+  return '<div class="col mz-in" style="gap:14px">' + mzHead('Обещания', 'ИИ сам находит в чатах, кто что обещал', 'menu') +
+    '<div class="mz-hero row" style="gap:16px"><span class="col" style="gap:2px"><span class="xs muted" style="font-weight:600">ОТКРЫТО</span><b class="mz-big" style="font-size:38px">' + open.length + '</b></span><span class="col" style="gap:2px"><span class="xs muted" style="font-weight:600">ПРОСРОЧЕНО</span><b class="mz-big" style="font-size:38px;color:' + (late ? 'var(--red)' : 'var(--mint-t)') + '">' + late + '</b></span><span class="small sub" style="flex:1;line-height:1.45">Ничего не теряется между сменами: бот напомнит за 10 минут и проверит, выполнено ли.</span></div>' +
+    '<div class="col" style="gap:10px">' + open.map(row).join('') + done.map(row).join('') + '</div>' +
+    opsHowTo(['ИИ читает чаты водителей и брокеров и видит обещания: «скину через час», «перезвоню в 3».', 'Ставит напоминание и показывает здесь.', 'Время вышло, а ответа нет: бот спросит человека сам (если включено) или напомнит вам.']) +
+    '<div class="xs" style="color:var(--faint)">Демо: обещания примерные.</div></div>';
+}
+
+/* ---------- 3. voice ---------- */
+function opsVoiceToEn(t) {
+  const s = String(t || '').toLowerCase();
+  const unit = (s.match(/\b(\d{3,4})\b/) || [])[1], mi = (s.match(/(\d{1,4})\s*(миль|мил|mi|miles)/) || [])[1], tm = (s.match(/(?:к|в|до)\s*(\d{1,2})(?::(\d{2}))?/) || []);
+  let st = 'rolling';
+  if (/жд(е|ё)т док|на склад|у ворот|waiting/.test(s)) st = 'at the facility, waiting for a door';
+  else if (/разгруж/.test(s)) st = 'being unloaded now';
+  else if (/загрузил|загружен/.test(s)) st = 'loaded and rolling';
+  else if (/отдых|спит|ресет|break/.test(s)) st = 'on a 10-hour break';
+  else if (/стоит|пробк/.test(s)) st = 'stopped in traffic';
+  else if (/сломал|поломк|шин/.test(s)) st = 'stopped with a mechanical issue, we are on it';
+  return (unit ? 'Truck ' + unit : 'Our truck') + ' is ' + st + (mi ? ', ' + mi + ' miles out' : '') + (tm[1] ? '. ETA ' + tm[1] + ':' + (tm[2] || '00') : '') + '. Will keep you posted.';
+}
+function vVoice() {
+  return '<div class="col mz-in" style="gap:14px">' + mzHead('Голос', 'Говорите своими словами, бот пишет брокеру на английском', 'menu') +
+    opsCard('<div class="row" style="justify-content:space-between"><b style="font-size:15px">Пришло голосовое</b><span class="chip c-plan">узбекский · 0:14</span></div>' +
+      '<div class="row" style="gap:10px;padding:10px 12px;border-radius:14px;background:var(--raised)"><span class="mz-av" style="width:34px;height:34px;border-radius:50%;background:var(--mint);color:var(--on-mint)">' + ic('send', 15, 'currentColor', 2) + '</span><span style="flex:1;height:24px;background:repeating-linear-gradient(90deg,var(--mint) 0 3px,transparent 3px 7px);opacity:.6;border-radius:4px"></span><span class="xs muted">Bekzod T. · 2081</span></div>' +
+      '<span class="xs muted">Текст</span><span class="small sub">«Aka, skladga keldim, eshik berishmayapti, 2 soatdan beri kutyapman, lumper 150 dollar so‘rayapti»</span>' +
+      '<span class="xs muted">Перевод</span><span class="small" style="line-height:1.45">«Брат, приехал на склад, док не дают, жду уже 2 часа, lumper просит $150»</span>' +
+      '<div class="card col" style="padding:10px 12px;border-radius:12px;gap:4px;border-color:var(--violet-bd);background:var(--violet-bg)"><span class="xs mz-ai" style="font-weight:700">' + ic('spark', 13) + ' ИИ понял</span><span class="small sub">Ждёт 2 ч → включил detention. Lumper $150 → нужен ваш OK.</span></div>' +
+      '<div class="grid2"><button class="btn" data-go="detention">Detention</button><button class="btn primary" data-opact="demosend">Ответить</button></div>') +
+    opsCard('<b style="font-size:15px">Скажите апдейт своими словами</b><div class="row" style="gap:10px"><button class="mz-av" data-opact="mic" aria-label="Говорить" style="width:56px;height:56px;border-radius:50%;border:0;background:linear-gradient(135deg,var(--mint),#7CE7FF);color:var(--on-mint)">' + ic('chat', 24, 'currentColor', 2) + '</button><span class="small sub" style="flex:1;line-height:1.45">Нажмите и скажите, например: «3011 едет, 120 миль, будет к 6». Или напишите ниже.</span></div>' +
+      '<textarea id="opsVoice" rows="2" placeholder="3011 едет, 120 миль, будет к 6" style="border-radius:12px;border:1px solid var(--line);background:var(--input);padding:10px 12px;font-size:15px;color:var(--text);resize:none">' + esc(OPS.voiceIn) + '</textarea>' +
+      '<span class="xs muted">Брокеру уйдёт</span>' + opsMsgBox('opsVoiceOut', opsVoiceToEn(OPS.voiceIn || '3011 едет, 120 миль, будет к 6'))) +
+    '<div class="xs" style="color:var(--faint)">Демо: распознавание и перевод упрощены. В рабочей версии голос распознаёт и переводит ИИ на русском, узбекском и турецком.</div></div>';
+}
+
+/* ---------- 4. amazon scorecard ---------- */
+function vScorecard() {
+  const ot = 96.8, rej = 1.9, tierOf = (o, r) => o >= 98 && r < 1 ? ['Fantastic', 'var(--mint-t)'] : o >= 96 && r < 2 ? ['Great', 'var(--mint-t)'] : o >= 94 ? ['Fair', 'var(--amber)'] : ['Poor', 'var(--red)'];
+  const t = tierOf(ot, rej);
+  const bar = (k, v, goal, good, unit) => '<div class="col" style="gap:6px"><div class="row" style="justify-content:space-between"><span class="small sub">' + k + '</span><b>' + v + unit + ' <span class="xs muted">цель ' + goal + unit + '</span></b></div><span style="height:10px;border-radius:5px;background:var(--line2);display:block;position:relative"><span style="display:block;height:10px;border-radius:5px;width:' + Math.min(100, good ? v : 100 - v * 10) + '%;background:' + (good ? (v >= goal ? 'var(--mint)' : 'var(--amber)') : (v <= goal ? 'var(--mint)' : 'var(--amber)')) + '"></span></span></div>';
+  const save = [['1042','Amir K.','Опоздает ~45 мин','Сообщить в Relay заранее и дать новый ETA'],['1236','Mike D.','Впритык, запас 12 мин','Не ставить остановку на отдых до выгрузки'],['T-11W2B6NA','—','Без водителя, PU через 3 ч','Назначить сейчас, иначе будет reject']];
+  return '<div class="col mz-in" style="gap:14px">' + mzHead('Скоркард Amazon', 'Чтобы рейтинг в Relay не упал', 'menu') +
+    '<div class="mz-hero col" style="gap:14px"><div class="row" style="justify-content:space-between;align-items:flex-start"><span class="col" style="gap:4px"><span class="xs muted" style="font-weight:600">ТЕКУЩИЙ УРОВЕНЬ · НЕДЕЛЯ</span><b class="mz-big" style="font-size:40px;color:' + t[1] + '">' + t[0] + '</b></span><span class="chip" style="background:var(--amber-bg);color:var(--amber);border-color:var(--amber-bd)">риск: Fair</span></div>' +
+      bar('On-time', ot, 96, true, '%') + bar('Reject', rej, 2, false, '%') +
+      '<div class="card col" style="padding:10px 12px;border-radius:12px;gap:4px;border-color:var(--violet-bd);background:var(--violet-bg)"><span class="xs mz-ai" style="font-weight:700">' + ic('spark', 13) + ' ПРОГНОЗ ИИ</span><span class="small sub" style="line-height:1.45">Ещё 2 опоздания или 1 reject до воскресенья, и уровень упадёт до Fair. Спасите сначала эти грузы:</span></div></div>' +
+    '<div class="col" style="gap:10px">' + save.map((s, i) => '<div class="mz-rec"><span class="mz-av" style="width:36px;height:36px;border-radius:12px;background:' + (i ? 'var(--amber-bg)' : 'var(--red-bg)') + ';color:' + (i ? 'var(--amber)' : 'var(--red)') + '">' + (i + 1) + '</span><span class="col" style="flex:1;gap:3px"><b style="font-size:15px">' + s[0] + ' · ' + esc(s[1]) + '</b><span class="small" style="color:' + (i ? 'var(--amber)' : 'var(--red)') + '">' + s[2] + '</span><span class="small sub">' + s[3] + '</span></span></div>').join('') + '</div>' +
+    '<div class="xs" style="color:var(--faint)">Демо: цифры примерные. Настоящие придут из расширения Relay.</div></div>';
+}
+
+/* ---------- 5. weather & roads ---------- */
+function opsRoadText(r) { return 'Hi, quick heads-up on truck ' + r.unit + ': ' + r.road.split(' · ')[1] + ' (' + r.road.split(' · ')[0] + ') — ' + (r.lvl === 'red' ? 'chain control in effect' : 'slow conditions') + ' about ' + r.miles + ' miles ahead. Expect about ' + Math.round(r.delay / 60 * 10) / 10 + 'h delay; updated ETA to follow. Safety first.'; }
+function vRoads() {
+  const col = { red:['var(--red-bg)','var(--red)','var(--red-bd)'], amber:['var(--amber-bg)','var(--amber)','var(--amber-bd)'], ok:['var(--mint-bg)','var(--mint-t)','var(--mint-bd)'] };
+  const bad = OPS_ROADS.filter((r) => r.lvl !== 'ok');
+  return '<div class="col mz-in" style="gap:14px">' + mzHead('Погода и дороги', 'Что ждёт каждый трак впереди', 'menu') +
+    '<div class="mz-hero row" style="gap:16px"><span class="col" style="gap:2px"><span class="xs muted" style="font-weight:600">ТРАКОВ С РИСКОМ</span><b class="mz-big" style="font-size:38px;color:' + (bad.length ? 'var(--amber)' : 'var(--mint-t)') + '">' + bad.length + '</b></span><span class="small sub" style="flex:1;line-height:1.45">Бот смотрит дорогу на 200 миль вперёд по маршруту: цепи, снег, ветер, закрытия. Предупредит до того, как водитель встанет.</span></div>' +
+    '<div class="col" style="gap:10px">' + OPS_ROADS.map((r, i) => opsCard('<div class="row" style="gap:12px;align-items:flex-start"><span class="mz-av" style="width:40px;height:40px;border-radius:13px;background:' + col[r.lvl][0] + ';color:' + col[r.lvl][1] + '">' + ic(r.icon, 20, 'currentColor', 2) + '</span><span class="col" style="flex:1;min-width:0;gap:2px"><b style="font-size:15px">' + esc(r.kind) + '</b><span class="xs muted">' + esc(r.road) + ' · трак ' + r.unit + ' · ' + esc(r.driver) + '</span>' +
+      (r.lvl !== 'ok' ? '<span class="small" style="color:' + col[r.lvl][1] + ';font-weight:600">через ' + r.miles + ' mi · ETA +' + (r.delay >= 60 ? Math.round(r.delay / 6) / 10 + ' ч' : r.delay + ' мин') + '</span>' : '<span class="small" style="color:var(--mint-t)">Без задержек</span>') + '</span></div>' +
+      (r.lvl !== 'ok' ? '<button class="pill" data-oproad="' + i + '" style="height:32px;align-self:flex-start">' + (OPS.roadOpen === i ? 'Скрыть' : 'Текст брокеру ›') + '</button>' + (OPS.roadOpen === i ? opsMsgBox('roadTxt', opsRoadText(r)) : '') : ''), r.lvl === 'red' ? 'border-color:var(--red-bd)' : '')).join('') + '</div>' +
+    '<div class="xs" style="color:var(--faint)">Демо: условия примерные. В рабочей версии данные берутся из служб погоды и дорог США.</div></div>';
+}
+
+/* ---------- 6. shift handoff ---------- */
+function opsHandoffText() {
+  const open = OPS_PROM.filter((p) => p.st === 'open'), late = LOADS.filter((l) => l.v === 'late'), det = OPS_DET.filter((d) => !d.out), roads = OPS_ROADS.filter((r) => r.lvl === 'red');
+  return 'СДАЧА СМЕНЫ · ' + new Date().toLocaleString('ru-RU', { day:'2-digit', month:'2-digit', hour:'2-digit', minute:'2-digit' }) + '\n\n' +
+    '🔴 Под риском:\n' + (late.map((l) => '• ' + l.id + ' ' + l.driver + ': ' + (l.verdict || 'опаздывает')).join('\n') || '• нет') + '\n' + roads.map((r) => '• ' + r.unit + ': ' + r.kind + ' (' + r.road + ')').join('\n') + '\n\n' +
+    '⏱ Detention идёт:\n' + (det.map((d) => '• ' + d.unit + ' на ' + d.fac + ': ' + opsHM(Date.now() - d.arr)).join('\n') || '• нет') + '\n\n' +
+    '🤝 Обещания:\n' + (open.map((p) => '• ' + p.who + ': ' + p.what + ' (' + opsDue(p.due) + ')').join('\n') || '• нет') + '\n\n' +
+    '✅ Всё остальное по плану.';
+}
+function vHandoff() {
+  return '<div class="col mz-in" style="gap:14px">' + mzHead('Сдача смены', 'Следующий диспетчер сразу в курсе', 'menu') +
+    '<div class="mz-hero col" style="gap:12px"><span class="xs mz-ai row" style="gap:6px;font-weight:700">' + ic('spark', 14) + 'ИИ СОБРАЛ ЗА ВАС</span><span class="small sub" style="line-height:1.45">Риски, detention, обещания и всё открытое за смену. Проверьте и нажмите «Сдать смену».</span></div>' +
+    opsCard('<div class="mono" id="handTxt" style="white-space:pre-wrap;max-height:none">' + esc(opsHandoffText()) + '</div><div class="grid2"><button class="btn" data-opcopy="handTxt">' + ic('copy', 17) + 'Скопировать</button><button class="btn primary" data-opact="handoff">Сдать смену</button></div>') +
+    '<span class="xs muted" style="line-height:1.45">Сводка уйдёт следующему диспетчеру в бот. Он нажмёт «Принял», и вы увидите это.</span></div>';
+}
+
+/* ---------- home alerts, nav, agents, feed ---------- */
+function opsHomeAlerts() {
+  const d = OPS_DET.filter((x) => !x.out && Date.now() - x.arr > 2 * 36e5)[0], p = OPS_PROM.filter((x) => x.st === 'open' && x.due < Date.now())[0], r = OPS_ROADS.filter((x) => x.lvl === 'red')[0];
+  return (d ? alertRow('detention', 'clock', 'var(--mint-bg)', 'var(--mint-t)', 'Detention: ' + esc(d.unit) + ' · ' + esc(d.fac), opsHM(Date.now() - d.arr) + ' на складе · уже ' + $m(opsDetMoney(d)), 'var(--mint-t)') : '') +
+    (p ? alertRow('promises', 'chat', 'var(--red-bg)', 'var(--red)', 'Обещание просрочено', esc(p.who) + ': ' + esc(p.what), 'var(--red)') : '') +
+    (r ? alertRow('roads', 'warn', 'var(--amber-bg)', 'var(--amber)', 'Цепи впереди у ' + r.unit, esc(r.road) + ' · ETA +2 ч', 'var(--amber)') : '');
+}
+(function () {
+  const ins = (gid, at, items) => { const g = NAVTREE.filter((n) => n[0] === gid)[0]; if (g) g[3].splice(at, 0, ...items); };
+  const gi = NAVTREE.findIndex((n) => n[0] === 'g_money');
+  NAVTREE.splice(gi, 0, ['g_shift','Смена','clock',[['handoff','Сдача смены','Сводка следующему диспетчеру в 1 кнопку','NEW'],['promises','Обещания','Кто что обещал и когда: ничего не теряется','NEW'],['voice','Голос','Говорите, бот пишет брокеру на английском','NEW']]]);
+  ins('g_money', 1, [['detention','Detention','Бот считает простой и готовит запрос на деньги','NEW']]);
+  const gf = NAVTREE.findIndex((n) => n[0] === 'g_fleet');
+  NAVTREE.splice(gf, 0, ['g_risk','Риски','warn',[['roads','Погода и дороги','Цепи, снег, ветер впереди по маршруту','NEW'],['scorecard','Скоркард Amazon','Чтобы рейтинг в Relay не упал','NEW']]]);
+  ins('g_set', 0, [['tour','Обзор окна','Показать подсказки по кнопкам ещё раз']]);
+})();
+Object.assign(VIEWS, { detention:vDetention, promises:vPromises, voice:vVoice, scorecard:vScorecard, roads:vRoads, handoff:vHandoff });
+['detention','promises','voice','scorecard','roads','handoff'].forEach((v) => { TAB_OF[v] = 'menu'; });
+OPS_AG2.unshift(
+  ['detention','Detention-агент','Видит по GPS, что трак стоит на складе дольше 2 часов, считает деньги и готовит запрос брокеру.','2081 на Walmart DC уже 3 ч 24 мин. Detention $75. Подготовить запрос TQL?','clock','var(--mint-bg)','var(--mint-t)'],
+  ['promises','Агент обещаний','Находит в чатах «скину через час», «перезвоню в 3» и напоминает, пока не выполнят.','Bekzod T. обещал lumper receipt 25 мин назад. Напомнить ему?','chat','var(--blue-bg)','var(--blue)'],
+  ['voice','Голосовой агент','Переводит голосовые водителей и превращает ваш голос в апдейт брокеру на английском.','Голосовое от 2081 (узб.): «жду док 2 часа, lumper $150». Включил detention.','chat','var(--violet-bg)','var(--violet)'],
+  ['weather','Агент дорог','Смотрит погоду и дороги на 200 миль вперёд по маршруту каждого трака.','У 2081 через 92 mi Donner Pass: цепи обязательны. ETA +2 ч, текст брокеру готов.','warn','var(--amber-bg)','var(--amber)'],
+  ['score','Агент скоркарда','Считает on-time и reject в Relay и подсказывает, какие грузы спасать первыми.','Ещё 2 опоздания, и уровень упадёт до Fair. Спасите сначала 1042.','chart','var(--red-bg)','var(--red)'],
+  ['handoff','Агент смены','В конце смены сам собирает сводку для следующего диспетчера.','Смена заканчивается через 15 мин. Сводка готова: 2 риска, 3 обещания.','users','var(--blue-bg)','var(--blue)']
+);
+['detention','promises','voice','weather','score','handoff'].forEach((k) => { if (OPS.agOn[k] === undefined) OPS.agOn[k] = true; });
+OPS_FEED.unshift(['detention','clock','var(--mint-bg)','var(--mint-t)','Detention-агент','2081 на Walmart DC больше 3 часов: detention $75, запрос TQL готов.'], ['promises','chat','var(--blue-bg)','var(--blue)','Агент обещаний','Bekzod T. обещал lumper receipt и молчит 25 мин. Напомнил ему.'], ['weather','warn','var(--amber-bg)','var(--amber)','Агент дорог','У 2081 впереди Donner Pass: цепи обязательны. ETA +2 ч.']);
+
+/* ---------- guided tour ---------- */
+const OPS_TOUR = [
+  ['.mz-hero', 'Сводка ИИ', 'Здесь главное прямо сейчас: сколько траков в пути, кто опаздывает и сколько заработали за неделю.'],
+  ['.mz-acts [data-go="dispatch"]', 'Диспеч груза', 'Новый груз водителю: вписываете код склада, DH, RPM и сообщение водителю считаются сами.'],
+  ['.mz-acts [data-go="updates"]', 'Апдейты', 'Бот готовит апдейты водителям и брокерам. Без вашего «Отправить» никто ничего не получит.'],
+  ['[data-tour-attn]', 'Требует внимания', 'Сюда попадает только важное: опоздания, detention, просроченные обещания, цепи на дороге.'],
+  ['.tab.center', 'Спросить ИИ', 'Спросите своими словами: «что было ночью?», «где 2081?», «кто отстаёт по gross?»'],
+  ['.tabbar [data-go="menu"]', 'Меню', 'Все разделы по группам: Грузы, Смена, Деньги, Риски, Флот, ИИ-агенты.'],
+  ['.side', 'Меню слева', 'Все разделы по группам. Нажмите на группу, чтобы открыть функции.'],
+  ['[data-go="agents"].card', 'ИИ-команда', 'Агенты работают 24/7: следят за водителями, деньгами и дорогами и пишут только вам.']
+];
+OPS.tour = -1;
+function opsTourSteps() { return OPS_TOUR.filter((s) => { const el = document.querySelector(s[0]); if (!el) return false; const r = el.getBoundingClientRect(); return r.width > 0 && r.height > 0 && getComputedStyle(el).display !== 'none'; }); }
+function opsTourShow() {
+  let ov = document.getElementById('mzTour'); if (ov) ov.remove();
+  if (OPS.tour < 0) return;
+  const steps = opsTourSteps(); if (!steps.length || OPS.tour >= steps.length) { opsTourEnd(); return; }
+  const st = steps[OPS.tour], el = document.querySelector(st[0]);
+  el.scrollIntoView({ block:'center', behavior:'instant' });
+  const r = el.getBoundingClientRect(), pad = 8, vw = innerWidth, vh = innerHeight;
+  const below = r.bottom + 200 < vh || r.top < 220;
+  const tipW = Math.min(340, vw - 32), left = Math.max(16, Math.min(vw - tipW - 16, r.left + r.width / 2 - tipW / 2));
+  const tipTop = below ? Math.min(vh - 210, r.bottom + pad + 12) : Math.max(16, r.top - pad - 12 - 190);
+  document.body.insertAdjacentHTML('beforeend', '<div id="mzTour" style="position:fixed;inset:0;z-index:9999">' +
+    '<div data-optour="next" style="position:fixed;left:' + (r.left - pad) + 'px;top:' + (r.top - pad) + 'px;width:' + (r.width + pad * 2) + 'px;height:' + (r.height + pad * 2) + 'px;border-radius:18px;box-shadow:0 0 0 9999px rgba(3,8,6,.72),0 0 0 2px var(--mint),0 0 24px rgba(61,220,151,.45);transition:all .25s ease"></div>' +
+    '<div role="dialog" aria-label="Обзор окна" style="position:fixed;left:' + left + 'px;top:' + tipTop + 'px;width:' + tipW + 'px;background:var(--card);border:1px solid var(--mint-bd);border-radius:18px;padding:16px;display:flex;flex-direction:column;gap:8px;box-shadow:0 18px 50px rgba(0,0,0,.45);animation:mzIn .3s ease both">' +
+      '<span class="xs" style="color:var(--mint-t);font-weight:700">ШАГ ' + (OPS.tour + 1) + ' ИЗ ' + steps.length + '</span><b style="font-size:17px">' + st[1] + '</b><span class="small sub" style="line-height:1.5">' + st[2] + '</span>' +
+      '<div class="row" style="gap:4px;margin:4px 0">' + steps.map((x, i) => '<span style="height:4px;flex:1;border-radius:2px;background:' + (i <= OPS.tour ? 'var(--mint)' : 'var(--line2)') + '"></span>').join('') + '</div>' +
+      '<div class="row" style="justify-content:space-between;gap:8px"><button class="btn ghost" data-optour="skip" style="height:40px;border:0;color:var(--muted)">Пропустить</button><span class="row" style="gap:8px">' + (OPS.tour ? '<button class="btn" data-optour="back" style="height:40px">Назад</button>' : '') + '<button class="btn primary" data-optour="next" style="height:40px;padding:0 18px">' + (OPS.tour === steps.length - 1 ? 'Начать работу' : 'Далее') + '</button></span></div></div></div>');
+}
+function opsTourEnd() { OPS.tour = -1; const ov = document.getElementById('mzTour'); if (ov) ov.remove(); try { localStorage.setItem('mz_tour_done', '1'); } catch (e) {} }
+function opsTourStart() { if (S.view !== 'home') { go('home'); } OPS.tour = 0; setTimeout(opsTourShow, 450); }
+document.addEventListener('click', (e) => {
+  const t = e.target.closest && e.target.closest('[data-optour]'); if (!t) return;
+  e.preventDefault(); e.stopPropagation();
+  const a = t.dataset.optour;
+  if (a === 'skip') opsTourEnd();
+  else if (a === 'back') { OPS.tour = Math.max(0, OPS.tour - 1); opsTourShow(); }
+  else { const n = opsTourSteps().length; OPS.tour++; if (OPS.tour >= n) opsTourEnd(); else opsTourShow(); }
+}, true);
+addEventListener('resize', () => { if (OPS.tour >= 0) opsTourShow(); });
+setTimeout(() => { let done = '1'; try { done = localStorage.getItem('mz_tour_done'); } catch (e) {} if (!done && S.view === 'home') opsTourStart(); }, 900);
+
+/* ---------- events v6 ---------- */
+function opsClick6(d) {
+  if (d.go === 'tour') { opsTourStart(); return true; }
+  if (d.opdet) { OPS.detOpen = OPS.detOpen === d.opdet ? '' : d.opdet; render(); return true; }
+  if (d.opdr) { OPS.detRate = Math.max(20, OPS.detRate + +d.opdr); render(); return true; }
+  if (d.opprom) { const p = d.opprom.split(':'), x = OPS_PROM.filter((y) => y.id === p[1])[0]; if (p[0] === 'done' && x) x.st = 'done'; if (p[0] === 'remind') toast('Демо: напоминание отправлено'); render(); return true; }
+  if (d.oproad) { OPS.roadOpen = OPS.roadOpen === +d.oproad ? -1 : +d.oproad; render(); return true; }
+  if (d.opcopy) { const el = document.getElementById(d.opcopy); try { navigator.clipboard.writeText(el ? el.textContent : ''); toast('Скопировано'); } catch (e) { toast('Не получилось скопировать'); } return true; }
+  if (d.opact === 'demosend') { toast('Демо: отправлено после вашего подтверждения'); return true; }
+  if (d.opact === 'handoff') { toast('Демо: смена сдана, сводка ушла следующему диспетчеру'); return true; }
+  if (d.opact === 'mic') {
+    const SR = window.SpeechRecognition || window.webkitSpeechRecognition;
+    if (!SR) { toast('Голос в этом окне недоступен: напишите текстом'); const t = document.getElementById('opsVoice'); if (t) t.focus(); return true; }
+    try { const r = new SR(); r.lang = 'ru-RU'; r.onresult = (ev) => { OPS.voiceIn = ev.results[0][0].transcript; render(); }; r.onerror = () => toast('Не расслышал, попробуйте ещё раз'); r.start(); toast('Говорите…'); } catch (e) { toast('Голос недоступен'); }
+    return true;
+  }
+  return false;
+}
+try { const v0 = new URLSearchParams(location.search).get('view'); if (v0 && VIEWS[v0]) S.view = v0; } catch (e) {}
+VIEWS.tour = () => { setTimeout(opsTourStart, 0); return VIEWS.home(); };
+document.addEventListener('input', (e) => {
+  if (!e.target || e.target.id !== 'opsVoice') return;
+  OPS.voiceIn = e.target.value; const o = document.getElementById('opsVoiceOut'); if (o) o.textContent = opsVoiceToEn(OPS.voiceIn || '3011 едет, 120 миль, будет к 6');
+});
+
 
 
 
