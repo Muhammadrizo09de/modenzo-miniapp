@@ -1596,18 +1596,22 @@ function addSend() {
 }
 
 /* ---------- custom plan: the client picks drivers, updates, mode and extras; price = costs + 60%, ends in 9 ---------- */
-const CP_COSTS = { base:1.5, driver:0.25, update:0.001, shift:0.75, fees:0.01 };
+const CP_COSTS = { base:1.5, driver:0.25, update:0.001, shift:0.75, fees:0.01, seat:0.5 };
+const CP_SHIFT_K = { 8:0.6, 10:0.68, 12:0.75 };
 const CP_EXTRAS = [['ai','AI ассистент','Вопросы о работе, передача смены, логистика',0.6,0.03],['auto','Автоответчик водителям','Отвечает на простые вопросы водителей',0,0.08],['map','Слежка на карте','Траки, маршруты и скорость (после ELD)',0,0.02],['ub','Update Board и напоминания','Дела из сообщений и напоминания',0,0.01],['broker','Тексты брокеру (ИИ)','Сообщение, email или звонок при опоздании',0.3,0],['reports','Отчёты за смену','Итог смены каждый день',0.2,0.01],['prio','Поддержка в приоритете','Владелец отвечает первым',3,0]];
 S.cp = { n:20, u:6, m:'full', f:127 };
 try { const q = new URLSearchParams(location.search); S.cpu = +q.get('cpu') || 0; S.cpf = q.get('cpf') ? parseInt(q.get('cpf'), 16) : 127; S.cpp = q.get('cpp') || ''; S.cpr = q.get('cpr') || ''; } catch (e) {}
 if (S.plan === 'custom') { PLANS.push(['custom', 'Свой', S.lim, S.cpu || 6]); S.cp = { n:S.lim || 20, u:S.cpu || 6, m:S.pm || 'full', f:S.cpf }; }
-function nicePrice(x) { if (x <= 9) return 9; if (x < 1000) return Math.ceil((x + 1) / 10) * 10 - 1; return Math.ceil((x + 1) / 100) * 100 - 1; }
+function nicePrice(x) { if (x <= 9) return 9; const st = x < 1000 ? 10 : 100, lo = Math.floor((x + 1) / st) * st - 1, hi = Math.ceil((x + 1) / st) * st - 1; return Math.max(9, x - lo <= hi - x ? lo : hi); }
 function cpPrice(c) {
-  const k = c.m === 'shift' ? CP_COSTS.shift : 1;
+  const k = c.m === 'shift' ? (CP_SHIFT_K[c.h || 12] || CP_COSTS.shift) : 1;
   let cost = CP_COSTS.base + CP_COSTS.driver * c.n * k + CP_COSTS.update * c.n * c.u * 30;
   CP_EXTRAS.forEach((e, i) => { if (c.f & (1 << i)) cost += e[3] + e[4] * c.n * k; });
+  cost += CP_COSTS.seat * Math.max(0, (c.t || 1) - (c.m === 'shift' ? 3 : 6));
   cost = Math.round(cost * 100) / 100;
-  return nicePrice(cost * 1.6 / (1 - CP_COSTS.fees));
+  let price = nicePrice(cost * 1.6 / (1 - CP_COSTS.fees));
+  while (price < cost * 1.3 / (1 - CP_COSTS.fees)) price = nicePrice(price + 10);   // rounding down never leaves less than +30% over costs
+  return price;
 }
 function vCustom() {
   const c = S.cp, price = cpPrice(c);
@@ -5533,23 +5537,39 @@ function ngShow(i) {
 function ngClose() { const el = document.getElementById('mzNudge'); if (el) el.remove(); }
 
 /* ---------- AI tariff consultant: drivers range (gap up to 15), how you work, features with price hints, then the result ---------- */
-CP_EXTRAS.push(['voice', 'Голос и переводы', 'Голосовые водителей в текст и перевод', 0, 0.30]);
-const PK_CORE = ['Диспеч и шаблоны', 'Gross-борд', 'Грузы и борд', 'Amazon-фасилити', 'Детеншен и обещания', 'Передача смены', 'Агенты-помощники'];
+CP_EXTRAS.push(['voice', 'Голос и переводы голосовых', 'Голосовые водителей в текст и перевод', 0, 0.30],
+  ['relay', 'Amazon Relay: новости и скоркард', 'Отмены, новые грузы, rejects и рейтинг компании', 0.3, 0],
+  ['grossai', 'ИИ-советы по деньгам', 'Где теряете деньги и что поменять в Gross', 0.3, 0],
+  ['eta', 'ETA с пробками и часами', 'Точное время до стопа с учётом HOS', 0, 0.02],
+  ['photos', 'Разбор фото', 'BOL, пломба, номер трейлера из фото водителя', 0, 0.05],
+  ['proof', 'Детеншен и папка-доказательство', 'Время на складе, фото и письмо брокеру', 0, 0.02],
+  ['handoff', 'Передача смены и сводка', 'Что передать следующему диспетчеру, утренняя сводка', 0.3, 0],
+  ['translate', 'Перевод для водителей', 'Русский, узбекский, турецкий ↔ английский', 0, 0.03],
+  ['roads', 'Погода и опасные дороги', 'Шторма, снег и закрытия на маршруте', 0, 0.01]);
+const PK_KEYS = CP_EXTRAS.map((e) => e[0]), PK_BIT = (k) => 1 << PK_KEYS.indexOf(k);
+const PK_GROUPS = [['ИИ-помощники', ['ai', 'auto', 'grossai', 'handoff']], ['Водители и связь', ['voice', 'translate', 'photos', 'broker']], ['Слежение и ETA', ['map', 'eta', 'roads', 'relay']], ['Отчёты и порядок', ['reports', 'ub', 'proof', 'prio']]];
+const PK_CORE = ['Диспеч и шаблоны (DH, RPM)', 'Gross-борд', 'Грузы и борд', 'Amazon-фасилити', 'Обещания', 'Окно на телефоне и компьютере'];
+const PK_TRIAL_OFF = ['auto', 'voice', 'broker', 'prio'];
 OPS.pk = (function () { try { return JSON.parse(localStorage.getItem('mz_pick') || 'null'); } catch (e) { return null; } })();
 OPS.pkBusy = 0;
 function pkSave() { try { localStorage.setItem('mz_pick', JSON.stringify(OPS.pk)); } catch (e) {} }
 function pkRecommend(p) {
-  let f = 1 | 4 | 8 | 32;                                   // AI assistant, map, Update Board, shift reports
-  if (p.m === 'full') f |= 2;                                // 24/7: nobody is always there to answer drivers
-  if (p.kind !== 'amazon') f |= 16;                          // street loads: brokers wait for texts
-  if (p.voice) f |= 128;
-  if (p.hi >= 50) f |= 64;
+  let f = 0; const on = (k) => { f |= PK_BIT(k); };
+  ['ai', 'map', 'ub', 'reports', 'grossai', 'eta'].forEach(on);   // cheap and useful for everyone
+  if (p.m === 'full') on('auto');                                   // 24/7: nobody is always there to answer drivers
+  if (p.kind !== 'amazon') { on('broker'); on('proof'); on('photos'); }
+  if (p.kind !== 'street') on('relay');
+  if (p.voice) on('voice');
+  if (p.trn) on('translate');
+  if (p.hi >= 25 || p.m === 'full') on('roads');
+  if (p.t > 1 || p.m === 'shift') on('handoff');
+  if (p.hi >= 50) on('prio');
   return f;
 }
 function pkInit() {
-  if (OPS.pk && OPS.pk.v === 2) return OPS.pk;
+  if (OPS.pk && OPS.pk.v === 3) return OPS.pk;
   const used = S.used || 0, lo = used ? Math.max(1, used - (used % 5)) : 10;
-  OPS.pk = { v:2, step:0, lo:lo, hi:Math.max(lo + 10, used), m:S.pm === 'shift' ? 'shift' : 'full', u:4, kind:'both', voice:false, f:0, own:false, phone:'' };
+  OPS.pk = { v:3, step:0, lo:lo, hi:Math.max(lo + 10, used), m:S.pm === 'shift' ? 'shift' : 'full', h:12, u:4, t:1, kind:'both', voice:false, trn:true, f:0, own:false, phone:'' };
   OPS.pk.f = pkRecommend(OPS.pk);
   return OPS.pk;
 }
@@ -5557,14 +5577,18 @@ function pkFix(p, edited) {
   p.lo = Math.max(1, Math.min(300, Math.round(p.lo) || 1)); p.hi = Math.max(1, Math.min(300, Math.round(p.hi) || 1));
   if (p.hi < p.lo) { if (edited === 'lo') p.hi = p.lo; else p.lo = p.hi; }
   if (p.hi - p.lo > 15) { if (edited === 'lo') p.hi = p.lo + 15; else p.lo = p.hi - 15; }
+  p.u = Math.max(3, Math.min(12, p.u)); p.t = Math.max(1, Math.min(30, p.t));
 }
-function pkCost(p, f) { return cpPrice({ n:Math.max(5, p.hi), u:p.u, m:p.m, f:f === undefined ? p.f : f }); }
-function pkRaw(p, f) {
-  const n = Math.max(5, p.hi), k = p.m === 'shift' ? CP_COSTS.shift : 1;
-  let c = CP_COSTS.base + CP_COSTS.driver * n * k + CP_COSTS.update * n * p.u * 30;
-  CP_EXTRAS.forEach((e, i) => { if (f & (1 << i)) c += e[3] + e[4] * n * k; });
-  return c * 1.6 / (1 - CP_COSTS.fees);
+function pkC(p, over) { return Object.assign({ n:Math.max(5, p.hi), u:p.u, m:p.m, h:p.h, t:p.t, f:p.f }, over || {}); }
+function pkCost(p, f) { return cpPrice(pkC(p, f === undefined ? {} : { f:f })); }
+function pkLines(p, over) {   // [name, $ per month before rounding]
+  const c = pkC(p, over), k = c.m === 'shift' ? (CP_SHIFT_K[c.h] || CP_COSTS.shift) : 1, mk = 1.6 / (1 - CP_COSTS.fees);
+  const out = [['База: сервер и хранение', CP_COSTS.base], ['Водители: ' + c.n, CP_COSTS.driver * c.n * k], ['Апдейты: ' + c.u + ' в день', CP_COSTS.update * c.n * c.u * 30]];
+  CP_EXTRAS.forEach((e, i) => { if (c.f & (1 << i)) out.push([e[1], e[3] + e[4] * c.n * k]); });
+  const xs = Math.max(0, c.t - (c.m === 'shift' ? 3 : 6)); if (xs) out.push(['Ещё людей в окне: ' + xs, CP_COSTS.seat * xs]);
+  return out.map((l) => [l[0], l[1] * mk]);
 }
+function pkRaw(p, f) { return pkLines(p, { f:f }).reduce((a, l) => a + l[1], 0); }
 function pkDelta(p, i) { return Math.max(1, Math.round(Math.abs(pkRaw(p, p.f ^ (1 << i)) - pkRaw(p, p.f)))); }
 function pkHint(d, on) {
   const t = on ? 'входит, ≈ $' + d + ' в месяц' : '≈ +$' + d + ' в месяц';
@@ -5573,82 +5597,102 @@ function pkHint(d, on) {
   return '<span class="chip c-dev" style="height:22px;align-self:flex-start">' + t + ' · заметно</span>';
 }
 function pkSteps(p) { return '<div class="row" style="gap:6px">' + [0, 1, 2, 3].map((i) => '<span class="pk-step' + (i <= p.step ? ' on' : '') + '"></span>').join('') + '</div>'; }
+function pkBar(p) {
+  return '<div class="card row" style="padding:12px 16px;border-radius:16px;justify-content:space-between;gap:10px;position:sticky;bottom:' + (isWide() ? 12 : 92) + 'px;z-index:5;box-shadow:0 10px 30px rgba(0,0,0,.35)"><span class="col" style="gap:2px"><span class="xs muted">Ориентир сейчас</span><b class="mz-big" style="font-size:24px">$' + pkCost(p) + ' <span class="xs muted" style="font-weight:500">/ мес' + (S.fx ? ' · ≈ ' + uzs(pkCost(p)) : '') + '</span></b></span>' +
+    (p.own && p.step === 2 ? '<button class="pill" data-pk="rec" style="height:34px">Как советует ИИ</button>' : '') + '</div>';
+}
 function pkNav(p, nextLabel) {
   return '<div class="row" style="gap:10px">' + (p.step ? '<button class="btn" data-pk="back" style="height:50px;flex:none;width:110px">Назад</button>' : '') + '<button class="btn primary" data-pk="next" style="height:50px;flex:1;font-size:15px">' + nextLabel + '</button></div>';
+}
+function pkStepper(id, v, min, max, label) {
+  return '<div class="row" style="gap:6px"><button class="pill" data-pkr="' + id + ':-1" aria-label="меньше" style="width:40px;height:44px"' + (v <= min ? ' disabled' : '') + '>−</button><input class="pk-num" id="pk_' + id + '" type="number" inputmode="numeric" min="' + min + '" max="' + max + '" value="' + v + '" aria-label="' + label + '"><button class="pill" data-pkr="' + id + ':1" aria-label="больше" style="width:40px;height:44px"' + (v >= max ? ' disabled' : '') + '>+</button></div>';
 }
 function pkStep0(p) {
   const top = Math.max(100, p.hi + 20), l = p.lo / top * 100, w = Math.max(1.5, (p.hi - p.lo) / top * 100);
   const chips = [[1, 10], [10, 25], [20, 35], [35, 50], [50, 65], [65, 80], [85, 100]];
-  const stepper = (k, v) => '<div class="col" style="gap:6px;align-items:center"><span class="xs muted">' + (k === 'lo' ? 'от' : 'до') + '</span><div class="row" style="gap:6px"><button class="pill" data-pkr="' + k + ':-1" aria-label="меньше" style="width:40px;height:44px">−</button><input class="pk-num" id="pk_' + k + '" type="number" inputmode="numeric" min="1" max="300" value="' + v + '" aria-label="' + (k === 'lo' ? 'водителей от' : 'водителей до') + '"><button class="pill" data-pkr="' + k + ':1" aria-label="больше" style="width:40px;height:44px">+</button></div></div>';
+  const col = (k, v) => '<div class="col" style="gap:6px;align-items:center"><span class="xs muted">' + (k === 'lo' ? 'от' : 'до') + '</span>' + pkStepper(k, v, 1, 300, k === 'lo' ? 'водителей от' : 'водителей до') + '</div>';
   return opsCard('<b style="font-size:17px">Сколько у вас водителей?</b><span class="small sub" style="line-height:1.45">Укажите «от и до». Разница до 15: так цена точнее. Считаем по верхней границе.</span>' +
-    '<div class="row" style="justify-content:center;gap:18px;flex-wrap:wrap">' + stepper('lo', p.lo) + stepper('hi', p.hi) + '</div>' +
+    '<div class="row" style="justify-content:center;gap:18px;flex-wrap:wrap">' + col('lo', p.lo) + col('hi', p.hi) + '</div>' +
     '<div style="position:relative;height:10px;border-radius:5px;background:var(--line);margin:4px 2px"><span style="position:absolute;top:0;bottom:0;left:' + l + '%;width:' + w + '%;background:var(--violet);border-radius:5px;transition:all .25s"></span></div>' +
     '<div class="wrap" style="gap:6px">' + chips.map((c) => '<button class="chip ' + (p.lo === c[0] && p.hi === c[1] ? 'c-done' : 'c-gray') + '" data-pkq="' + c[0] + '-' + c[1] + '" style="height:32px;cursor:pointer">' + c[0] + '–' + c[1] + '</button>').join('') + '</div>' +
     (S.used ? '<div class="row" style="gap:8px;padding:10px 12px;border-radius:12px;background:var(--violet-bg)"><span class="mz-ai">' + ic('spark', 16) + '</span><span class="xs" style="line-height:1.45">Сейчас к боту подключено групп водителей: <b>' + S.used + '</b>. ' + (S.used > p.hi ? 'Это больше верхней границы: лишние встанут на паузу.' : S.used < p.lo ? 'Это меньше нижней границы: можно взять диапазон ниже и сэкономить.' : 'Диапазон подходит.') + '</span></div>' : '') +
-    '<span class="xs muted" style="line-height:1.45">Водителей станет больше верхней границы: новые группы встанут на паузу, и бот предложит расширить диапазон. Ничего не отключится внезапно.</span>') + pkNav(p, 'Дальше');
+    '<span class="xs muted" style="line-height:1.45">Водителей станет больше верхней границы: новые группы встанут на паузу, и бот предложит расширить диапазон. Ничего не отключится внезапно.</span>') + pkBar(p) + pkNav(p, 'Дальше');
 }
+function pkSeg(p, k, v, label, sub) { return '<button class="seg' + (p[k] === v ? ' on' : '') + '" data-pks="' + k + ':' + v + '" style="min-height:56px;display:flex;flex-direction:column;align-items:center;justify-content:center;gap:2px;font-size:14px;padding:6px 4px"><b>' + label + '</b>' + (sub ? '<span class="xs">' + sub + '</span>' : '') + '</button>'; }
 function pkStep1(p) {
-  const seg = (k, v, label, sub) => '<button class="seg' + (p[k] === v ? ' on' : '') + '" data-pks="' + k + ':' + v + '" style="height:58px;display:flex;flex-direction:column;align-items:center;justify-content:center;gap:2px;font-size:14px"><b>' + label + '</b>' + (sub ? '<span class="xs">' + sub + '</span>' : '') + '</button>';
+  const modeSeg = (m, h, label, sub) => '<button class="seg' + (p.m === m && (m === 'full' || p.h === h) ? ' on' : '') + '" data-pkm="' + m + ':' + h + '" style="min-height:56px;display:flex;flex-direction:column;align-items:center;justify-content:center;gap:2px;font-size:14px;padding:6px 4px"><b>' + label + '</b><span class="xs">' + sub + '</span></button>';
+  const free = p.m === 'shift' ? 3 : 6;
   return opsCard('<b style="font-size:17px">Как вы работаете?</b>' +
-    '<span class="label">Какие грузы</span><div style="display:grid;grid-template-columns:repeat(3,minmax(0,1fr));gap:8px">' + seg('kind', 'amazon', 'Amazon') + seg('kind', 'street', 'Street') + seg('kind', 'both', 'Оба') + '</div>' +
-    '<span class="label">Когда бот пишет в группы</span><div class="grid2">' + seg('m', 'shift', 'Только в смену', 'дешевле примерно на 25%') + seg('m', 'full', '24/7', 'в любое время') + '</div>' +
-    '<span class="label">Апдейтов водителю в день</span><div style="display:grid;grid-template-columns:repeat(4,minmax(0,1fr));gap:8px">' + [3, 4, 5, 6].map((u) => seg('u', u, String(u), u === 4 ? 'обычно' : '')).join('') + '</div>' +
-    '<span class="label">Водители часто шлют голосовые?</span><div class="grid2">' + seg('voice', true, 'Да, часто') + seg('voice', false, 'Редко') + '</div>' +
-    '<span class="xs muted">Каждый лишний апдейт чуть дороже: бот считает маршрут и пробки для каждого водителя.</span>') + pkNav(p, 'Дальше');
+    '<span class="label">Какие грузы</span><div style="display:grid;grid-template-columns:repeat(3,minmax(0,1fr));gap:8px">' + pkSeg(p, 'kind', 'amazon', 'Amazon') + pkSeg(p, 'kind', 'street', 'Street') + pkSeg(p, 'kind', 'both', 'Оба') + '</div>' +
+    '<span class="label">Когда бот пишет в группы</span><div style="display:grid;grid-template-columns:repeat(4,minmax(0,1fr));gap:8px">' + modeSeg('full', 24, '24/7', 'всегда') + modeSeg('shift', 12, 'Смена', '12 ч') + modeSeg('shift', 10, 'Смена', '10 ч') + modeSeg('shift', 8, 'Смена', '8 ч') + '</div>' +
+    '<span class="xs muted" style="margin-top:-4px">Короче смена — дешевле: вне смены бот только следит и копит сводку.</span>' +
+    '<span class="label">Апдейтов водителю в день</span><div style="display:grid;grid-template-columns:repeat(5,minmax(0,1fr));gap:6px">' + [3, 4, 5, 6, 7, 8, 9, 10, 11, 12].map((u) => pkSeg(p, 'u', u, String(u), '~' + (Math.round(24 / u * 10) / 10) + ' ч')).join('') + '</div>' +
+    '<span class="xs muted" style="margin-top:-4px">Каждый апдейт чуть дороже: бот считает маршрут и пробки для каждого водителя. Между апдейтами не меньше 2 часов.</span>' +
+    '<div class="row" style="justify-content:space-between;gap:10px;flex-wrap:wrap"><span class="col" style="gap:2px"><span class="label">Сколько человек работает в окне</span><span class="xs muted">' + free + ' бесплатно, дальше меньше $1 за человека</span></span>' + pkStepper('t', p.t, 1, 30, 'людей в окне') + '</div>' +
+    '<span class="label">Водители часто шлют голосовые?</span><div class="grid2">' + pkSeg(p, 'voice', true, 'Да, часто') + pkSeg(p, 'voice', false, 'Редко') + '</div>' +
+    '<span class="label">Вы пишете водителям не на английском?</span><div class="grid2">' + pkSeg(p, 'trn', true, 'Да, нужен перевод') + pkSeg(p, 'trn', false, 'Нет, на английском') + '</div>') + pkBar(p) + pkNav(p, 'Дальше');
 }
 function pkStep2(p) {
-  const rec = pkRecommend(p);
-  const rows = CP_EXTRAS.map((e, i) => {
-    const on = !!(p.f & (1 << i)), d = pkDelta(p, i);
-    return '<button class="row" data-pkx="' + i + '" style="justify-content:space-between;gap:12px;width:100%;padding:12px 0;background:none;border:0;border-top:1px solid var(--line2);color:var(--text);font:inherit;text-align:left;cursor:pointer"><span class="col" style="gap:4px;min-width:0;flex:1"><span class="row" style="gap:6px;flex-wrap:wrap"><b style="font-size:14px">' + e[1] + '</b>' + (rec & (1 << i) ? '<span class="chip" style="height:20px;background:var(--violet-bg);color:var(--violet);border-color:var(--violet-bd)">советую</span>' : '') + '</span><span class="xs muted">' + e[2] + '</span>' + pkHint(d, on) + '</span>' +
+  const rec = pkRecommend(p), trial = inTrial();
+  const row = (k) => {
+    const i = PK_KEYS.indexOf(k), e = CP_EXTRAS[i], on = !!(p.f & (1 << i)), d = pkDelta(p, i);
+    return '<button class="row" data-pkx="' + i + '" style="justify-content:space-between;gap:12px;width:100%;padding:12px 0;background:none;border:0;border-top:1px solid var(--line2);color:var(--text);font:inherit;text-align:left;cursor:pointer"><span class="col" style="gap:4px;min-width:0;flex:1"><span class="row" style="gap:6px;flex-wrap:wrap"><b style="font-size:14px">' + e[1] + '</b>' + (rec & (1 << i) ? '<span class="chip" style="height:20px;background:var(--violet-bg);color:var(--violet);border-color:var(--violet-bd)">советую</span>' : '') + (trial && PK_TRIAL_OFF.indexOf(k) >= 0 ? '<span class="chip c-gray" style="height:20px">после оплаты</span>' : '') + '</span><span class="xs muted">' + e[2] + '</span>' + pkHint(d, on) + '</span>' +
       '<span style="width:46px;height:28px;border-radius:14px;flex:none;position:relative;background:' + (on ? 'var(--mint)' : 'var(--line)') + ';transition:background .2s"><span style="position:absolute;top:3px;left:' + (on ? 21 : 3) + 'px;width:22px;height:22px;border-radius:11px;background:#fff;transition:left .2s"></span></span></button>';
-  }).join('');
+  };
   return opsCard('<b style="font-size:17px">Что включить?</b><span class="small sub" style="line-height:1.45">Основное входит всегда. Остальное по желанию: рядом видно, насколько меняется цена.</span>' +
-      '<div class="wrap" style="gap:6px">' + PK_CORE.map((c) => '<span class="chip c-done" style="height:28px">' + ic('check', 13, 'currentColor', 3) + ' ' + c + '</span>').join('') + '</div>' + '<div class="col">' + rows + '</div>') +
-    '<div class="card row" style="padding:12px 16px;border-radius:16px;justify-content:space-between;gap:10px"><span class="col" style="gap:2px"><span class="xs muted">Ориентир сейчас</span><b class="mz-big" style="font-size:24px">$' + pkCost(p) + ' <span class="xs muted" style="font-weight:500">/ мес</span></b></span>' +
-    (p.own ? '<button class="pill" data-pk="rec" style="height:34px">Как советует ИИ</button>' : '') + '</div>' + pkNav(p, 'Узнать мою цену');
+      '<div class="wrap" style="gap:6px">' + PK_CORE.map((c) => '<span class="chip c-done" style="height:28px">' + ic('check', 13, 'currentColor', 3) + ' ' + c + '</span>').join('') + '</div>' +
+      '<div style="display:grid;grid-template-columns:repeat(3,minmax(0,1fr));gap:6px"><button class="pill" data-pk="rec" style="height:36px;font-size:12px">Как советует ИИ</button><button class="pill" data-pk="all" style="height:36px;font-size:12px">Включить всё</button><button class="pill" data-pk="none" style="height:36px;font-size:12px">Только основное</button></div>') +
+    PK_GROUPS.map((g) => opsCard('<b style="font-size:15px">' + g[0] + '</b><div class="col">' + g[1].map(row).join('') + '</div>')).join('') + pkBar(p) + pkNav(p, 'Узнать мою цену');
 }
 function pkWhy(p) {
-  const out = [];
+  const out = [], on = (k) => !!(p.f & PK_BIT(k));
   out.push('У вас ' + p.lo + '–' + p.hi + ' водителей, поэтому цена считается по ' + p.hi + '.');
-  out.push(p.m === 'shift' ? 'Режим «Только в смену» дешевле: вне смены бот только следит и копит сводку.' : 'Режим 24/7: бот пишет и отвечает в любое время, ночью тоже.');
-  if (p.f & 2) out.push('Автоответчик включён: когда диспетчер занят, водитель не ждёт ответа.');
-  if (p.kind === 'amazon') out.push('Для Amazon тексты брокеру обычно не нужны, Relay всё показывает сам.');
-  if (p.f & 128) out.push('Голос включён: водители шлют голосовые, бот переведёт их в текст.');
+  out.push(p.m === 'shift' ? 'Смена ' + p.h + ' ч: вне смены бот только следит, поэтому дешевле.' : 'Режим 24/7: бот пишет и отвечает в любое время, ночью тоже.');
+  out.push(p.u + ' апдейтов в день, примерно раз в ' + (Math.round(24 / p.u * 10) / 10) + ' ч.');
+  if (on('auto')) out.push('Автоответчик включён: когда диспетчер занят, водитель не ждёт ответа.');
+  if (p.kind === 'amazon' && !on('broker')) out.push('Для Amazon тексты брокеру обычно не нужны, Relay всё показывает сам.');
+  if (on('voice')) out.push('Голос включён: водители шлют голосовые, бот переведёт их в текст.');
+  if (p.t > (p.m === 'shift' ? 3 : 6)) out.push('В окне ' + p.t + ' человек: ' + (p.m === 'shift' ? 3 : 6) + ' бесплатно, остальные чуть добавляют к цене.');
   out.push('Цену считает формула по вашим ответам. Догадок нет: у всех с такими же ответами цена одинаковая.');
   return out;
 }
 function pkSavings(p) {
-  const base = pkCost(p), rec = pkRecommend(p), out = [];
-  CP_EXTRAS.forEach((e, i) => { if ((p.f & (1 << i)) && !(rec & (1 << i))) out.push(['x:' + i, 'Без «' + e[1] + '»', base - pkCost(p, p.f ^ (1 << i))]); });
-  if (p.m === 'full') { const q = Object.assign({}, p, { m:'shift' }); out.push(['m:shift', 'Режим «Только в смену»', base - pkCost(q)]); }
-  if (p.u > 3) { const q = Object.assign({}, p, { u:p.u - 1 }); out.push(['u:' + (p.u - 1), (p.u - 1) + ' апдейта в день вместо ' + p.u, base - pkCost(q)]); }
-  CP_EXTRAS.forEach((e, i) => { if ((p.f & (1 << i)) && (rec & (1 << i)) && i !== 0) out.push(['x:' + i, 'Без «' + e[1] + '»', base - pkCost(p, p.f ^ (1 << i))]); });
-  return out.filter((s) => s[2] > 0).sort((a, b) => b[2] - a[2]).slice(0, 3);
+  const base = pkCost(p), rec = pkRecommend(p), out = [], alt = (o) => cpPrice(pkC(p, o));
+  CP_EXTRAS.forEach((e, i) => { if ((p.f & (1 << i)) && !(rec & (1 << i))) out.push(['x:' + i, 'Без «' + e[1] + '»', base - pkCost(p, p.f ^ (1 << i)), 1]); });
+  if (p.m === 'full') out.push(['m:shift:12', 'Смена 12 ч вместо 24/7', base - alt({ m:'shift', h:12 }), 2]);
+  else if (p.h > 8) out.push(['m:shift:' + (p.h - 2), 'Смена ' + (p.h - 2) + ' ч вместо ' + p.h, base - alt({ h:p.h - 2 }), 2]);
+  if (p.u > 3) out.push(['u:' + (p.u - 1), (p.u - 1) + ' апдейтов в день вместо ' + p.u, base - alt({ u:p.u - 1 }), 2]);
+  const free = p.m === 'shift' ? 3 : 6; if (p.t > free) out.push(['t:' + free, free + ' человек в окне вместо ' + p.t, base - alt({ t:free }), 2]);
+  CP_EXTRAS.forEach((e, i) => { if ((p.f & (1 << i)) && (rec & (1 << i)) && i !== 0) out.push(['x:' + i, 'Без «' + e[1] + '»', base - pkCost(p, p.f ^ (1 << i)), 3]); });
+  return out.filter((s) => s[2] > 0).sort((a, b) => a[3] - b[3] || b[2] - a[2]).slice(0, 4);
 }
 function pkStep3(p) {
   if (OPS.pkBusy > Date.now()) {
-    const lines = ['Смотрю на число водителей', 'Считаю апдейты и режим', 'Убираю то, что вам не нужно', 'Сравниваю варианты'];
+    const lines = ['Смотрю на число водителей', 'Считаю апдейты, смену и людей', 'Убираю то, что вам не нужно', 'Сравниваю варианты'];
     const k = Math.min(lines.length, Math.floor((1700 - (OPS.pkBusy - Date.now())) / 425) + 1);
     return '<div class="mz-hero col" style="gap:14px;align-items:center;text-align:center;padding:34px 20px"><span class="mz-av" style="width:56px;height:56px;border-radius:18px;background:var(--violet-bg);color:var(--violet)">' + ic('spark', 28, 'currentColor', 2) + '</span><b style="font-size:18px">ИИ-консультант считает…</b><div class="col" style="gap:8px;align-items:flex-start">' +
       lines.map((t, i) => '<span class="row small" style="gap:8px;color:' + (i < k ? 'var(--text)' : 'var(--faint)') + '">' + (i < k - 1 ? ic('check', 15, 'var(--mint-t)', 3) : i === k - 1 ? '<span class="mzSpin" style="width:15px;height:15px"></span>' : '<span style="width:15px"></span>') + t + '</span>').join('') + '</div></div>';
   }
-  const price = pkCost(p), per = (price / Math.max(1, p.hi)).toFixed(2), sav = pkSavings(p);
+  const price = pkCost(p), per = (price / Math.max(1, p.hi)).toFixed(2), sav = pkSavings(p), lines = pkLines(p), raw = lines.reduce((a, l) => a + l[1], 0);
   const on = CP_EXTRAS.filter((e, i) => p.f & (1 << i)).map((e) => e[1]);
   const sent = p.sent && Date.now() - p.sent < 7 * 864e5;
+  const mode = p.m === 'full' ? '24/7' : 'смена ' + p.h + ' ч';
   return '<div class="mz-hero col" style="gap:12px"><span class="xs row mz-ai" style="gap:6px;font-weight:700">' + ic('spark', 15) + 'ИИ-КОНСУЛЬТАНТ РЕКОМЕНДУЕТ</span>' +
       '<div class="row" style="align-items:baseline;gap:8px"><b class="mz-big" style="font-size:52px;letter-spacing:-.03em">$' + price + '</b><span class="muted">/ мес</span></div>' +
       (S.fx ? '<span class="small" style="margin-top:-6px">≈ ' + uzs(price) + ' в месяц по курсу ЦБ</span>' : '') +
-      '<span class="small sub">до ' + p.hi + ' водителей · ' + p.u + ' апдейта в день · ' + (p.m === 'full' ? '24/7' : 'только в смену') + '</span>' +
+      '<span class="small sub">до ' + p.hi + ' водителей · ' + p.u + ' апдейтов в день · ' + mode + (p.t > 1 ? ' · ' + p.t + ' чел. в окне' : '') + '</span>' +
       '<span class="row" style="gap:8px;flex-wrap:wrap"><span class="chip c-done">$' + per + ' за водителя</span><span class="chip c-plan">без автосписаний</span>' + (inTrial() ? '<span class="chip" style="background:var(--violet-bg);color:var(--violet);border-color:var(--violet-bd)">+ ' + trialLeft() + ' пробных к месяцу</span>' : '') + '</span></div>' +
     opsCard('<b style="font-size:15px">Почему такая цена</b>' + pkWhy(p).map((t) => '<div class="row small sub" style="gap:8px;align-items:flex-start;line-height:1.45"><span style="color:var(--violet)">•</span><span>' + t + '</span></div>').join('')) +
+    opsCard('<b style="font-size:15px">Из чего цена</b>' + lines.map((l) => '<div class="row" style="justify-content:space-between;gap:10px;padding:6px 0;border-top:1px solid var(--line2)"><span class="small sub">' + esc(l[0]) + '</span><b class="small" style="font-variant-numeric:tabular-nums">$' + l[1].toFixed(2) + '</b></div>').join('') +
+      '<div class="row" style="justify-content:space-between;gap:10px;padding:6px 0;border-top:1px solid var(--line2)"><span class="small sub">Округление до цены на 9</span><b class="small">' + (price >= raw ? '+' : '−') + '$' + Math.abs(price - raw).toFixed(2) + '</b></div>' +
+      '<span class="xs muted" style="line-height:1.45">Здесь расходы бота (сервер, ИИ, маршруты, ваше время на поддержку) плюс 60% и налог 1%.</span>') +
     (sav.length ? opsCard('<b style="font-size:15px">Можно дешевле</b>' + sav.map((s) => '<button class="row" data-pkopt="' + s[0] + '" style="justify-content:space-between;gap:10px;width:100%;padding:10px 0;background:none;border:0;border-top:1px solid var(--line2);color:var(--text);font:inherit;text-align:left;cursor:pointer"><span class="small">' + s[1] + '</span><span class="row" style="gap:8px"><b class="small" style="color:var(--mint-t);white-space:nowrap">−$' + s[2] + '</b><span class="pill" style="height:30px">Применить</span></span></button>').join('')) : '') +
     opsCard('<b style="font-size:15px">Что входит</b><div class="wrap" style="gap:6px">' + PK_CORE.concat(on).map((c) => '<span class="chip c-done" style="height:28px">' + ic('check', 13, 'currentColor', 3) + ' ' + c + '</span>').join('') + '</div>') +
     opsCard('<b style="font-size:15px">Оплата через Click</b><span class="small sub" style="line-height:1.45">Укажите номер, к которому привязан Click. Счёт придёт в приложение Click, оплачиваете там. Тариф включится, как только владелец увидит оплату.</span>' +
       '<input id="pkPhone" type="tel" inputmode="tel" autocomplete="tel" placeholder="+998 90 123 45 67" value="' + esc(p.phone || '') + '" style="height:50px;border-radius:14px;border:1px solid var(--line3);background:var(--raised);color:var(--text);font:inherit;font-size:17px;padding:0 14px" aria-label="Номер Click">' +
       '<button class="btn primary" data-pk="send" style="height:52px;font-size:16px">' + (sent ? 'Отправить заявку ещё раз' : 'Получить счёт в Click · ' + (S.fx ? '≈ ' + uzs(price) : '$' + price + '/мес')) + '</button>' +
       (sent ? '<span class="xs" style="color:var(--mint-t)">✓ Заявка отправлена. Счёт придёт в Click.</span>' : '') +
-      '<span class="xs muted" style="line-height:1.45">Сумма в счёте в сумах по курсу ЦБ на день заявки.' + (inTrial() ? ' Оплатите сейчас, и оставшиеся пробные дни добавятся к месяцу.' : '') + '</span>') +
+      '<span class="xs muted" style="line-height:1.45">Сумма в счёте в сумах по курсу ЦБ на день заявки. Поменять апдейты, функции или людей можно в любой момент: цена пересчитается.' + (inTrial() ? ' Оплатите сейчас, и оставшиеся пробные дни добавятся к месяцу.' : '') + '</span>') +
     '<button class="btn" data-pk="restart" style="height:46px">Изменить ответы</button>';
 }
 function vPick() {
@@ -5669,13 +5713,17 @@ function opsClick8(d) {
   if (d.ngx) { ngClose(); if (d.ngx === 'go') go('pick'); else { OPS.ng.snooze = Date.now() + 30 * 6e4; ngSave(); } return true; }
   const p = OPS.pk;
   if (!p) return false;
-  if (d.pkr) { const a = d.pkr.split(':'); p[a[0]] += +a[1]; pkFix(p, a[0]); if (!p.own) p.f = pkRecommend(p); pkSave(); render(); return true; }
-  if (d.pkq) { const a = d.pkq.split('-'); p.lo = +a[0]; p.hi = +a[1]; pkFix(p, 'hi'); if (!p.own) p.f = pkRecommend(p); pkSave(); render(); return true; }
-  if (d.pks) { const a = d.pks.split(':'), v = a[1] === 'true' ? true : a[1] === 'false' ? false : /^\d+$/.test(a[1]) ? +a[1] : a[1]; p[a[0]] = v; if (!p.own) p.f = pkRecommend(p); pkSave(); render(); return true; }
+  const re = () => { if (!p.own) p.f = pkRecommend(p); pkSave(); render(); return true; };
+  if (d.pkr) { const a = d.pkr.split(':'); p[a[0]] += +a[1]; pkFix(p, a[0]); return re(); }
+  if (d.pkq) { const a = d.pkq.split('-'); p.lo = +a[0]; p.hi = +a[1]; pkFix(p, 'hi'); return re(); }
+  if (d.pkm) { const a = d.pkm.split(':'); p.m = a[0]; if (a[0] === 'shift') p.h = +a[1]; return re(); }
+  if (d.pks) { const a = d.pks.split(':'), v = a[1] === 'true' ? true : a[1] === 'false' ? false : /^\d+$/.test(a[1]) ? +a[1] : a[1]; p[a[0]] = v; return re(); }
   if (d.pkx !== undefined) { p.f ^= (1 << +d.pkx); p.own = true; pkSave(); render(); return true; }
-  if (d.pkopt) { const a = d.pkopt.split(':'); if (a[0] === 'x') { p.f ^= (1 << +a[1]); p.own = true; } else if (a[0] === 'm') p.m = a[1]; else if (a[0] === 'u') p.u = +a[1]; pkSave(); render(); toast('Готово: цена $' + pkCost(p) + '/мес'); return true; }
+  if (d.pkopt) { const a = d.pkopt.split(':'); if (a[0] === 'x') { p.f ^= (1 << +a[1]); p.own = true; } else if (a[0] === 'm') { p.m = a[1]; p.h = +a[2] || 12; } else if (a[0] === 'u') p.u = +a[1]; else if (a[0] === 't') p.t = +a[1]; pkSave(); render(); toast('Готово: цена $' + pkCost(p) + '/мес'); return true; }
   if (d.pk === 'back') { p.step = Math.max(0, p.step - 1); pkSave(); render(); return true; }
   if (d.pk === 'rec') { p.f = pkRecommend(p); p.own = false; pkSave(); render(); return true; }
+  if (d.pk === 'all') { p.f = (1 << CP_EXTRAS.length) - 1; p.own = true; pkSave(); render(); return true; }
+  if (d.pk === 'none') { p.f = 0; p.own = true; pkSave(); render(); return true; }
   if (d.pk === 'restart') { p.step = 0; pkSave(); render(); return true; }
   if (d.pk === 'next') {
     p.step = Math.min(3, p.step + 1);
@@ -5687,14 +5735,15 @@ function opsClick8(d) {
     const el = document.getElementById('pkPhone'), ph = pkPhoneDigits(el && el.value);
     if (!ph) { toast('Введите номер Click: +998 и 9 цифр'); if (el) el.focus(); return true; }
     p.phone = '+' + ph; p.sent = Date.now(); pkSave();
-    sendToBot('cp-' + Math.max(5, p.hi) + '-' + p.u + '-' + (p.m === 'full' ? 'f' : 's') + '-' + p.f.toString(16) + '-' + p.lo + '-' + ph, '/plan');
+    const mc = p.m === 'full' ? 'f' : ({ 12:'s', 10:'t', 8:'e' })[p.h] || 's';
+    sendToBot('cp-' + Math.max(5, p.hi) + '-' + p.u + '-' + mc + '-' + p.f.toString(16) + '-' + p.lo + (p.t > 1 ? '-t' + p.t : '') + '-' + ph, '/plan');
     render(); return true;
   }
   return false;
 }
 document.addEventListener('change', (e) => {
   const t = e.target; if (!t || !OPS.pk) return;
-  if (t.id === 'pk_lo' || t.id === 'pk_hi') { const k = t.id.slice(3); OPS.pk[k] = +t.value || 1; pkFix(OPS.pk, k); if (!OPS.pk.own) OPS.pk.f = pkRecommend(OPS.pk); pkSave(); render(); }
+  if (t.id === 'pk_lo' || t.id === 'pk_hi' || t.id === 'pk_t') { const k = t.id.slice(3); OPS.pk[k] = +t.value || 1; pkFix(OPS.pk, k); if (!OPS.pk.own) OPS.pk.f = pkRecommend(OPS.pk); pkSave(); render(); }
   else if (t.id === 'pkPhone') { OPS.pk.phone = t.value.slice(0, 20); pkSave(); }
 });
 
@@ -5710,23 +5759,32 @@ VIEWS.home = function () {
   const h = vHomeV7(), b = trialBanner(), mark = '<div class="mz-hero col" style="gap:14px">';
   return b && h.indexOf(mark) >= 0 ? h.replace(mark, b + mark) : h;
 };
-if (VIEWS.voice) {
-  const vVoiceV7 = VIEWS.voice;
-  VIEWS.voice = function () {
-    const h = vVoiceV7();
-    if (!inTrial()) return h;
-    const lock = '<div class="card row" style="padding:12px 14px;border-radius:16px;gap:10px;border-color:var(--violet-bd);background:var(--violet-bg)">' + ic('lock', 18, 'var(--violet)', 2) + '<span class="small" style="flex:1;line-height:1.45">В пробные дни голос только для просмотра: распознавание речи платное. Включится после оплаты.</span><button class="pill" data-go="pick" style="height:32px;flex:none">Тариф</button></div>';
-    const head = mzHead('Голос', 'Говорите своими словами, бот пишет брокеру на английском', 'menu');
-    return h.indexOf(head) >= 0 ? h.replace(head, head + lock) : lock + h;
-  };
+/* screens of options that are off (custom plan without them, or not in the free trial): visible, with a clear note on top */
+const FEAT_VIEW = { voice:'voice', scorecard:'relay', detention:'proof', papers:'proof', handoff:'handoff', roads:'roads', map:'map', ub:'ub', eta:'eta', broker:'broker', ai:'ai' };
+const PLAN_Q = (function () { try { return new URLSearchParams(location.search).get('plan') || ''; } catch (e) { return ''; } })();
+function featOn(k) {
+  if (inTrial()) return PK_TRIAL_OFF.indexOf(k) < 0;
+  if ((S.plan === 'custom' || PLAN_Q === 'custom') && S.cpf !== undefined) { const i = PK_KEYS.indexOf(k); return i < 0 || !!(S.cpf & (1 << i)); }
+  return true;
 }
+Object.keys(FEAT_VIEW).forEach((v) => {
+  const orig = VIEWS[v]; if (!orig) return;
+  VIEWS[v] = function () {
+    const h = orig(), k = FEAT_VIEW[v];
+    if (featOn(k)) return h;
+    const name = CP_EXTRAS[PK_KEYS.indexOf(k)][1];
+    const lock = '<div class="card row" style="padding:12px 14px;border-radius:16px;gap:10px;border-color:var(--violet-bd);background:var(--violet-bg)">' + ic('lock', 18, 'var(--violet)', 2) + '<span class="small" style="flex:1;line-height:1.45">' + (inTrial() ? '«' + name + '» включится после оплаты: в пробные дни её нет. Посмотреть можно.' : '«' + name + '» не входит в ваш тариф. Посмотреть можно, а включить: «Подобрать тариф».') + '</span><button class="pill" data-go="pick" style="height:32px;flex:none">' + (inTrial() ? 'Тариф' : 'Добавить') + '</button></div>';
+    const i = h.indexOf('</h1>'), j = i >= 0 ? h.indexOf('</div></div>', i) : -1;
+    return j > 0 ? h.slice(0, j + 12) + lock + h.slice(j + 12) : lock + h;
+  };
+});
 OPS_AG2.unshift(['pricing', 'ИИ-консультант по тарифу', 'Подбирает тариф под ваших водителей и подсказывает, что убрать, чтобы было дешевле. Цену считает формула, а не догадка.', 'К боту подключено 23 группы: подойдёт диапазон 20–35. Без «Поддержки в приоритете» выйдет на $5 дешевле.', 'tag', 'var(--violet-bg)', 'var(--violet)'],
   ['trial', 'Агент пробного периода', 'Показывает, сколько осталось пробных дней, и за сутки до конца напоминает подобрать тариф, чтобы окно не ушло в режим просмотра.', 'Пробный период закончится завтра в 14:00. Оплатите раньше, и оставшиеся дни добавятся к месяцу.', 'gift', 'var(--violet-bg)', 'var(--violet)']);
 if (OPS.agOn.pricing === undefined) OPS.agOn.pricing = true;
 if (OPS.agOn.trial === undefined) OPS.agOn.trial = true;
 OPS_FEED.unshift(['pricing', 'tag', 'var(--violet-bg)', 'var(--violet)', 'ИИ-консультант по тарифу', 'Вы работаете только в смену: режим «Только в смену» сэкономит около 25%.']);
 try { const v0 = new URLSearchParams(location.search).get('view'); if (v0 === 'pick') { S.view = 'pick'; } } catch (e) {}
-
+try { window.OPS_T = Object.assign(window.OPS_T || {}, { pkCost:pkCost, cpPrice:cpPrice }); } catch (e) {}
 
 render();
 
