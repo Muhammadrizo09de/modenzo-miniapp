@@ -5693,12 +5693,23 @@ function pkStep3(p) {
       '<span class="xs muted" style="line-height:1.45">Здесь расходы бота (сервер, ИИ, маршруты, ваше время на поддержку) плюс 60% и налог 1%.</span>') +
     (sav.length ? opsCard('<b style="font-size:15px">Можно дешевле</b>' + sav.map((s) => '<button class="row" data-pkopt="' + s[0] + '" style="justify-content:space-between;gap:10px;width:100%;padding:10px 0;background:none;border:0;border-top:1px solid var(--line2);color:var(--text);font:inherit;text-align:left;cursor:pointer"><span class="small">' + s[1] + '</span><span class="row" style="gap:8px"><b class="small" style="color:var(--mint-t);white-space:nowrap">−$' + s[2] + '</b><span class="pill" style="height:30px">Применить</span></span></button>').join('')) : '') +
     opsCard('<b style="font-size:15px">Что входит</b><div class="wrap" style="gap:6px">' + PK_CORE.concat(on).map((c) => '<span class="chip c-done" style="height:28px">' + ic('check', 13, 'currentColor', 3) + ' ' + c + '</span>').join('') + '</div>') +
-    opsCard('<b style="font-size:15px">Оплата через Click</b><span class="small sub" style="line-height:1.45">Укажите номер, к которому привязан Click. Счёт придёт в приложение Click, оплачиваете там. Тариф включится, как только владелец увидит оплату.</span>' +
-      '<input id="pkPhone" type="tel" inputmode="tel" autocomplete="tel" placeholder="+998 90 123 45 67" value="' + esc(p.phone || '') + '" style="height:50px;border-radius:14px;border:1px solid var(--line3);background:var(--raised);color:var(--text);font:inherit;font-size:17px;padding:0 14px" aria-label="Номер Click">' +
-      '<button class="btn primary" data-pk="send" style="height:52px;font-size:16px">' + (sent ? 'Отправить заявку ещё раз' : 'Получить счёт в Click · ' + (S.fx ? '≈ ' + uzs(price) : '$' + price + '/мес')) + '</button>' +
-      (sent ? '<span class="xs" style="color:var(--mint-t)">✓ Заявка отправлена. Счёт придёт в Click.</span>' : '') +
-      '<span class="xs muted" style="line-height:1.45">Сумма в счёте в сумах по курсу ЦБ на день заявки. Поменять апдейты, функции или людей можно в любой момент: цена пересчитается.' + (inTrial() ? ' Оплатите сейчас, и оставшиеся пробные дни добавятся к месяцу.' : '') + '</span>') +
+    pkPayCard(p, price, sent) +
     '<button class="btn" data-pk="restart" style="height:46px">Изменить ответы</button>';
+}
+function pkStars(usd) { return Math.ceil(usd / 0.013 / 50) * 50; }
+function pkPayCard(p, price, sent) {
+  const m = p.pay || 'click', tab = (k, label, sub) => '<button class="seg' + (m === k ? ' on' : '') + '" data-pkpay="' + k + '" style="min-height:58px;display:flex;flex-direction:column;align-items:center;justify-content:center;gap:2px;font-size:13px;padding:6px 4px"><b>' + label + '</b><span class="xs">' + sub + '</span></button>';
+  const how = {
+    click: ['Укажите номер, к которому привязан Click. Счёт придёт в приложение Click, оплачиваете там. Тариф включится, как только владелец увидит оплату.', 'Получить счёт в Click · ' + (S.fx ? '≈ ' + uzs(price) : '$' + price)],
+    card: ['Для Казахстана, России и других стран. Бот пришлёт номер карты Visa и код платежа. Переводите $' + price + ', присылаете чек в бот, владелец проверяет поступление и включает тариф, обычно за пару часов.', 'Получить реквизиты в боте · $' + price],
+    stars: ['Оплата прямо в Telegram, тариф включится сам за секунду. Звёзды можно купить в Telegram или у узбекских продавцов за сумы. Выходит дороже примерно на треть из-за комиссии Telegram.', 'Оплатить Telegram Stars · ≈ ' + pkStars(price).toLocaleString('ru-RU') + ' ⭐']
+  }[m];
+  return opsCard('<b style="font-size:15px">Оплата</b><div style="display:grid;grid-template-columns:repeat(3,minmax(0,1fr));gap:6px">' + tab('click', 'Click', 'Узбекистан') + tab('card', 'Карта Visa', 'другие страны') + tab('stars', 'Stars', 'в Telegram') + '</div>' +
+    '<span class="small sub" style="line-height:1.45">' + how[0] + '</span>' +
+    (m === 'click' ? '<input id="pkPhone" type="tel" inputmode="tel" autocomplete="tel" placeholder="+998 90 123 45 67" value="' + esc(p.phone || '') + '" style="height:50px;border-radius:14px;border:1px solid var(--line3);background:var(--raised);color:var(--text);font:inherit;font-size:17px;padding:0 14px" aria-label="Номер Click">' : '') +
+    '<button class="btn primary" data-pk="send" style="height:52px;font-size:15px">' + (sent ? 'Отправить заявку ещё раз' : how[1]) + '</button>' +
+    (sent ? '<span class="xs" style="color:var(--mint-t)">✓ Заявка отправлена: продолжение в чате с ботом.</span>' : '') +
+    '<span class="xs muted" style="line-height:1.45">🔒 Ничего не спишется само. Для перевода нужны только номер карты и имя: никто не попросит у вас CVV, срок карты или код из SMS.' + (inTrial() ? ' Оплатите сейчас, и оставшиеся пробные дни добавятся к месяцу.' : '') + '</span>');
 }
 function vPick() {
   const p = pkInit();
@@ -5725,6 +5736,7 @@ function opsClick8(d) {
   if (d.pks) { const a = d.pks.split(':'), v = a[1] === 'true' ? true : a[1] === 'false' ? false : /^\d+$/.test(a[1]) ? +a[1] : a[1]; p[a[0]] = v; return re(); }
   if (d.pkx !== undefined) { p.f ^= (1 << +d.pkx); p.own = true; pkSave(); render(); return true; }
   if (d.pkopt) { const a = d.pkopt.split(':'); if (a[0] === 'x') { p.f ^= (1 << +a[1]); p.own = true; } else if (a[0] === 'm') { p.m = a[1]; p.h = +a[2] || 12; } else if (a[0] === 'u') p.u = +a[1]; else if (a[0] === 't') p.t = +a[1]; pkSave(); render(); toast('Готово: цена $' + pkCost(p) + '/мес'); return true; }
+  if (d.pkpay) { p.pay = d.pkpay; pkSave(); render(); return true; }
   if (d.pk === 'back') { p.step = Math.max(0, p.step - 1); pkSave(); render(); return true; }
   if (d.pk === 'rec') { p.f = pkRecommend(p); p.own = false; pkSave(); render(); return true; }
   if (d.pk === 'all') { p.f = (1 << CP_EXTRAS.length) - 1; p.own = true; pkSave(); render(); return true; }
@@ -5737,11 +5749,15 @@ function opsClick8(d) {
   }
   if (d.pk === 'send') {
     if (S.access === 'survey') { S.lockSheet = 'survey'; render(); return true; }
-    const el = document.getElementById('pkPhone'), ph = pkPhoneDigits(el && el.value);
-    if (!ph) { toast('Введите номер Click: +998 и 9 цифр'); if (el) el.focus(); return true; }
-    p.phone = '+' + ph; p.sent = Date.now(); pkSave();
+    let tail = '-pc';
+    if ((p.pay || 'click') === 'click') {
+      const el = document.getElementById('pkPhone'), ph = pkPhoneDigits(el && el.value);
+      if (!ph) { toast('Введите номер Click: +998 и 9 цифр'); if (el) el.focus(); return true; }
+      p.phone = '+' + ph; tail = '-' + ph;
+    } else if (p.pay === 'stars') tail = '-ps';
+    p.sent = Date.now(); pkSave();
     const mc = p.m === 'full' ? 'f' : ({ 12:'s', 10:'t', 8:'e' })[p.h] || 's';
-    sendToBot('cp-' + Math.max(5, p.hi) + '-' + p.u + '-' + mc + '-' + p.f.toString(16) + '-' + p.lo + (p.t > 1 ? '-t' + p.t : '') + '-' + ph, '/plan');
+    sendToBot('cp-' + Math.max(5, p.hi) + '-' + p.u + '-' + mc + '-' + p.f.toString(16) + '-' + p.lo + (p.t > 1 ? '-t' + p.t : '') + tail, '/plan');
     render(); return true;
   }
   return false;
@@ -5851,9 +5867,9 @@ function vBilling() {
     opsCard('<b style="font-size:15px">Следующий счёт</b><div class="row" style="justify-content:space-between;padding:6px 0;border-top:1px solid var(--line2)"><span class="small sub">Цена тарифа</span><b class="small">$' + nextPrice + '</b></div>' +
       '<div class="row" style="justify-content:space-between;padding:6px 0;border-top:1px solid var(--line2)"><span class="small sub">Скидка за неиспользованное (прогноз)</span><b class="small" style="color:var(--mint-t);white-space:nowrap">−$' + (disc + b.credit).toFixed(2) + '</b></div>' +
       '<div class="row" style="justify-content:space-between;padding:8px 0;border-top:1px solid var(--line2)"><b class="small">К оплате</b><b style="font-size:17px">$' + next.toFixed(2) + (S.fx ? ' <span class="xs muted">≈ ' + uzs(next) + '</span>' : '') + '</b></div>' +
-      '<span class="xs muted">Счёт придёт в Click. Ничего не спишется само.</span>') +
+      '<span class="xs muted">Оплатить можно через Click, переводом на карту Visa или Telegram Stars: бот пришлёт выбор. Ничего не спишется само.</span>') +
     opsHowTo(['В начале месяца вы платите за свой диапазон, например до 60 водителей.', 'Каждый день бот считает, сколько групп водителей было «в работе». Поставили водителя на паузу, и он не считается с этого же дня.', 'Пришли новые водители: добавьте бота в их группы, они считаются с того дня, как начали работать. Больше верхней границы: новые встанут на паузу, а расширить диапазон можно с доплатой только за оставшиеся дни.', 'В конце месяца неиспользованное становится скидкой в следующий счёт. Пример: 60 водителей 10 дней, потом 40 до конца месяца: из $' + ex.pr + ' использовано ≈ $' + ex.u.toFixed(2) + ', скидка ≈ $' + ex.s.toFixed(2) + '.']) +
-    opsCard('<b style="font-size:15px">Частые вопросы</b>' + [['Деньги возвращаются на карту?', 'Нет, неиспользованное становится скидкой в следующий счёт. Так проще и без комиссий.'], ['Пауза удаляет водителя?', 'Нет. История и фото сохраняются, бот продолжает сохранять сообщения. Не будет только апдейтов и агентов. Вернуть можно одной кнопкой.'], ['Кто считается «в работе»?', 'Группа водителя, которая хоть раз за день была включена. Счёт по дням, а не по часам.'], ['Бот сам подскажет?', 'Да. Если в группе 3 дня нет сообщений от водителя, бот предложит поставить её на паузу и покажет, сколько сэкономите.']].map((q) => '<div class="col" style="gap:3px;padding:8px 0;border-top:1px solid var(--line2)"><b class="small">' + q[0] + '</b><span class="xs sub" style="line-height:1.45">' + q[1] + '</span></div>').join('')) + '</div>';
+    opsCard('<b style="font-size:15px">Частые вопросы</b>' + [['Как оплатить?', 'Click (Узбекистан), перевод на карту Visa с чеком (Казахстан, Россия и другие страны) или Telegram Stars прямо в Telegram. Открытый счёт и выбор способа: команда /pay в боте.'], ['Деньги возвращаются на карту?', 'Нет, неиспользованное становится скидкой в следующий счёт. Так проще и без комиссий.'], ['Пауза удаляет водителя?', 'Нет. История и фото сохраняются, бот продолжает сохранять сообщения. Не будет только апдейтов и агентов. Вернуть можно одной кнопкой.'], ['Кто считается «в работе»?', 'Группа водителя, которая хоть раз за день была включена. Счёт по дням, а не по часам.'], ['Бот сам подскажет?', 'Да. Если в группе 3 дня нет сообщений от водителя, бот предложит поставить её на паузу и покажет, сколько сэкономите.']].map((q) => '<div class="col" style="gap:3px;padding:8px 0;border-top:1px solid var(--line2)"><b class="small">' + q[0] + '</b><span class="xs sub" style="line-height:1.45">' + q[1] + '</span></div>').join('')) + '</div>';
 }
 function billWhatText(a) {
   const w = billWhatIf(a);
@@ -5874,7 +5890,7 @@ pkStep0 = function (p) { const h = pkStep0V8(p), mark = '<span class="xs muted" 
 pkStep3 = function (p) {
   const h = pkStep3V8(p);
   if (OPS.pkBusy > Date.now()) return h;
-  const mark = '<b style="font-size:15px">Оплата через Click</b>';
+  const mark = '<b style="font-size:15px">Оплата</b>';
   return h.replace('<span class="chip c-plan">без автосписаний</span>', '<span class="chip c-plan">без автосписаний</span><span class="chip c-done">честный счёт</span>')
     .replace(mark, mark + fairNote('Если водителей станет меньше, например было ' + p.hi + ', осталось ' + Math.max(5, p.hi - 20) + ', с этого дня считаем меньше, а разница уйдёт скидкой в следующий месяц.'));
 };
