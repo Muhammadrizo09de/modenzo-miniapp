@@ -1596,8 +1596,8 @@ function addSend() {
 }
 
 /* ---------- custom plan: the client picks drivers, updates, mode and extras; price = costs + 60%, ends in 9 ---------- */
-const CP_COSTS = { base:6.0, driver:0.35, update:0.002, shift:0.75 };
-const CP_EXTRAS = [['ai','AI ассистент','Вопросы о работе, передача смены, логистика',1.5,0.08],['auto','Автоответчик водителям','Отвечает на простые вопросы водителей',0,0.12],['map','Слежка на карте','Траки, маршруты и скорость (после ELD)',0,0.10],['ub','Update Board и напоминания','Дела из сообщений и напоминания',0,0.03],['broker','Тексты брокеру (ИИ)','Сообщение, email или звонок при опоздании',0.6,0],['reports','Отчёты за смену','Итог смены каждый день',0.4,0.02],['prio','Поддержка в приоритете','Владелец отвечает первым',5,0]];
+const CP_COSTS = { base:1.5, driver:0.25, update:0.001, shift:0.75, fees:0.01 };
+const CP_EXTRAS = [['ai','AI ассистент','Вопросы о работе, передача смены, логистика',0.6,0.03],['auto','Автоответчик водителям','Отвечает на простые вопросы водителей',0,0.08],['map','Слежка на карте','Траки, маршруты и скорость (после ELD)',0,0.02],['ub','Update Board и напоминания','Дела из сообщений и напоминания',0,0.01],['broker','Тексты брокеру (ИИ)','Сообщение, email или звонок при опоздании',0.3,0],['reports','Отчёты за смену','Итог смены каждый день',0.2,0.01],['prio','Поддержка в приоритете','Владелец отвечает первым',3,0]];
 S.cp = { n:20, u:6, m:'full', f:127 };
 try { const q = new URLSearchParams(location.search); S.cpu = +q.get('cpu') || 0; S.cpf = q.get('cpf') ? parseInt(q.get('cpf'), 16) : 127; S.cpp = q.get('cpp') || ''; S.cpr = q.get('cpr') || ''; } catch (e) {}
 if (S.plan === 'custom') { PLANS.push(['custom', 'Свой', S.lim, S.cpu || 6]); S.cp = { n:S.lim || 20, u:S.cpu || 6, m:S.pm || 'full', f:S.cpf }; }
@@ -1607,7 +1607,7 @@ function cpPrice(c) {
   let cost = CP_COSTS.base + CP_COSTS.driver * c.n * k + CP_COSTS.update * c.n * c.u * 30;
   CP_EXTRAS.forEach((e, i) => { if (c.f & (1 << i)) cost += e[3] + e[4] * c.n * k; });
   cost = Math.round(cost * 100) / 100;
-  return nicePrice(cost * 1.6);
+  return nicePrice(cost * 1.6 / (1 - CP_COSTS.fees));
 }
 function vCustom() {
   const c = S.cp, price = cpPrice(c);
@@ -5533,7 +5533,7 @@ function ngShow(i) {
 function ngClose() { const el = document.getElementById('mzNudge'); if (el) el.remove(); }
 
 /* ---------- AI tariff consultant: drivers range (gap up to 15), how you work, features with price hints, then the result ---------- */
-CP_EXTRAS.push(['voice', 'Голос и переводы', 'Голосовые водителей в текст и перевод', 0.5, 0.06]);
+CP_EXTRAS.push(['voice', 'Голос и переводы', 'Голосовые водителей в текст и перевод', 0, 0.30]);
 const PK_CORE = ['Диспеч и шаблоны', 'Gross-борд', 'Грузы и борд', 'Amazon-фасилити', 'Детеншен и обещания', 'Передача смены', 'Агенты-помощники'];
 OPS.pk = (function () { try { return JSON.parse(localStorage.getItem('mz_pick') || 'null'); } catch (e) { return null; } })();
 OPS.pkBusy = 0;
@@ -5563,7 +5563,7 @@ function pkRaw(p, f) {
   const n = Math.max(5, p.hi), k = p.m === 'shift' ? CP_COSTS.shift : 1;
   let c = CP_COSTS.base + CP_COSTS.driver * n * k + CP_COSTS.update * n * p.u * 30;
   CP_EXTRAS.forEach((e, i) => { if (f & (1 << i)) c += e[3] + e[4] * n * k; });
-  return c * 1.6;
+  return c * 1.6 / (1 - CP_COSTS.fees);
 }
 function pkDelta(p, i) { return Math.max(1, Math.round(Math.abs(pkRaw(p, p.f ^ (1 << i)) - pkRaw(p, p.f)))); }
 function pkHint(d, on) {
